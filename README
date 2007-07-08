@@ -1,0 +1,52 @@
+PyDo is a Metadata based Todo and Note taking application.  It attempts to
+work as you.. ok I.. do.  It provides categories to allow you to filter
+your view of todo items and notes so that you can work with a related
+subset at a time.  It also allows for a hierarchical structure, linking
+items to eachother.  It is designed to be flexible enough to meet the 
+organizational needs of most technical professionals.
+
+With categories you can divide items by project, team, line item, etc.
+
+Item types:
+    notes    - simple text, date
+    Todo     - text with a completion check box, time spent, date
+    Process  - text with a percentage completion and start/due/end dates, time spent, date
+
+class item {
+    date
+    text
+    list categories
+    item* parent
+}
+
+class todo {
+    public item
+    float complete (used as toggle)
+    time_spent (hours or days?)
+    ready (can this be done now? maybe just a pointer to a list of dependent tasks?)
+}
+
+class process {
+    public todo (complete used as percentage)
+    start_date
+    end_date
+    due_date
+}
+
+
+Tools/Extras:
+    - Generate Status report
+      - scale line item time to PM
+    - Searchable
+    - Insert Date
+    - Typeahead maybe?
+
+UI
+    - similar to f-spot
+    - check some categories, or click "All"
+
+Components
+    pydo module
+        decide on storage model (xml, pickle, plain text ??)
+    curses ui
+    pyglade ui
