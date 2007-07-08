@@ -33,8 +33,8 @@ class GUI:
         xml.signal_autoconnect(self)
 
         # load test data for now, later get the last filename from gconf
-        self.filename = "test.gtd"
-        #self.filename = None
+        #self.filename = "test.gtd"
+        self.filename = None
 
         if self.filename:
             self.gtd = gtd_tree.load(self.filename)
