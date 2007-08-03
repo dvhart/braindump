@@ -10,7 +10,6 @@ class GTDTreeModel(gtk.TreeStore):
             piter = self.append(None, [0, c])
             for t in self.gtd.context_tasks(c):
                 self.append(piter, [1, t])
-            self.append(piter, [0, gtd_tree.task("New Task", "", [c], "", 0)])
 
         # set up the task_tree model
         treeview.set_model(self)
@@ -48,8 +47,6 @@ class GTDTreeModel(gtk.TreeStore):
     def edited_cb(self, cell, path, new_text, store, column):
         old_text = store[path][column].title
         piter = store.iter_parent(store.get_iter(path))
-        if old_text == "New Task" and new_text != "New Task":
-            store.append(piter, [0, gtd_tree.task(new_text, "", [], "", 0)])
         return
 
 # FIXME: use something like this so all we store in the tree is the task object itself
