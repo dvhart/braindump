@@ -291,46 +291,12 @@
 	  <property name="shadow_type">GTK_SHADOW_OUT</property>
 
 	  <child>
-	    <widget class="GtkToolbar" id="toolbar1">
+	    <widget class="GtkToolbar" id="realm_toggles">
 	      <property name="visible">True</property>
 	      <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
 	      <property name="toolbar_style">GTK_TOOLBAR_ICONS</property>
 	      <property name="tooltips">True</property>
 	      <property name="show_arrow">True</property>
-
-	      <child>
-		<widget class="GtkToggleToolButton" id="toggletoolbutton1">
-		  <property name="visible">True</property>
-		  <property name="label" translatable="yes">Personal</property>
-		  <property name="use_underline">True</property>
-		  <property name="stock_id">gtk-home</property>
-		  <property name="visible_horizontal">True</property>
-		  <property name="visible_vertical">True</property>
-		  <property name="is_important">False</property>
-		  <property name="active">True</property>
-		</widget>
-		<packing>
-		  <property name="expand">False</property>
-		  <property name="homogeneous">True</property>
-		</packing>
-	      </child>
-
-	      <child>
-		<widget class="GtkToggleToolButton" id="toggletoolbutton2">
-		  <property name="visible">True</property>
-		  <property name="label" translatable="yes">Work</property>
-		  <property name="use_underline">True</property>
-		  <property name="stock_id">gtk-execute</property>
-		  <property name="visible_horizontal">True</property>
-		  <property name="visible_vertical">True</property>
-		  <property name="is_important">False</property>
-		  <property name="active">True</property>
-		</widget>
-		<packing>
-		  <property name="expand">False</property>
-		  <property name="homogeneous">True</property>
-		</packing>
-	      </child>
 	    </widget>
 	  </child>
 	</widget>

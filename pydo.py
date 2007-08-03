@@ -79,6 +79,16 @@ class GUI:
             project_area.append_text(area.title)
         project_area.set_active(0)
 
+        # add the realm toggle buttons
+        # FIXME: custom toolbar? as a realm listener?
+        realm_toggles = xml.get_widget("realm_toggles")
+        for realm in self.gtd.realms:
+            rtb = gtk.ToggleToolButton()
+            rtb.set_property("label", realm.title)
+            realm_toggles.insert(rtb, -1)
+            rtb.set_active(1)
+            rtb.show()
+
         # set up the task_tree model
         # FIXME: use a custom widget in glade, and override the treeview as well
         self.treeview = xml.get_widget("task_tree")
