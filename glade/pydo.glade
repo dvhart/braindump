@@ -297,6 +297,22 @@
 	      <property name="toolbar_style">GTK_TOOLBAR_ICONS</property>
 	      <property name="tooltips">True</property>
 	      <property name="show_arrow">True</property>
+
+	      <child>
+		<widget class="GtkToggleToolButton" id="toggletoolbutton2">
+		  <property name="visible">True</property>
+		  <property name="label" translatable="yes"></property>
+		  <property name="use_underline">True</property>
+		  <property name="visible_horizontal">True</property>
+		  <property name="visible_vertical">True</property>
+		  <property name="is_important">False</property>
+		  <property name="active">False</property>
+		</widget>
+		<packing>
+		  <property name="expand">False</property>
+		  <property name="homogeneous">True</property>
+		</packing>
+	      </child>
 	    </widget>
 	  </child>
 	</widget>
@@ -367,6 +383,7 @@ View By Project</property>
 			  <property name="fixed_height_mode">False</property>
 			  <property name="hover_selection">False</property>
 			  <property name="hover_expand">False</property>
+			  <signal name="cursor_changed" handler="on_task_tree_cursor_changed" last_modification_time="Fri, 03 Aug 2007 23:52:41 GMT"/>
 			</widget>
 		      </child>
 		    </widget>
@@ -438,7 +455,7 @@ View By Project</property>
 			  <property name="spacing">0</property>
 
 			  <child>
-			    <widget class="GtkEntry" id="entry3">
+			    <widget class="GtkEntry" id="task_title">
 			      <property name="visible">True</property>
 			      <property name="can_focus">True</property>
 			      <property name="editable">True</property>
@@ -471,10 +488,10 @@ View By Project</property>
 			  </child>
 
 			  <child>
-			    <widget class="GtkButton" id="button8">
+			    <widget class="GtkButton" id="update_task">
 			      <property name="visible">True</property>
 			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">button1</property>
+			      <property name="label" translatable="yes">Update</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
@@ -487,10 +504,10 @@ View By Project</property>
 			  </child>
 
 			  <child>
-			    <widget class="GtkButton" id="button9">
+			    <widget class="GtkButton" id="add_task">
 			      <property name="visible">True</property>
 			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">button4</property>
+			      <property name="label" translatable="yes">Add</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
@@ -697,10 +714,10 @@ View By Project</property>
 		      </child>
 
 		      <child>
-			<widget class="GtkButton" id="button5">
+			<widget class="GtkButton" id="update_project">
 			  <property name="visible">True</property>
 			  <property name="can_focus">True</property>
-			  <property name="label" translatable="yes">button5</property>
+			  <property name="label" translatable="yes">Update</property>
 			  <property name="use_underline">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
 			  <property name="focus_on_click">True</property>
@@ -713,10 +730,10 @@ View By Project</property>
 		      </child>
 
 		      <child>
-			<widget class="GtkButton" id="button6">
+			<widget class="GtkButton" id="add_project">
 			  <property name="visible">True</property>
 			  <property name="can_focus">True</property>
-			  <property name="label" translatable="yes">button6</property>
+			  <property name="label" translatable="yes">Add</property>
 			  <property name="use_underline">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
 			  <property name="focus_on_click">True</property>

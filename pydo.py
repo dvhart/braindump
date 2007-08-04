@@ -31,12 +31,12 @@ class GUI:
     taskviewby_labels = ["context","project"]
 
     def __init__(self):
-        xml = gtk.glade.XML('glade/pydo.glade')
-        xml.signal_autoconnect(self)
+        self.xml = gtk.glade.XML('glade/pydo.glade')
+        self.xml.signal_autoconnect(self)
 
         # initialize the necessary widgets
         # FIXME: load this config from gconf
-        xml.get_widget("taskviewby").set_active(0)
+        self.xml.get_widget("taskviewby").set_active(0)
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
@@ -51,15 +51,12 @@ class GUI:
         # FIXME: create a context_table object, that automatically resizes itself
         # FIXME: consider context listeners
         # build the necessary widgets based on the loaded data
-        t = xml.get_widget("task_contexts_table")
+        t = self.xml.get_widget("task_contexts_table")
         pitch = t.get_property("n-rows")
         i=0
         for context in self.gtd.contexts:
             x = i % pitch
             y = i / pitch
-            print x
-            print y
-            print context.title
             cb = gtk.CheckButton(context.title)
             t.attach(cb, x, x+1, y, y+1)
             cb.show()
@@ -67,21 +64,21 @@ class GUI:
 
         # add all projects to the project combo box
         # FIXME: consider project listeners
-        task_project = xml.get_widget("task_project")
+        task_project = self.xml.get_widget("task_project")
         for project in self.gtd.projects:
             task_project.append_text(project.title)
         task_project.set_active(0)
 
         # add all areas to the project combo box
         # FIXME: consider area listeners
-        project_area = xml.get_widget("project_area")
+        project_area = self.xml.get_widget("project_area")
         for area in self.gtd.areas:
             project_area.append_text(area.title)
         project_area.set_active(0)
 
         # add the realm toggle buttons
         # FIXME: custom toolbar? as a realm listener?
-        realm_toggles = xml.get_widget("realm_toggles")
+        realm_toggles = self.xml.get_widget("realm_toggles")
         for realm in self.gtd.realms:
             rtb = gtk.ToggleToolButton()
             rtb.set_property("label", realm.title)
@@ -91,15 +88,36 @@ class GUI:
 
         # set up the task_tree model
         # FIXME: use a custom widget in glade, and override the treeview as well
-        self.treeview = xml.get_widget("task_tree")
+        self.treeview = self.xml.get_widget("task_tree")
         self.treestore = gtd_gui.GTDTreeModel(self.gtd, self.treeview)
 
+    # widget signal handlers
     def on_window_destroy(self, widget):
         gtk.main_quit()
 
     def on_taskviewby_changed(self, cb):
         print "Current selection is: " + self.taskviewby_labels[cb.get_active()]
  
+    def on_task_tree_cursor_changed(self, tree):
+        path = tree.get_cursor()[0]
+        row_data = tree.get_model()[path][1]
+        task_title = self.xml.get_widget("task_title")
+        if isinstance(row_data, gtd_tree.task):
+            task_title.set_text(row_data.title)
+            # FIXME: update contexts table
+            # FIXME: update project combo box
+        elif isinstance(row_data, gtd_tree.context):
+            task_title.set_text("")
+            # FIXME: set context checkbox
+            print "FIXME: set context to: " + row_data.title
+            # FIXME: clear project combo box
+        elif isinstance(row_data, gtd_tree.project):
+            task_title.set_text("")
+            # FIXME: clear contexts table
+            # FIXME: set project combo box
+            print "FIXME: set project combo box to: " + row_data.title
+            
+            
 
 # test to see if we were run directly
 if __name__ == "__main__":
