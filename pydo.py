@@ -34,10 +34,6 @@ class Pydo:
     def __init__(self):
         GUI().signal_autoconnect(self)
 
-        # initialize the necessary widgets
-        # FIXME: load this config from gconf
-        GUI().get_widget("taskviewby").set_active(0)
-
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
         self.filename = None
@@ -47,6 +43,15 @@ class Pydo:
         else:
             self.gtd = gtd_tree.gtd_tree()
             gtd_tree.save(self.gtd, "test.gtd")
+
+        # set up the task_tree model
+        # FIXME: use a custom widget in glade, and override the treeview as well
+        self.treeview = GUI().get_widget("task_tree")
+        self.treestore = gtd_gui.GTDTreeModel(self.gtd, self.treeview)
+
+        # initialize the necessary widgets
+        # FIXME: load this config from gconf
+        GUI().get_widget("taskviewby").set_active(0)
 
         # FIXME: create a context_table object, that automatically resizes itself
         # FIXME: consider context listeners
@@ -86,17 +91,18 @@ class Pydo:
             rtb.set_active(1)
             rtb.show()
 
-        # set up the task_tree model
-        # FIXME: use a custom widget in glade, and override the treeview as well
-        self.treeview = GUI().get_widget("task_tree")
-        self.treestore = gtd_gui.GTDTreeModel(self.gtd, self.treeview)
 
     # widget signal handlers
     def on_window_destroy(self, widget):
         gtk.main_quit()
 
     def on_taskviewby_changed(self, cb):
-        print "Current selection is: " + self.taskviewby_labels[cb.get_active()]
+        view = cb.get_active()
+        model = GUI().get_widget("task_tree").get_model()
+        if view == 0:
+           model.view_by_context() 
+        elif view == 1:
+           model.view_by_project() 
  
     def on_task_tree_cursor_changed(self, tree):
         path = tree.get_cursor()[0]

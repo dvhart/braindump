@@ -92,7 +92,7 @@ class gtd_tree:
                 tasks.append(t)
         return tasks
 
-    def project_tasks(project):
+    def project_tasks(self, project):
         tasks = []
         for t in self.tasks:
             if t.project == project:

@@ -20,18 +20,14 @@
 #
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
-import gtk
+import gtk, gtk.glade
 import gtd_tree
+import gui
 
 class GTDTreeModel(gtk.TreeStore):
     def __init__(self, gtd, treeview):
         gtk.TreeStore.__init__(self, 'gboolean', object)
         self.gtd = gtd
-
-        for c in self.gtd.contexts:
-            piter = self.append(None, [0, c])
-            for t in self.gtd.context_tasks(c):
-                self.append(piter, [1, t])
 
         # set up the task_tree model
         treeview.set_model(self)
@@ -65,6 +61,22 @@ class GTDTreeModel(gtk.TreeStore):
 
         # Allow sorting on the column
         self.tvcolumn1.set_sort_column_id(1)
+
+    def view_by_context(self):
+        print "view by context"
+        self.clear()
+        for c in self.gtd.contexts:
+            piter = self.append(None, [0, c])
+            for t in self.gtd.context_tasks(c):
+                self.append(piter, [1, t])
+
+    def view_by_project(self):
+        print "view by project"
+        self.clear()
+        for p in self.gtd.projects:
+            piter = self.append(None, [0, p])
+            for t in self.gtd.project_tasks(p):
+                self.append(piter, [1, t])
 
     def edited_cb(self, cell, path, new_text, store, column):
         old_text = store[path][column].title
