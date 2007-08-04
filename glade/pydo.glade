@@ -299,18 +299,19 @@
 	      <property name="show_arrow">True</property>
 
 	      <child>
-		<widget class="GtkToggleToolButton" id="toggletoolbutton2">
+		<widget class="GtkToolItem" id="toolitem1">
 		  <property name="visible">True</property>
-		  <property name="label" translatable="yes"></property>
-		  <property name="use_underline">True</property>
 		  <property name="visible_horizontal">True</property>
 		  <property name="visible_vertical">True</property>
 		  <property name="is_important">False</property>
-		  <property name="active">False</property>
+
+		  <child>
+		    <placeholder/>
+		  </child>
 		</widget>
 		<packing>
 		  <property name="expand">False</property>
-		  <property name="homogeneous">True</property>
+		  <property name="homogeneous">False</property>
 		</packing>
 	      </child>
 	    </widget>
