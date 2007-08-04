@@ -102,20 +102,24 @@ class Pydo:
         path = tree.get_cursor()[0]
         row_data = tree.get_model()[path][1]
         task_title = GUI().get_widget("task_title")
+        task_notes = GUI().get_widget("task_notes")
         if isinstance(row_data, gtd_tree.task):
             task_title.set_text(row_data.title)
             # FIXME: update contexts table
             # FIXME: update project combo box
+            task_notes.get_buffer().set_text(row_data.notes)
         elif isinstance(row_data, gtd_tree.context):
             task_title.set_text("")
             # FIXME: set context checkbox
             print "FIXME: set context to: " + row_data.title
             # FIXME: clear project combo box
+            task_notes.get_buffer().set_text("")
         elif isinstance(row_data, gtd_tree.project):
             task_title.set_text("")
             # FIXME: clear contexts table
             # FIXME: set project combo box
             print "FIXME: set project combo box to: " + row_data.title
+            task_notes.get_buffer().set_text("")
             
             
 
