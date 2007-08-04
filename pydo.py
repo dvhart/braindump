@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #    Filename: pydo.py
-#      Author: Darren Hart <dvhltc@us.ibm.com>
-# Description: 
+#      Author: Darren Hart <darren@dvhart.com>
+# Description: Pydo application class and program initialization code
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 #
-# Copyright (C) IBM Corporation, 2006
+# Copyright (C) Darren Hart, 2007
 #
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
