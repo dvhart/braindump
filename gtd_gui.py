@@ -22,7 +22,7 @@
 
 import gtk, gtk.glade
 import gtd_tree
-import gui
+from gui import *
 
 class GTDTreeModel(gtk.TreeStore):
     def __init__(self, gtd, treeview):
@@ -79,8 +79,11 @@ class GTDTreeModel(gtk.TreeStore):
                 self.append(piter, [1, t])
 
     def edited_cb(self, cell, path, new_text, store, column):
-        old_text = store[path][column].title
-        piter = store.iter_parent(store.get_iter(path))
+        #piter = store.iter_parent(store.get_iter(path))
+        row_data = store[path][column]
+        row_data.title = new_text
+        if isinstance(row_data, gtd_tree.task):
+            GUI().get_widget("task_title").set_text(row_data.title)
         return
 
 # FIXME: use something like this so all we store in the tree is the task object itself
