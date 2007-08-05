@@ -85,10 +85,8 @@ class Pydo:
         # FIXME: custom toolbar? as a realm listener?
         realm_toggles = GUI().get_widget("realm_toggles")
         for realm in self.gtd.realms:
-            rtb = gtk.ToggleToolButton()
-            rtb.set_property("label", realm.title)
+            rtb = RealmToggleToolButton(realm)
             realm_toggles.insert(rtb, -1)
-            rtb.set_active(1)
             rtb.show()
 
 

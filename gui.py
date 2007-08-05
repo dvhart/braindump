@@ -20,7 +20,7 @@
 #
 # 2007-Aug-3:	Initial version by Darren Hart <darren@dvhart.com>
 
-import gtk.glade
+import gtk, gtk.glade
 
 class GUI(gtk.glade.XML):
     instance = None       
@@ -28,3 +28,20 @@ class GUI(gtk.glade.XML):
         if self.instance is None:
             self.instance = gtk.glade.XML('glade/pydo.glade')
         return self.instance
+
+class RealmToggleToolButton(gtk.ToggleToolButton):
+    def __init__(self, realm):
+        self.realm = realm
+        gtk.ToggleToolButton.__init__(self)
+        self.set_property("label", self.realm.title)
+        self.connect("toggled", self.on_toggled)
+        # FIXME: init this from the config (stored in gtd_tree ?)
+        self.set_active(1)
+
+    def on_toggled(self, userparam):
+        if self.get_active() is True:
+            print self.realm.title + " is on"
+        else:
+            print self.realm.title + " is off"
+
+
