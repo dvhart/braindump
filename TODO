@@ -1,0 +1,7 @@
+o decide on consistent coding style
+  o Class naming: MyClass, my_class, etc.
+  o widget naming: update, update_btn, etc.
+o rename files appropriately
+  o gtd_tree -> gtd
+    o gtd_tree class -> tree
+  o gtd_gui -> gui (merge GUI class)
