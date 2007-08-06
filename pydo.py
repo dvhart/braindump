@@ -47,14 +47,7 @@ class Pydo:
             self.gtd = gtd.Tree()
             gtd.save(self.gtd, "test.gtd")
 
-        # set up the task_tree model
-        # FIXME: use a custom widget in glade, and override the treeview as well
-        self.treeview = GUI().get_widget("task_tree").widget
-        self.treestore = GTDTreeModel(self.gtd, self.treeview)
-
-        # initialize the necessary widgets
-        # FIXME: load this config from gconf
-        GUI().get_widget("taskviewby").widget.set_active(0)
+        GTDTreeModel(self.gtd, GUI().get_widget("task_tree").widget)
 
         # FIXME: create a context_table object, that automatically resizes itself
         # FIXME: consider context listeners

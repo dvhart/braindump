@@ -212,11 +212,14 @@ def task_data_func(column, cell, store, iter):
 class TaskViewBy(WidgetWrapper):
     def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
+        # FIXME: pull the default view from a config
+        self.widget.set_active(0)
 
     # signal callbacks
     def on_taskviewby_changed(self, widget):
         view = widget.get_active()
         model = GUI().get_widget("task_tree").widget.get_model()
+        # FIXME: don't use magic numbers
         if view == 0:
             model.view_by_context()
         elif view == 1:
