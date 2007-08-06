@@ -37,7 +37,7 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
         self.set_property("label", self.realm.title)
         self.connect("toggled", self.on_toggled)
         # FIXME: init this from the config (stored in tree ?)
-        self.set_active(1)
+        self.set_active(self.realm.visible)
 
     def on_toggled(self, userparam):
         self.realm.set_visible(self.get_active())
