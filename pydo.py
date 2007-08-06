@@ -24,7 +24,7 @@
 import gtk, gtk.glade
 from gui import *
 import gnome
-import gtd_tree
+import gtd
 
 # GUI Classses and callbacks
 class Pydo:
@@ -38,10 +38,10 @@ class Pydo:
         self.filename = None
 
         if self.filename:
-            self.gtd = gtd_tree.load(self.filename)
+            self.gtd = gtd.load(self.filename)
         else:
-            self.gtd = gtd_tree.gtd_tree()
-            gtd_tree.save(self.gtd, "test.gtd")
+            self.gtd = gtd.tree()
+            gtd.save(self.gtd, "test.gtd")
 
         # set up the task_tree model
         # FIXME: use a custom widget in glade, and override the treeview as well
@@ -111,18 +111,18 @@ class Pydo:
         row_data = tree.get_model()[path][1]
         task_title = GUI().get_widget("task_title")
         task_notes = GUI().get_widget("task_notes")
-        if isinstance(row_data, gtd_tree.task):
+        if isinstance(row_data, gtd.task):
             task_title.set_text(row_data.title)
             # FIXME: update contexts table
             # FIXME: update project combo box
             task_notes.get_buffer().set_text(row_data.notes)
-        elif isinstance(row_data, gtd_tree.context):
+        elif isinstance(row_data, gtd.context):
             task_title.set_text("")
             # FIXME: set context checkbox
             print "FIXME: set context to: " + row_data.title
             # FIXME: clear project combo box
             task_notes.get_buffer().set_text("")
-        elif isinstance(row_data, gtd_tree.project):
+        elif isinstance(row_data, gtd.project):
             task_title.set_text("")
             # FIXME: clear contexts table
             # FIXME: set project combo box

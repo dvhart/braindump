@@ -21,7 +21,7 @@
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
 import gtk, gtk.glade
-import gtd_tree
+import gtd
 
 class GUI(gtk.glade.XML):
     instance = None       
@@ -36,7 +36,7 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
         gtk.ToggleToolButton.__init__(self)
         self.set_property("label", self.realm.title)
         self.connect("toggled", self.on_toggled)
-        # FIXME: init this from the config (stored in gtd_tree ?)
+        # FIXME: init this from the config (stored in tree ?)
         self.set_active(1)
 
     def on_toggled(self, userparam):
@@ -109,7 +109,7 @@ class GTDTreeModel(gtk.TreeStore):
         #piter = store.iter_parent(store.get_iter(path))
         row_data = store[path][column]
         row_data.title = new_text
-        if isinstance(row_data, gtd_tree.task):
+        if isinstance(row_data, gtd.task):
             GUI().get_widget("task_title").set_text(row_data.title)
         return
 
