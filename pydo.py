@@ -25,13 +25,15 @@ import gtk, gtk.glade
 from gui import *
 import gnome
 import gtd
+from callbacks import *
 
 # GUI Classses and callbacks
 class Pydo:
     taskviewby_labels = ["context","project"]
 
     def __init__(self):
-        GUI().signal_autoconnect(self)
+        self.callbacks = Callbacks()
+        GUI().signal_autoconnect(self.callbacks)
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
@@ -92,43 +94,6 @@ class Pydo:
             rtb = RealmToggleToolButton(realm)
             realm_toggles.insert(rtb, -1)
             rtb.show()
-
-
-    # widget signal handlers
-    def on_window_destroy(self, widget):
-        gtk.main_quit()
-
-    def on_taskviewby_changed(self, cb):
-        view = cb.get_active()
-        model = GUI().get_widget("task_tree").get_model()
-        if view == 0:
-           model.view_by_context() 
-        elif view == 1:
-           model.view_by_project() 
- 
-    def on_task_tree_cursor_changed(self, tree):
-        path = tree.get_cursor()[0]
-        row_data = tree.get_model()[path][1]
-        task_title = GUI().get_widget("task_title")
-        task_notes = GUI().get_widget("task_notes")
-        if isinstance(row_data, gtd.Task):
-            task_title.set_text(row_data.title)
-            # FIXME: update contexts table
-            # FIXME: update project combo box
-            task_notes.get_buffer().set_text(row_data.notes)
-        elif isinstance(row_data, gtd.Context):
-            task_title.set_text("")
-            # FIXME: set context checkbox
-            print "FIXME: set context to: " + row_data.title
-            # FIXME: clear project combo box
-            task_notes.get_buffer().set_text("")
-        elif isinstance(row_data, gtd.Project):
-            task_title.set_text("")
-            # FIXME: clear contexts table
-            # FIXME: set project combo box
-            print "FIXME: set project combo box to: " + row_data.title
-            task_notes.get_buffer().set_text("")
-            
             
 
 # test to see if we were run directly
