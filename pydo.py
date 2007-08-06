@@ -28,8 +28,6 @@ import gtd
 
 # GUI Classses and callbacks
 class Pydo:
-    taskviewby_labels = ["context","project"]
-
     def __init__(self):
         # aggregate widgets, with member callbacks
         GUI("glade/pydo.glade")
