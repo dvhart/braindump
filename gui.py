@@ -222,3 +222,10 @@ class TaskViewBy(WidgetWrapper):
         elif view == 1:
             model.view_by_project()
 
+class PydoWindow(WidgetWrapper):
+    def __init_(self, widget):
+        WidgetWrapper.__init__(self, widget)
+
+    # signal callbacks
+    def on_window_destroy(self, widget):
+        gtk.main_quit()

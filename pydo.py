@@ -25,19 +25,17 @@ import gtk, gtk.glade
 from gui import *
 import gnome
 import gtd
-from callbacks import *
 
 # GUI Classses and callbacks
 class Pydo:
     taskviewby_labels = ["context","project"]
 
     def __init__(self):
-        self.callbacks = Callbacks()
-        GUI("glade/pydo.glade").signal_autoconnect(self.callbacks)
-
-        # example aggregate widgets, with member callbacks
-        TaskViewBy(GUI().get_widget("taskviewby").widget)
+        # aggregate widgets, with member callbacks
+        GUI("glade/pydo.glade")
+        PydoWindow(GUI().get_widget("pydo_window").widget)
         TaskTree(GUI().get_widget("task_tree").widget)
+        TaskViewBy(GUI().get_widget("taskviewby").widget)
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
