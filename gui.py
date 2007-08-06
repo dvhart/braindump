@@ -56,20 +56,28 @@ class GUI(gtk.glade.XML):
         print 'Registering widgets{' + name + '} as ' + str(wrapped_widget)
         self.widgets[wrapped_widget.widget.get_name()] = wrapped_widget
 
-    # Return the wrapped widget if it exists
+    # Return the wrapped widget if it exists, create one for consistent usage if not
     def get_widget(self, name):
         if self.widgets.has_key(name):
             widget = self.widgets[name]
         else:
-            widget = gtk.glade.XML.get_widget(self, name)
+            widget = WidgetWrapperBase(gtk.glade.XML.get_widget(self, name))
         return widget
 
-# FIXME: do some python magic to create a facade for all known widget functions
-class WidgetWrapper(object):
+
+# FIXME: rather than having to reference .widget, is it possible to superimpose
+#        the widget namespace onto ours with metaclasses ??
+class WidgetWrapperBase(object):
     def __init__(self, widget):
         self.widget = widget
+
+
+class WidgetWrapper(WidgetWrapperBase):
+    def __init__(self, widget):
+        WidgetWrapperBase.__init__(self, widget)
         GUI().register_widget(self)
         GUI().signal_autoconnect(self)
+
 
 class RealmToggleToolButton(gtk.ToggleToolButton):
     def __init__(self, realm):
@@ -82,11 +90,12 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
 
     def on_toggled(self, userparam):
         self.realm.set_visible(self.get_active())
-        store = GUI().get_widget("task_tree").get_model()
-        if GUI().get_widget("taskviewby").get_active() == 0:
+        store = GUI().get_widget("task_tree").widget.get_model()
+        if GUI().get_widget("taskviewby").widget.get_active() == 0:
             store.view_by_context()
         else:
             store.view_by_project()
+
 
 class GTDTreeModel(gtk.TreeStore):
     def __init__(self, gtd, treeview):
@@ -147,39 +156,26 @@ class GTDTreeModel(gtk.TreeStore):
                         for t in p.tasks:
                             self.append(piter, [1, t])
 
+    # signal callbacks
     def edited_cb(self, cell, path, new_text, store, column):
         #piter = store.iter_parent(store.get_iter(path))
         row_data = store[path][column]
         row_data.title = new_text
         if isinstance(row_data, gtd.Task):
-            GUI().get_widget("task_title").set_text(row_data.title)
+            GUI().get_widget("task_title").widget.set_text(row_data.title)
         return
 
-# FIXME: consider a base WidgetWrapper class that connects all widgets calls to the child widget
+
 class TaskTree(WidgetWrapper):
     def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
-
-    # aggregate class method connectors
-    # FIXME: can this be done with metaclass magic?
-    def set_model(self, model):
-        self.widget.set_model(model)
-
-    def get_model(self):
-        return self.widget.get_model()
-
-    def append_column(self, column):
-        self.widget.append_column(column)
-
-    def set_search_column(self, col):
-        self.widget.set_search_column(col)
 
     # signal callbacks
     def on_task_tree_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
         row_data = tree.get_model()[path][1]
-        task_title = GUI().get_widget("task_title")
-        task_notes = GUI().get_widget("task_notes")
+        task_title = GUI().get_widget("task_title").widget
+        task_notes = GUI().get_widget("task_notes").widget
         if isinstance(row_data, gtd.Task):
             task_title.set_text(row_data.title)
             # FIXME: update contexts table
@@ -217,18 +213,10 @@ class TaskViewBy(WidgetWrapper):
     def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
 
-    # aggregate class method connectors
-    # FIXME: can this be done with metaclass magic?
-    def set_active(self, active):
-        self.widget.set_active(active)
-
-    def get_active(self):
-        return self.widget.get_active()
-
     # signal callbacks
     def on_taskviewby_changed(self, widget):
         view = widget.get_active()
-        model = GUI().get_widget("task_tree").get_model()
+        model = GUI().get_widget("task_tree").widget.get_model()
         if view == 0:
             model.view_by_context()
         elif view == 1:

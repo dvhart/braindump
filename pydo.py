@@ -36,8 +36,8 @@ class Pydo:
         GUI("glade/pydo.glade").signal_autoconnect(self.callbacks)
 
         # example aggregate widgets, with member callbacks
-        TaskViewBy(GUI().get_widget("taskviewby"))
-        TaskTree(GUI().get_widget("task_tree"))
+        TaskViewBy(GUI().get_widget("taskviewby").widget)
+        TaskTree(GUI().get_widget("task_tree").widget)
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
@@ -51,17 +51,17 @@ class Pydo:
 
         # set up the task_tree model
         # FIXME: use a custom widget in glade, and override the treeview as well
-        self.treeview = GUI().get_widget("task_tree")
+        self.treeview = GUI().get_widget("task_tree").widget
         self.treestore = GTDTreeModel(self.gtd, self.treeview)
 
         # initialize the necessary widgets
         # FIXME: load this config from gconf
-        GUI().get_widget("taskviewby").set_active(0)
+        GUI().get_widget("taskviewby").widget.set_active(0)
 
         # FIXME: create a context_table object, that automatically resizes itself
         # FIXME: consider context listeners
         # build the necessary widgets based on the loaded data
-        t = GUI().get_widget("task_contexts_table")
+        t = GUI().get_widget("task_contexts_table").widget
         pitch = t.get_property("n-rows")
         i=0
         for context in self.gtd.contexts:
@@ -74,7 +74,7 @@ class Pydo:
 
         # add all projects to the project combo box
         # FIXME: consider project listeners
-        task_project = GUI().get_widget("task_project")
+        task_project = GUI().get_widget("task_project").widget
         for r in self.gtd.realms:
             if r.visible:
                 for a in r.areas:
@@ -84,7 +84,7 @@ class Pydo:
 
         # add all areas to the project combo box
         # FIXME: consider area listeners
-        project_area = GUI().get_widget("project_area")
+        project_area = GUI().get_widget("project_area").widget
         for r in self.gtd.realms:
             if r.visible:
                 for a in r.areas:
@@ -93,7 +93,7 @@ class Pydo:
 
         # add the realm toggle buttons
         # FIXME: custom toolbar? as a realm listener?
-        realm_toggles = GUI().get_widget("realm_toggles")
+        realm_toggles = GUI().get_widget("realm_toggles").widget
         for realm in self.gtd.realms:
             rtb = RealmToggleToolButton(realm)
             realm_toggles.insert(rtb, -1)
