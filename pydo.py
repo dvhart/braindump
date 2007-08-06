@@ -33,7 +33,11 @@ class Pydo:
 
     def __init__(self):
         self.callbacks = Callbacks()
-        GUI().signal_autoconnect(self.callbacks)
+        GUI("glade/pydo.glade").signal_autoconnect(self.callbacks)
+
+        # example aggregate widgets, with member callbacks
+        TaskViewBy(GUI().get_widget("taskviewby"))
+        TaskTree(GUI().get_widget("task_tree"))
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
