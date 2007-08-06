@@ -25,7 +25,6 @@ import gtk, gtk.glade
 from gui import *
 import gnome
 import gtd_tree
-import gtd_gui
 
 # GUI Classses and callbacks
 class Pydo:
@@ -47,7 +46,7 @@ class Pydo:
         # set up the task_tree model
         # FIXME: use a custom widget in glade, and override the treeview as well
         self.treeview = GUI().get_widget("task_tree")
-        self.treestore = gtd_gui.GTDTreeModel(self.gtd, self.treeview)
+        self.treestore = GTDTreeModel(self.gtd, self.treeview)
 
         # initialize the necessary widgets
         # FIXME: load this config from gconf
