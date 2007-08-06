@@ -1,4 +1,4 @@
-#    Filename: gtd_tree.py
+#    Filename: gtd.py
 #      Author: Darren Hart <darren@dvhart.com>
 # Description: gtd classes (task, contexts, etc.)
 #
@@ -22,18 +22,15 @@
 
 import pickle
 
-class base(object):
+class Base(object):
     def __init__(self, title):
         self.title = title
 
-    def set_visible(visible):
-        self.visible = visible
 
-
-class context(base):
+class Context(Base):
     def __init__(self, title):
         self.tasks = []
-        base.__init__(self, title)
+        Base.__init__(self, title)
 
     def add_task(self, task):
         self.tasks.append(task)
@@ -42,11 +39,11 @@ class context(base):
         self.tasks.remove(task)
 
 
-class realm(base):
-    def __init__(self, title):
+class Realm(Base):
+    def __init__(self, title, visible=True):
         self.areas = []
-        self.visible = True
-        base.__init__(self, title)
+        self.visible = visible
+        Base.__init__(self, title)
 
     def add_area(self, area):
         self.areas.append(area)
@@ -59,10 +56,10 @@ class realm(base):
         print self.title + " visibility = " + str(visible)
 
 
-class area(base):
+class Area(Base):
     def __init__(self, title, realm):
         self.projects = []
-        base.__init__(self, title)
+        Base.__init__(self, title)
         self.realm = realm
         self.realm.add_area(self)
 
@@ -73,10 +70,10 @@ class area(base):
         self.projects.remove(project)
 
 
-class project(base):
+class Project(Base):
     def __init__(self, title, notes, area, state):
         self.tasks = []
-        base.__init__(self, title)
+        Base.__init__(self, title)
         self.notes = notes
         self.area = area
         self.state = state # ie: complete, someday
@@ -89,9 +86,9 @@ class project(base):
         self.tasks.remove(task)
 
 
-class task(base):
+class Task(Base):
     def __init__(self, title, project, contexts, notes, state):
-        base.__init__(self, title)
+        Base.__init__(self, title)
         self.project = project
         self.contexts = contexts
         self.notes = notes
@@ -101,27 +98,27 @@ class task(base):
             context.add_task(self)
 
 
-class gtd_tree(object):
+class Tree(object):
     def __init__(self):
         self.contexts = []
         self.realms = []
 
         # load test data
         self.contexts = [
-            context("Evening"),
-            context("Weekend"),
-            context("Errands"),
-            context("Online"),
-            context("Computer"),
-            context("Calls")]
-        self.realms = [realm("Personal"), realm("Professional")]
-        staffdev = area("Remodel", self.realms[0])
-        staffdev = area("Staff Development", self.realms[1])
-        pydo = project("pydo", "", staffdev, 0)
-        deck = project("front deck", "", staffdev, 0)
-        task("research gnome list_item", pydo, [self.contexts[3]], "notes A", 0),
-        task("extend gnome list_item", deck, [self.contexts[3]], "notes B", 0),
-        task("lay deck boards", deck, [self.contexts[1]], "use stained boards first", 0)
+            Context("Evening"),
+            Context("Weekend"),
+            Context("Errands"),
+            Context("Online"),
+            Context("Computer"),
+            Context("Calls")]
+        self.realms = [Realm("Personal"), Realm("Professional")]
+        staffdev = Area("Remodel", self.realms[0])
+        staffdev = Area("Staff Development", self.realms[1])
+        pydo = Project("pydo", "", staffdev, 0)
+        deck = Project("front deck", "", staffdev, 0)
+        Task("research gnome list_item", pydo, [self.contexts[3]], "notes A", 0),
+        Task("extend gnome list_item", deck, [self.contexts[3]], "notes B", 0),
+        Task("lay deck boards", deck, [self.contexts[1]], "use stained boards first", 0)
     
     # FIXME: the datastructure should be revisited after a usage analysis and these functions
     # can then be optimized
