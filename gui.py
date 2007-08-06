@@ -39,9 +39,10 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
         self.set_active(1)
 
     def on_toggled(self, userparam):
-        if self.get_active() is True:
-            print self.realm.title + " is on"
+        self.realm.set_visible(self.get_active())
+        store = GUI().get_widget("task_tree").get_model()
+        if GUI().get_widget("taskviewby").get_active() == 0:
+            store.view_by_context()
         else:
-            print self.realm.title + " is off"
-
+            store.view_by_project()
 

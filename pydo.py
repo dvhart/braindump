@@ -70,15 +70,20 @@ class Pydo:
         # add all projects to the project combo box
         # FIXME: consider project listeners
         task_project = GUI().get_widget("task_project")
-        for project in self.gtd.projects:
-            task_project.append_text(project.title)
+        for r in self.gtd.realms:
+            if r.visible:
+                for a in r.areas:
+                    for p in a.projects:
+                        task_project.append_text(p.title)
         task_project.set_active(0)
 
         # add all areas to the project combo box
         # FIXME: consider area listeners
         project_area = GUI().get_widget("project_area")
-        for area in self.gtd.areas:
-            project_area.append_text(area.title)
+        for r in self.gtd.realms:
+            if r.visible:
+                for a in r.areas:
+                    project_area.append_text(a.title)
         project_area.set_active(0)
 
         # add the realm toggle buttons

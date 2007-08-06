@@ -67,16 +67,20 @@ class GTDTreeModel(gtk.TreeStore):
         self.clear()
         for c in self.gtd.contexts:
             piter = self.append(None, [0, c])
-            for t in self.gtd.context_tasks(c):
-                self.append(piter, [1, t])
+            for t in c.tasks:
+                if t.project.area.realm.visible:
+                    self.append(piter, [1, t])
 
     def view_by_project(self):
         print "view by project"
         self.clear()
-        for p in self.gtd.projects:
-            piter = self.append(None, [0, p])
-            for t in self.gtd.project_tasks(p):
-                self.append(piter, [1, t])
+        for r in self.gtd.realms:
+            if r.visible:
+                for a in r.areas:
+                    for p in a.projects:
+                        piter = self.append(None, [0, p])
+                        for t in p.tasks:
+                            self.append(piter, [1, t])
 
     def edited_cb(self, cell, path, new_text, store, column):
         #piter = store.iter_parent(store.get_iter(path))
