@@ -103,33 +103,29 @@ class GTDTreeModel(gtk.TreeStore):
         self.gtd = gtd
 
         # set up the task_tree model
-        print "treeview is of type ", type(treeview)
         treeview.set_model(self)
 
-        # create the TreeViewColumn to display the data
+        # create the TreeViewColumns to display the data
         self.tvcolumn0 = gtk.TreeViewColumn("Done")
         self.tvcolumn1 = gtk.TreeViewColumn("Title")
 
-        # add tvcolumn to treeview
+        # append the columns to the view
         treeview.append_column(self.tvcolumn0)
         treeview.append_column(self.tvcolumn1)
 
-        # create a CellRendererText to render the data
+        # create the CellRenderers
         self.cell0 = gtk.CellRendererToggle()
         self.cell0.connect('toggled', self.toggled, self, 0)
         self.cell1 = gtk.CellRendererText()
         self.cell1.set_property('editable', True)
-        self.cell1.connect('edited', self.edited_cb, self, 1)
+        self.cell1.connect('edited', self.edited, self, 1)
 
-        # add the cell to the tvcolumn and allow it to expand
-        self.tvcolumn0.pack_start(self.cell0, True)
+        # attach the CellRenderers to each column
+        self.tvcolumn0.pack_start(self.cell0, False)
         self.tvcolumn1.pack_start(self.cell1, True)
 
-        # set the cell "text" attribute to column 0 - retrieve text
-        # from that column in treestore
-        self.tvcolumn0.add_attribute(self.cell0, 'active', 0)
+        # display data directly from the gtd object, rather than setting attributes
         self.tvcolumn0.set_cell_data_func(self.cell0, self.task_data_func, "complete")
-        #self.tvcolumn1.add_attribute(self.cell1, 'markup', 1)
         self.tvcolumn1.set_cell_data_func(self.cell1, self.task_data_func, "title")
 
         # make it searchable
@@ -139,7 +135,6 @@ class GTDTreeModel(gtk.TreeStore):
         self.tvcolumn1.set_sort_column_id(1)
 
     def view_by_context(self):
-        print "view by context"
         self.clear()
         for c in self.gtd.contexts:
             piter = self.append(None, [0, c])
@@ -148,7 +143,6 @@ class GTDTreeModel(gtk.TreeStore):
                     self.append(piter, [1, t])
 
     def view_by_project(self):
-        print "view by project"
         self.clear()
         for r in self.gtd.realms:
             if r.visible:
@@ -165,7 +159,7 @@ class GTDTreeModel(gtk.TreeStore):
         if isinstance(row_data, gtd.Task):
             row_data.complete = not row_data.complete
 
-    def edited_cb(self, cell, path, new_text, store, column):
+    def edited(self, cell, path, new_text, store, column):
         #piter = store.iter_parent(store.get_iter(path))
         row_data = store[path][column]
         row_data.title = new_text
