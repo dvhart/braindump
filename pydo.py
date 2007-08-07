@@ -31,9 +31,6 @@ class Pydo:
     def __init__(self):
         # aggregate widgets, with member callbacks
         GUI("glade/pydo.glade")
-        PydoWindow(GUI().get_widget("pydo_window").widget)
-        TaskTree(GUI().get_widget("task_tree").widget)
-        TaskViewBy(GUI().get_widget("taskviewby").widget)
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
@@ -46,6 +43,9 @@ class Pydo:
             gtd.save(self.gtd, "test.gtd")
 
         GTDTreeModel(self.gtd, GUI().get_widget("task_tree").widget)
+        PydoWindow(GUI().get_widget("pydo_window").widget)
+        TaskTree(GUI().get_widget("task_tree").widget)
+        TaskViewBy(GUI().get_widget("taskviewby").widget)
 
         # FIXME: create a context_table object, that automatically resizes itself
         # FIXME: consider context listeners
