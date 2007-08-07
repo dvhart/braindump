@@ -116,6 +116,7 @@ class GTDTreeModel(gtk.TreeStore):
 
         # create a CellRendererText to render the data
         self.cell0 = gtk.CellRendererToggle()
+        self.cell0.connect('toggled', self.toggled, self, 0)
         self.cell1 = gtk.CellRendererText()
         self.cell1.set_property('editable', True)
         self.cell1.connect('edited', self.edited_cb, self, 1)
@@ -127,8 +128,9 @@ class GTDTreeModel(gtk.TreeStore):
         # set the cell "text" attribute to column 0 - retrieve text
         # from that column in treestore
         self.tvcolumn0.add_attribute(self.cell0, 'active', 0)
+        self.tvcolumn0.set_cell_data_func(self.cell0, self.task_data_func, "complete")
         #self.tvcolumn1.add_attribute(self.cell1, 'markup', 1)
-        self.tvcolumn1.set_cell_data_func(self.cell1, task_data_func, data="title")
+        self.tvcolumn1.set_cell_data_func(self.cell1, self.task_data_func, "title")
 
         # make it searchable
         treeview.set_search_column(1)
@@ -157,13 +159,29 @@ class GTDTreeModel(gtk.TreeStore):
                             self.append(piter, [1, t])
 
     # signal callbacks
+    def toggled(self, cell, path, store, column):
+        complete = store[path][column]
+        row_data = store[path][1]
+        if isinstance(row_data, gtd.Task):
+            row_data.complete = not row_data.complete
+
     def edited_cb(self, cell, path, new_text, store, column):
         #piter = store.iter_parent(store.get_iter(path))
         row_data = store[path][column]
         row_data.title = new_text
         if isinstance(row_data, gtd.Task):
             GUI().get_widget("task_title").widget.set_text(row_data.title)
-        return
+
+    # FIXME: use something like this so all we store in the tree is the task object itself
+    # may need a gtd_row abstract class and derived classes
+    # assign to a column like:
+    def task_data_func(self, column, cell, store, iter, data):
+        obj = store.get_value(iter, 1)
+        if data is "complete" and isinstance(obj, gtd.Task):
+            cell.set_property("active", obj.complete)
+        if data is "title":
+            cell.set_property("markup", obj.title)
+    
 
 
 class TaskTree(WidgetWrapper):
@@ -193,19 +211,6 @@ class TaskTree(WidgetWrapper):
             # FIXME: set project combo box
             print "FIXME: set project combo box to: " + row_data.title
             task_notes.get_buffer().set_text("")
-
-# FIXME: use something like this so all we store in the tree is the task object itself
-# may need a gtd_row abstract class and derived classes
-# assign to a column like:
-# tvcolumn1.set_cell_data_func(cell1, task_data_func, data="title")
-def task_data_func(column, cell, store, iter):
-        task = store.get_value(iter, 1)
-        data = "Unknown"
-        # if we add user_data, the signature doesn't seem to match ???
-        # need to find something else to switch on
-        # if user_data == "title":
-        data = task.title
-        cell.set_property("markup", data)
 
 
 # Example class using aggregation instead of inheritance

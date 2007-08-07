@@ -87,12 +87,13 @@ class Project(Base):
 
 
 class Task(Base):
-    def __init__(self, title, project, contexts, notes, state):
+    def __init__(self, title, project, contexts, notes, waiting, complete):
         Base.__init__(self, title)
         self.project = project
         self.contexts = contexts
         self.notes = notes
-        self.state = state # ie: next, waiting, complete
+        self.waiting = waiting
+        self.complete = complete
         self.project.add_task(self)
         for context in contexts:
             context.add_task(self)
@@ -116,9 +117,9 @@ class Tree(object):
         staffdev = Area("Staff Development", self.realms[1])
         pydo = Project("pydo", "", staffdev, 0)
         deck = Project("front deck", "", staffdev, 0)
-        Task("research gnome list_item", pydo, [self.contexts[3]], "notes A", 0),
-        Task("extend gnome list_item", deck, [self.contexts[3]], "notes B", 0),
-        Task("lay deck boards", deck, [self.contexts[1]], "use stained boards first", 0)
+        Task("research gnome list_item", pydo, [self.contexts[3]], "notes A", False, False),
+        Task("extend gnome list_item", deck, [self.contexts[3]], "notes B", False, False),
+        Task("lay deck boards", deck, [self.contexts[1]], "use stained boards first", False, False)
     
     # FIXME: the datastructure should be revisited after a usage analysis and these functions
     # can then be optimized
