@@ -174,8 +174,10 @@ class GTDTreeModel(gtk.TreeStore):
         if data is "complete" and isinstance(obj, gtd.Task):
             cell.set_property("active", obj.complete)
         if data is "title":
-            cell.set_property("markup", obj.title)
-    
+            text = obj.title
+            if not isinstance(obj, gtd.Task):
+                text = "<b>%s</b>"%text
+            cell.set_property("markup", text)
 
 
 class TaskTree(WidgetWrapper):
