@@ -171,13 +171,20 @@ class GTDTreeModel(gtk.TreeStore):
     # assign to a column like:
     def task_data_func(self, column, cell, store, iter, data):
         obj = store.get_value(iter, 1)
-        if data is "complete" and isinstance(obj, gtd.Task):
-            cell.set_property("active", obj.complete)
-        if data is "title":
+        # FIXME: add project.complete var, and update to handle in first test below
+        if data is "complete":
+            if isinstance(obj, gtd.Task):  # or isinstance(obj, gtd.Project)
+                cell.set_property("active", obj.complete)
+            else:
+                cell.set_property("active", False)
+        elif data is "title":
             text = obj.title
             if not isinstance(obj, gtd.Task):
                 text = "<b>%s</b>"%text
             cell.set_property("markup", text)
+        else:
+            # FIXME: throw an exception
+            print "ERROR: didn't set toggle property for ", obj.title
 
 
 class TaskTree(WidgetWrapper):
