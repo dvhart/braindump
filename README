@@ -1,52 +1,39 @@
-PyDo is a Metadata based Todo and Note taking application.  It attempts to
-work as you.. ok I.. do.  It provides categories to allow you to filter
-your view of todo items and notes so that you can work with a related
-subset at a time.  It also allows for a hierarchical structure, linking
-items to eachother.  It is designed to be flexible enough to meet the 
-organizational needs of most technical professionals.
+NOTE: If you are reading this version of the code, it means you have probably
+expressed an interest in the forming of the project and it's fundamental
+design, rather than strictly in using the end-result.  As such, please keep in
+mind that this project is "not intelligent design" but rather an evolutionary
+code base.  I am using this project to learn best python practices, and as such
+the object hierarchy and other fundamental design elements are likely (read:
+will) change, probably drastically.  That said, the end goal is to produce a
+top notch python gnome application.  Constructive criticism about any aspect of
+the project is very welcome.
 
-With categories you can divide items by project, team, line item, etc.
+Thanks,
 
-Item types:
-    notes    - simple text, date
-    Todo     - text with a completion check box, time spent, date
-    Process  - text with a percentage completion and start/due/end dates, time spent, date
+Darren hart <darren@dvhart.com>
 
-class item {
-    date
-    text
-    list categories
-    item* parent
-}
+------------
 
-class todo {
-    public item
-    float complete (used as toggle)
-    time_spent (hours or days?)
-    ready (can this be done now? maybe just a pointer to a list of dependent tasks?)
-}
+PyDo is a Context based Todo and Note taking application, based largely on the
+productivity tips outlined in the book "Getting Things Done" by David Allen.
+Tasks are tagged with the context in which you plan to accomplish them (Phone
+Calls, Evening, Online, Weekends, etc.).
 
-class process {
-    public todo (complete used as percentage)
-    start_date
-    end_date
-    due_date
-}
+Tasks are the leaf node of a tree like hierarchy:
 
+Realm (Personal, Profesional, etc.)
+   |-Area of Responsibility (Staff Development, Technical Leadership, Parenting)
+       |-Project
+           |-Task
 
-Tools/Extras:
-    - Generate Status report
-      - scale line item time to PM
-    - Searchable
-    - Insert Date
-    - Typeahead maybe?
+Realms allow you to filter your view of todo items and notes so that you can
+work with a related subset at a time.  The Area and Project levels are used
+during the Weekly Review process to ensure you are making progress on each of
+your responsibilities.
 
-UI
-    - similar to f-spot
-    - check some categories, or click "All"
-
-Components
-    pydo module
-        decide on storage model (xml, pickle, plain text ??)
-    curses ui
-    pyglade ui
+The user interface is designed to optimize the common cases, which I believe to
+be viewing and checking off tasks, and populating new projects and tasks during
+weekly reviews.  As such, those tasks can be accomplished without the use of
+dialog boxes, excessive mouse clicks, etc.  I intend to make the app save state
+automatically - so there will be no "Save" or "Save As" symmantics, just an
+"Open" to work with a different data file.

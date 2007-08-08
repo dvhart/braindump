@@ -1,2 +1,7 @@
+This is HORRIBLY incomplete.  The list is immense as the project isn't
+even completely functional yet.  Right now I just start the app, pick some
+unimplemented bit, and hack away...  I'll update this file to remind me
+of things I can't just as easily do via inline '# FIXME's
+
 o decide on consistent coding style
   o widget naming: update, update_btn, etc.
