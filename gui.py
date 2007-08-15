@@ -191,6 +191,14 @@ class TaskTree(WidgetWrapper):
     def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
 
+    # return the current gtd object
+    def get_current_data(self):
+        row_data = None
+        path = self.widget.get_cursor()[0]
+        if path:
+            row_data = self.widget.get_model()[path][1]
+        return row_data
+
     # signal callbacks
     def on_task_tree_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
@@ -199,18 +207,18 @@ class TaskTree(WidgetWrapper):
         task_notes = GUI().get_widget("task_notes").widget
         if isinstance(row_data, gtd.Task):
             task_title.set_text(row_data.title)
-            # FIXME: update contexts table
+            GUI().get_widget("task_contexts_table").set_active_contexts(row_data.contexts)
             # FIXME: update project combo box
             task_notes.get_buffer().set_text(row_data.notes)
         elif isinstance(row_data, gtd.Context):
             task_title.set_text("")
-            # FIXME: set context checkbox
-            print "FIXME: set context to: " + row_data.title
+            GUI().get_widget("task_contexts_table").set_active_contexts([row_data])
             # FIXME: clear project combo box
             task_notes.get_buffer().set_text("")
         elif isinstance(row_data, gtd.Project):
             task_title.set_text("")
             # FIXME: clear contexts table
+            GUI().get_widget("task_contexts_table").uncheck_all()
             # FIXME: set project combo box
             print "FIXME: set project combo box to: " + row_data.title
             task_notes.get_buffer().set_text("")
@@ -234,9 +242,87 @@ class TaskViewBy(WidgetWrapper):
             model.view_by_project()
 
 class PydoWindow(WidgetWrapper):
-    def __init_(self, widget):
+    def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
 
     # signal callbacks
     def on_window_destroy(self, widget):
         gtk.main_quit()
+
+class ContextCheckButton(gtk.CheckButton):
+    def __init__(self, context):
+        gtk.CheckButton.__init__(self, context.title)
+        self.context = context
+
+# Class aggregrating GtkTable to list contexts for tasks
+class ContextTable(WidgetWrapper):
+    def __init__(self, widget, gtd_tree):
+        WidgetWrapper.__init__(self, widget)
+        self.gtd_tree = gtd_tree
+        self.table = gtk.Table()
+        self.widget.add(self.table)
+        self.table.show()
+        self.context_cbs = {}
+        # FIXME: move to a context listener function or something...
+        for context in self.gtd_tree.contexts:
+            cb = ContextCheckButton(context)
+            cb.connect("toggled", self.on_checkbutton_toggled)
+            self.context_cbs[context] = cb
+        self.resize()
+        # FIXME: clean this up once the configure_events are working
+        widget.add_events(gtk.gdk.STRUCTURE_MASK)
+        print "Events: ", widget.get_property("events")
+
+    def set_active_contexts(self, contexts):
+        for c, cb in self.context_cbs.iteritems():
+            cb.set_property("active", c in contexts)
+
+    def uncheck_all(self):
+        for c, cb in self.context_cbs.iteritems():
+            cb.set_property("active", False)
+
+    def resize(self):
+        # determine the widest cell needed
+        max_width = 0
+        for c, cb in self.context_cbs.iteritems():
+            w = cb.size_request()[0]
+            if w > max_width:
+                max_width = w
+            if cb.parent:
+                self.table.remove(cb)
+
+        # resize it
+        pitch = self.widget.allocation.width / max_width
+        self.table.resize(pitch, len(self.context_cbs)/pitch + 1)
+
+        pitch = self.table.get_property("n-rows")
+        i=0
+        for c, cb in self.context_cbs.iteritems():
+            x = i % pitch
+            y = i / pitch
+            self.table.attach(cb, x, x+1, y, y+1)
+            cb.show()
+            i = i + 1
+
+    # eventbox callbacks
+    def on_configure_event(self, widget, event):
+        print "EVENT: ", event
+        print "event.width: ", event.width
+        return True
+
+    # checkbox callbacks
+    # FIXME: is there a way to set the active property without triggering the signal?
+    # if not, we need to be careful not to act on an event that we did programmatically
+    # vs. the user clicking the checkbox
+    def on_checkbutton_toggled(self, cb):
+        row_data = GUI().get_widget("task_tree").get_current_data()
+        if row_data and isinstance(row_data, gtd.Task):
+            # FIXME: this shouldn't have to be done twice
+            if cb.get_active():
+                cb.context.add_task(row_data)
+                row_data.contexts.append(cb.context)
+            else:
+                cb.context.remove_task(row_data)
+                row_data.contexts.remove(cb.context)
+            # FIXME: tell the tree to update itself
+

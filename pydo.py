@@ -46,20 +46,12 @@ class Pydo:
         PydoWindow(GUI().get_widget("pydo_window").widget)
         TaskTree(GUI().get_widget("task_tree").widget)
         TaskViewBy(GUI().get_widget("taskviewby").widget)
+        ContextTable(GUI().get_widget("task_contexts_table").widget, self.gtd)
 
-        # FIXME: create a context_table object, that automatically resizes itself
-        # FIXME: consider context listeners
-        # build the necessary widgets based on the loaded data
-        t = GUI().get_widget("task_contexts_table").widget
-        pitch = t.get_property("n-rows")
-        i=0
-        for context in self.gtd.contexts:
-            x = i % pitch
-            y = i / pitch
-            cb = gtk.CheckButton(context.title)
-            t.attach(cb, x, x+1, y, y+1)
-            cb.show()
-            i = i + 1
+        # FIXME: these should be bound to the eventbox we put the table in
+        #        see ContextTable clas sin gui.py (remove this when fixed)
+        GUI().get_widget("pydo_window").widget.connect("configure_event",
+            lambda w,e: GUI().get_widget("task_contexts_table").resize())
 
         # add all projects to the project combo box
         # FIXME: consider project listeners
