@@ -138,7 +138,7 @@ class GTDTreeModel(gtk.TreeStore):
         self.clear()
         for c in self.gtd.contexts:
             piter = self.append(None, [0, c])
-            for t in c.tasks:
+            for t in self.gtd.context_tasks(c):
                 if t.project.area.realm.visible:
                     self.append(piter, [1, t])
 
@@ -319,10 +319,8 @@ class ContextTable(WidgetWrapper):
         if row_data and isinstance(row_data, gtd.Task):
             # FIXME: this shouldn't have to be done twice
             if cb.get_active():
-                cb.context.add_task(row_data)
-                row_data.contexts.append(cb.context)
+                row_data.add_context(cb.context)
             else:
-                cb.context.remove_task(row_data)
-                row_data.contexts.remove(cb.context)
+                row_data.remove_context(cb.context)
             # FIXME: tell the tree to update itself
 

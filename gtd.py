@@ -29,14 +29,7 @@ class Base(object):
 
 class Context(Base):
     def __init__(self, title):
-        self.tasks = []
         Base.__init__(self, title)
-
-    def add_task(self, task):
-        self.tasks.append(task)
-
-    def remove_task(self, task):
-        self.tasks.remove(task)
 
 
 class Realm(Base):
@@ -44,6 +37,12 @@ class Realm(Base):
         self.areas = []
         self.visible = visible
         Base.__init__(self, title)
+
+    def get_tasks(self):
+        tasks = []
+        for a in self.areas:
+            tasks.extend(a.get_tasks())
+        return tasks
 
     def add_area(self, area):
         self.areas.append(area)
@@ -62,6 +61,12 @@ class Area(Base):
         Base.__init__(self, title)
         self.realm = realm
         self.realm.add_area(self)
+
+    def get_tasks(self):
+        tasks = []
+        for p in self.projects:
+            tasks.extend(p.tasks)
+        return tasks
 
     def add_project(self, project):
         self.projects.append(project)
@@ -95,8 +100,14 @@ class Task(Base):
         self.waiting = waiting
         self.complete = complete
         self.project.add_task(self)
-        for context in contexts:
-            context.add_task(self)
+
+    def add_context(self, context):
+        if self.contexts.count(context) == 0:
+            self.contexts.append(context)
+
+    def remove_context(self, context):
+        if self.contexts.count(context):
+            self.contexts.remove(context)
 
 
 class Tree(object):
@@ -125,9 +136,11 @@ class Tree(object):
     # can then be optimized
     def context_tasks(self, context):
         tasks = []
-        for t in self.tasks:
-            if t.contexts.count(context):
-                tasks.append(t)
+        for r in self.realms:
+            if r.visible:
+                for t in r.get_tasks():
+                    if t.contexts.count(context):
+                        tasks.append(t)
         return tasks
 
     def project_tasks(self, project):
