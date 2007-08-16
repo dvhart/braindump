@@ -259,19 +259,15 @@ class ContextTable(WidgetWrapper):
     def __init__(self, widget, gtd_tree):
         WidgetWrapper.__init__(self, widget)
         self.gtd_tree = gtd_tree
-        self.table = gtk.Table()
-        self.widget.add(self.table)
-        self.table.show()
+        self.last_allocation = None
         self.context_cbs = {}
+        self.max_width = 0
         # FIXME: move to a context listener function or something...
         for context in self.gtd_tree.contexts:
             cb = ContextCheckButton(context)
             cb.connect("toggled", self.on_checkbutton_toggled)
             self.context_cbs[context] = cb
-        self.resize()
-        # FIXME: clean this up once the configure_events are working
-        widget.add_events(gtk.gdk.STRUCTURE_MASK)
-        print "Events: ", widget.get_property("events")
+            self.max_width = max(self.max_width, cb.size_request()[0])
 
     def set_active_contexts(self, contexts):
         for c, cb in self.context_cbs.iteritems():
@@ -281,34 +277,32 @@ class ContextTable(WidgetWrapper):
         for c, cb in self.context_cbs.iteritems():
             cb.set_property("active", False)
 
-    def resize(self):
-        # determine the widest cell needed
-        max_width = 0
-        for c, cb in self.context_cbs.iteritems():
-            w = cb.size_request()[0]
-            if w > max_width:
-                max_width = w
-            if cb.parent:
-                self.table.remove(cb)
+    def on_size_allocate(self, widget, allocation):
+        if self.last_allocation and \
+           allocation.width == self.last_allocation.width:
+            return
+        self.last_allocation = allocation
 
-        # resize it
-        pitch = self.widget.allocation.width / max_width
-        self.table.resize(pitch, len(self.context_cbs)/pitch + 1)
+        # resize it (with forced col spacing of 5)
+        cols = max(1, allocation.width / (self.max_width+5))
+        rows = max(1, len(self.context_cbs)/cols)
+        if len(self.context_cbs) % cols:
+            rows = rows + 1
 
-        pitch = self.table.get_property("n-rows")
-        i=0
-        for c, cb in self.context_cbs.iteritems():
-            x = i % pitch
-            y = i / pitch
-            self.table.attach(cb, x, x+1, y, y+1)
-            cb.show()
-            i = i + 1
-
-    # eventbox callbacks
-    def on_configure_event(self, widget, event):
-        print "EVENT: ", event
-        print "event.width: ", event.width
-        return True
+        if (widget.get_property("n-rows") != rows or
+            widget.get_property("n-columns") != cols):
+            widget.set_size_request(cols*self.max_width+5, -1)
+            for c, cb in self.context_cbs.iteritems():
+                if cb.parent:
+                    widget.remove(cb)
+            widget.resize(rows, cols)
+            i=0
+            for c, cb in self.context_cbs.iteritems():
+                x = i % cols
+                y = i / cols
+                widget.attach(cb, x, x+1, y, y+1)
+                cb.show()
+                i = i + 1
 
     # checkbox callbacks
     # FIXME: is there a way to set the active property without triggering the signal?

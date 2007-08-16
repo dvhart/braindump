@@ -7,3 +7,5 @@ o decide on consistent coding style
   o widget naming: update, update_btn, etc.
 o Fix gui.py +237 __init__
 o call vars gtd_tree instead of gtd
+o recurring tasks
+o task and project resource attachments (with twisty to hide)

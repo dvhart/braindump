@@ -48,11 +48,6 @@ class Pydo:
         TaskViewBy(GUI().get_widget("taskviewby").widget)
         ContextTable(GUI().get_widget("task_contexts_table").widget, self.gtd)
 
-        # FIXME: these should be bound to the eventbox we put the table in
-        #        see ContextTable clas sin gui.py (remove this when fixed)
-        GUI().get_widget("pydo_window").widget.connect("configure_event",
-            lambda w,e: GUI().get_widget("task_contexts_table").resize())
-
         # add all projects to the project combo box
         # FIXME: consider project listeners
         task_project = GUI().get_widget("task_project").widget
