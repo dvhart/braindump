@@ -258,6 +258,9 @@ class ContextCheckButton(gtk.CheckButton):
 class ContextTable(WidgetWrapper):
     def __init__(self, widget, gtd_tree):
         WidgetWrapper.__init__(self, widget)
+        self.table = gtk.Table()
+        widget.add(self.table)
+        self.table.show()
         self.gtd_tree = gtd_tree
         self.last_allocation = None
         self.context_cbs = {}
@@ -268,7 +271,7 @@ class ContextTable(WidgetWrapper):
             cb.connect("toggled", self.on_checkbutton_toggled)
             self.context_cbs[context] = cb
             self.max_width = max(self.max_width, cb.size_request()[0])
-        self.on_size_allocate(widget, widget.allocation)
+        self.on_size_allocate(self.widget, self.widget.allocation)
 
     def set_active_contexts(self, contexts):
         for c, cb in self.context_cbs.iteritems():
@@ -290,18 +293,17 @@ class ContextTable(WidgetWrapper):
         if len(self.context_cbs) % cols:
             rows = rows + 1
 
-        if (widget.get_property("n-rows") != rows or
-            widget.get_property("n-columns") != cols):
-            widget.set_size_request(cols*self.max_width+5, -1)
+        if (self.table.get_property("n-columns") != cols):
+            self.table.set_size_request(cols*self.max_width+5, -1)
             for c, cb in self.context_cbs.iteritems():
                 if cb.parent:
-                    widget.remove(cb)
-            widget.resize(rows, cols)
+                    self.table.remove(cb)
+            self.table.resize(rows, cols)
             i=0
             for c, cb in self.context_cbs.iteritems():
                 x = i % cols
                 y = i / cols
-                widget.attach(cb, x, x+1, y, y+1)
+                self.table.attach(cb, x, x+1, y, y+1)
                 cb.show()
                 i = i + 1
 
