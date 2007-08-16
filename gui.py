@@ -285,7 +285,7 @@ class ContextTable(WidgetWrapper):
         self.last_allocation = allocation
 
         # resize it (with forced col spacing of 5)
-        cols = max(1, allocation.width / (self.max_width+5))
+        cols = max(1, min(allocation.width / (self.max_width+5), len(self.context_cbs)))
         rows = max(1, len(self.context_cbs)/cols)
         if len(self.context_cbs) % cols:
             rows = rows + 1
