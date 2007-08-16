@@ -268,6 +268,7 @@ class ContextTable(WidgetWrapper):
             cb.connect("toggled", self.on_checkbutton_toggled)
             self.context_cbs[context] = cb
             self.max_width = max(self.max_width, cb.size_request()[0])
+        self.on_size_allocate(widget, widget.allocation)
 
     def set_active_contexts(self, contexts):
         for c, cb in self.context_cbs.iteritems():
