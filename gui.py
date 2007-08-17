@@ -101,6 +101,7 @@ class GTDTreeModel(gtk.TreeStore):
     def __init__(self, gtd, treeview):
         gtk.TreeStore.__init__(self, 'gboolean', object)
         self.gtd = gtd
+        self.viewby = None
 
         # set up the task_tree model
         treeview.set_model(self)
@@ -135,6 +136,7 @@ class GTDTreeModel(gtk.TreeStore):
         self.tvcolumn1.set_sort_column_id(1)
 
     def view_by_context(self):
+        self.viewby = "context"
         self.clear()
         for c in self.gtd.contexts:
             piter = self.append(None, [0, c])
@@ -143,6 +145,7 @@ class GTDTreeModel(gtk.TreeStore):
                     self.append(piter, [1, t])
 
     def view_by_project(self):
+        self.viewby = "project"
         self.clear()
         for r in self.gtd.realms:
             if r.visible:
@@ -151,6 +154,33 @@ class GTDTreeModel(gtk.TreeStore):
                         piter = self.append(None, [0, p])
                         for t in p.tasks:
                             self.append(piter, [1, t])
+
+    def add_task_to_context(self, task, context):
+        if self.viewby == "context":
+            iter = self.get_iter_first()
+            while iter:
+                row_data = self[iter][1]
+                if row_data is context:
+                    self.append(iter, [1, task])
+                    break
+                iter = self.iter_next(iter)
+
+
+    def remove_task_from_context(self, task, context):
+        if self.viewby == "context":
+            iter = self.get_iter_first()
+            while iter:
+                row_data = self[iter][1]
+                if row_data is context:
+                    iter = self.iter_children(iter)
+                    while iter:
+                        if self[iter][1] is task:
+                            path = self.get_path(iter)
+                            self.remove(iter)
+                            self.row_deleted(path)
+                            break
+                    break
+                iter = self.iter_next(iter)
 
     # signal callbacks
     def toggled(self, cell, path, store, column):
@@ -170,7 +200,7 @@ class GTDTreeModel(gtk.TreeStore):
     # may need a gtd_row abstract class and derived classes
     # assign to a column like:
     def task_data_func(self, column, cell, store, iter, data):
-        obj = store.get_value(iter, 1)
+        obj = store[iter][1]
         # FIXME: add project.complete var, and update to handle in first test below
         if data is "complete":
             if isinstance(obj, gtd.Task):  # or isinstance(obj, gtd.Project)
@@ -198,6 +228,30 @@ class TaskTree(WidgetWrapper):
         if path:
             row_data = self.widget.get_model()[path][1]
         return row_data
+
+    def update_current_context(self, context, active):
+        row_data = self.get_current_data()
+        if row_data and isinstance(row_data, gtd.Task):
+            print "update_current_context: ", context.title, " ", active
+            update_tree = False
+            model = self.widget.get_model()
+            if active:
+                if not row_data.contexts.count(context):
+                    row_data.add_context(context)
+                    model.add_task_to_context(row_data, context)
+            else:
+                if row_data.contexts.count(context):
+                    row_data.remove_context(context)
+                    model.remove_task_from_context(row_data, context)
+
+    def update_current_project(self, project):
+        row_data = self.get_current_data()
+        if row_data and isinstance(row_data, gtd.Task):
+            if row_data.project is not project:
+                print "update_current_project: ", project.title
+                row_data.project = project
+                if self.widget.get_model().viewby == "project":
+                    print "    need to refresh model (by project)"
 
     # signal callbacks
     def on_task_tree_cursor_changed(self, tree):
@@ -312,12 +366,6 @@ class ContextTable(WidgetWrapper):
     # if not, we need to be careful not to act on an event that we did programmatically
     # vs. the user clicking the checkbox
     def on_checkbutton_toggled(self, cb):
-        row_data = GUI().get_widget("task_tree").get_current_data()
-        if row_data and isinstance(row_data, gtd.Task):
-            # FIXME: this shouldn't have to be done twice
-            if cb.get_active():
-                row_data.add_context(cb.context)
-            else:
-                row_data.remove_context(cb.context)
-            # FIXME: tell the tree to update itself
+        tree = GUI().get_widget("task_tree")
+        tree.update_current_context(cb.context, cb.get_active())
 
