@@ -37,21 +37,20 @@ class Pydo:
         self.filename = None
 
         if self.filename:
-            self.gtd = gtd.load(self.filename)
+            self.gtd_tree = gtd.load(self.filename)
         else:
-            self.gtd = gtd.Tree()
-            gtd.save(self.gtd, "test.gtd")
+            self.gtd_tree = gtd.Tree()
+            gtd.save(self.gtd_tree, "test.gtd")
 
-        GTDTreeModel(self.gtd, GUI().get_widget("task_tree").widget)
         PydoWindow(GUI().get_widget("pydo_window").widget)
-        TaskTree(GUI().get_widget("task_tree").widget)
+        TaskTreeView(GUI().get_widget("task_tree").widget, self.gtd_tree)
         TaskViewBy(GUI().get_widget("taskviewby").widget)
-        ContextTable(GUI().get_widget("task_contexts_table").widget, self.gtd)
+        ContextTable(GUI().get_widget("task_contexts_table").widget, self.gtd_tree)
 
         # add all projects to the project combo box
         # FIXME: consider project listeners
         task_project = GUI().get_widget("task_project").widget
-        for r in self.gtd.realms:
+        for r in self.gtd_tree.realms:
             if r.visible:
                 for a in r.areas:
                     for p in a.projects:
@@ -61,7 +60,7 @@ class Pydo:
         # add all areas to the project combo box
         # FIXME: consider area listeners
         project_area = GUI().get_widget("project_area").widget
-        for r in self.gtd.realms:
+        for r in self.gtd_tree.realms:
             if r.visible:
                 for a in r.areas:
                     project_area.append_text(a.title)
@@ -70,7 +69,7 @@ class Pydo:
         # add the realm toggle buttons
         # FIXME: custom toolbar? as a realm listener?
         realm_toggles = GUI().get_widget("realm_toggles").widget
-        for realm in self.gtd.realms:
+        for realm in self.gtd_tree.realms:
             rtb = RealmToggleToolButton(realm)
             realm_toggles.insert(rtb, -1)
             rtb.show()

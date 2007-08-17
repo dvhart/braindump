@@ -90,64 +90,35 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
 
     def on_toggled(self, userparam):
         self.realm.set_visible(self.get_active())
-        store = GUI().get_widget("task_tree").widget.get_model()
+        model = GUI().get_widget("task_tree").widget.get_model()
         if GUI().get_widget("taskviewby").widget.get_active() == 0:
-            store.view_by_context()
+            model.view_by_context()
         else:
-            store.view_by_project()
+            model.view_by_project()
 
 
-class GTDTreeModel(gtk.TreeStore):
-    def __init__(self, gtd, treeview):
+class TaskTreeModel(gtk.TreeStore):
+    def __init__(self, gtd_tree):
         gtk.TreeStore.__init__(self, 'gboolean', object)
-        self.gtd = gtd
+        self.gtd_tree = gtd_tree
         self.viewby = None
 
-        # set up the task_tree model
-        treeview.set_model(self)
-
-        # create the TreeViewColumns to display the data
-        self.tvcolumn0 = gtk.TreeViewColumn("Done")
-        self.tvcolumn1 = gtk.TreeViewColumn("Title")
-
-        # append the columns to the view
-        treeview.append_column(self.tvcolumn0)
-        treeview.append_column(self.tvcolumn1)
-
-        # create the CellRenderers
-        self.cell0 = gtk.CellRendererToggle()
-        self.cell0.connect('toggled', self.toggled, self, 0)
-        self.cell1 = gtk.CellRendererText()
-        self.cell1.set_property('editable', True)
-        self.cell1.connect('edited', self.edited, self, 1)
-
-        # attach the CellRenderers to each column
-        self.tvcolumn0.pack_start(self.cell0, False)
-        self.tvcolumn1.pack_start(self.cell1, True)
-
-        # display data directly from the gtd object, rather than setting attributes
-        self.tvcolumn0.set_cell_data_func(self.cell0, self.task_data_func, "complete")
-        self.tvcolumn1.set_cell_data_func(self.cell1, self.task_data_func, "title")
-
-        # make it searchable
-        treeview.set_search_column(1)
-
-        # Allow sorting on the column
-        self.tvcolumn1.set_sort_column_id(1)
-
+    # FIXME: "view_by" seems like it should be part of TaskTree (TreeView)
+    # but it operates on model data... perhaps we should have two models,
+    # rather than constantly rebuilding this one?
     def view_by_context(self):
         self.viewby = "context"
         self.clear()
-        for c in self.gtd.contexts:
+        for c in self.gtd_tree.contexts:
             piter = self.append(None, [0, c])
-            for t in self.gtd.context_tasks(c):
+            for t in self.gtd_tree.context_tasks(c):
                 if t.project.area.realm.visible:
                     self.append(piter, [1, t])
 
     def view_by_project(self):
         self.viewby = "project"
         self.clear()
-        for r in self.gtd.realms:
+        for r in self.gtd_tree.realms:
             if r.visible:
                 for a in r.areas:
                     for p in a.projects:
@@ -182,44 +153,40 @@ class GTDTreeModel(gtk.TreeStore):
                     break
                 iter = self.iter_next(iter)
 
-    # signal callbacks
-    def toggled(self, cell, path, store, column):
-        complete = store[path][column]
-        row_data = store[path][1]
-        if isinstance(row_data, gtd.Task):
-            row_data.complete = not row_data.complete
 
-    def edited(self, cell, path, new_text, store, column):
-        #piter = store.iter_parent(store.get_iter(path))
-        row_data = store[path][column]
-        row_data.title = new_text
-        if isinstance(row_data, gtd.Task):
-            GUI().get_widget("task_title").widget.set_text(row_data.title)
-
-    # FIXME: use something like this so all we store in the tree is the task object itself
-    # may need a gtd_row abstract class and derived classes
-    # assign to a column like:
-    def task_data_func(self, column, cell, store, iter, data):
-        obj = store[iter][1]
-        # FIXME: add project.complete var, and update to handle in first test below
-        if data is "complete":
-            if isinstance(obj, gtd.Task):  # or isinstance(obj, gtd.Project)
-                cell.set_property("active", obj.complete)
-            else:
-                cell.set_property("active", False)
-        elif data is "title":
-            text = obj.title
-            if not isinstance(obj, gtd.Task):
-                text = "<b>%s</b>"%text
-            cell.set_property("markup", text)
-        else:
-            # FIXME: throw an exception
-            print "ERROR: didn't set toggle property for ", obj.title
-
-
-class TaskTree(WidgetWrapper):
-    def __init__(self, widget):
+class TaskTreeView(WidgetWrapper):
+    def __init__(self, widget, gtd_tree):
         WidgetWrapper.__init__(self, widget)
+        self.widget.set_model(TaskTreeModel(gtd_tree))
+
+        # create the TreeViewColumns to display the data
+        self.tvcolumn0 = gtk.TreeViewColumn("Done")
+        self.tvcolumn1 = gtk.TreeViewColumn("Title")
+
+        # append the columns to the view
+        widget.append_column(self.tvcolumn0)
+        widget.append_column(self.tvcolumn1)
+
+        # create the CellRenderers
+        self.cell0 = gtk.CellRendererToggle()
+        self.cell0.connect('toggled', self.toggled, widget.get_model(), 0)
+        self.cell1 = gtk.CellRendererText()
+        self.cell1.set_property('editable', True)
+        self.cell1.connect('edited', self.edited, widget.get_model(), 1)
+
+        # attach the CellRenderers to each column
+        self.tvcolumn0.pack_start(self.cell0, False)
+        self.tvcolumn1.pack_start(self.cell1, True)
+
+        # display data directly from the gtd object, rather than setting attributes
+        self.tvcolumn0.set_cell_data_func(self.cell0, self.task_data_func, "complete")
+        self.tvcolumn1.set_cell_data_func(self.cell1, self.task_data_func, "title")
+
+        # make it searchable
+        widget.set_search_column(1)
+
+        # Allow sorting on the column
+        self.tvcolumn1.set_sort_column_id(1)
 
     # return the current gtd object
     def get_current_data(self):
@@ -276,6 +243,38 @@ class TaskTree(WidgetWrapper):
             # FIXME: set project combo box
             print "FIXME: set project combo box to: " + row_data.title
             task_notes.get_buffer().set_text("")
+
+    def toggled(self, cell, path, model, column):
+        complete = model[path][column]
+        row_data = model[path][1]
+        if isinstance(row_data, gtd.Task):
+            row_data.complete = not row_data.complete
+
+    def edited(self, cell, path, new_text, model, column):
+        row_data = model[path][column]
+        row_data.title = new_text
+        if isinstance(row_data, gtd.Task):
+            GUI().get_widget("task_title").widget.set_text(row_data.title)
+
+    # FIXME: use something like this so all we store in the tree is the task object itself
+    # may need a gtd_row abstract class and derived classes
+    # assign to a column like:
+    def task_data_func(self, column, cell, model, iter, data):
+        obj = model[iter][1]
+        # FIXME: add project.complete var, and update to handle in first test below
+        if data is "complete":
+            if isinstance(obj, gtd.Task):  # or isinstance(obj, gtd.Project)
+                cell.set_property("active", obj.complete)
+            else:
+                cell.set_property("active", False)
+        elif data is "title":
+            text = obj.title
+            if not isinstance(obj, gtd.Task):
+                text = "<b>%s</b>"%text
+            cell.set_property("markup", text)
+        else:
+            # FIXME: throw an exception
+            print "ERROR: didn't set toggle property for ", obj.title
 
 
 # Example class using aggregation instead of inheritance
