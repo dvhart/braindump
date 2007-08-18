@@ -5,17 +5,10 @@ of things I can't just as easily do via inline '# FIXME's
 
 o decide on consistent coding style
   o widget naming: update, update_btn, etc.
-***
-o consider eliminating the tree for tasks by context.  Doesn't it make more
-  sense to have a column of categories that you can enable or disable, and
-  a separate column of tasks which is updated as the context selection changes?
-  One advantage here is that the task will only be listed once on the screen,
-  saving space, and reducing screen clutter.
-***
 o recurring tasks
 o task and project resource attachments (with twisty to hide)
 o task complete doesn't get immediately updated for the same task
   listed in other categories (but the title does, oddly enough)
-o connect task_project combo box to TaskTreeView
+o connect task_project combo box to TaskListView
 o Add tree sorter functions
-o don't display a checkbutton for categories in the TaskTreeView
+o have the filter row animate (swell, glow, whatever) when something is added/removed

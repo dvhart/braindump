@@ -30,7 +30,7 @@ import gtd
 class Pydo:
     def __init__(self):
         # aggregate widgets, with member callbacks
-        GUI("glade/pydo.glade")
+        GUI("glade/pydo2.glade")
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
@@ -43,8 +43,9 @@ class Pydo:
             gtd.save(self.gtd_tree, "test.gtd")
 
         PydoWindow(GUI().get_widget("pydo_window").widget)
-        TaskTreeView(GUI().get_widget("task_tree").widget, self.gtd_tree)
-        TaskViewBy(GUI().get_widget("taskviewby").widget)
+        TaskListView(GUI().get_widget("task_list").widget, self.gtd_tree)
+        FilterListView(GUI().get_widget("filter_list").widget, self.gtd_tree)
+        TaskFilterBy(GUI().get_widget("taskfilterby").widget)
         ContextTable(GUI().get_widget("task_contexts_table").widget, self.gtd_tree)
 
         # add all projects to the project combo box
@@ -73,6 +74,9 @@ class Pydo:
             rtb = RealmToggleToolButton(realm)
             realm_toggles.insert(rtb, -1)
             rtb.show()
+
+        # FIXME: get the last selection and filterby from last time we were run
+        GUI().get_widget("filter_list").widget.get_selection().select_all()
             
 
 # test to see if we were run directly

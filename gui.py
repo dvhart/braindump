@@ -61,7 +61,10 @@ class GUI(gtk.glade.XML):
         if self.widgets.has_key(name):
             widget = self.widgets[name]
         else:
-            widget = WidgetWrapperBase(gtk.glade.XML.get_widget(self, name))
+            gtk_widget = gtk.glade.XML.get_widget(self, name)
+            if not gtk_widget:
+                print "ERROR: failed to find widget: ", name
+            widget = WidgetWrapperBase(gtk_widget)
         return widget
 
 
@@ -90,74 +93,69 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
 
     def on_toggled(self, userparam):
         self.realm.set_visible(self.get_active())
-        model = GUI().get_widget("task_tree").widget.get_model()
-        if GUI().get_widget("taskviewby").widget.get_active() == 0:
-            model.view_by_context()
+        filter_list = GUI().get_widget("filter_list")
+        # FIXME: the logic doesn't belong here
+        if GUI().get_widget("taskfilterby").widget.get_active() == 0:
+            filter_list.filter_by_context()
         else:
-            model.view_by_project()
+            filter_list.filter_by_project()
 
 
-class TaskTreeModel(gtk.TreeStore):
-    def __init__(self, gtd_tree):
-        gtk.TreeStore.__init__(self, 'gboolean', object)
+class FilterListView(WidgetWrapper):
+    def __init__(self, widget, gtd_tree):
+        WidgetWrapper.__init__(self, widget)
         self.gtd_tree = gtd_tree
-        self.viewby = None
+        self.widget.set_model(gtk.ListStore(gobject.TYPE_PYOBJECT))
 
-    # FIXME: "view_by" seems like it should be part of TaskTree (TreeView)
-    # but it operates on model data... perhaps we should have two models,
-    # rather than constantly rebuilding this one?
-    def view_by_context(self):
-        self.viewby = "context"
-        self.clear()
+        # setup the column and cell renderer
+        self.tvcolumn0 = gtk.TreeViewColumn()
+        self.cell0 = gtk.CellRendererText()
+        self.cell0.set_property('editable', True)
+        self.cell0.connect('edited', self.on_filter_edited, self.widget.get_model(), 0)
+        self.tvcolumn0.pack_start(self.cell0, False)
+        self.tvcolumn0.set_cell_data_func(self.cell0, self.data_func, "data")
+        self.widget.append_column(self.tvcolumn0)
+
+        # setup selection modes and callback
+        self.widget.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        self.widget.set_rubber_banding(True)
+        self.widget.get_selection().connect("changed", GUI().get_widget("task_list").on_filter_selection_changed)
+
+    def filter_by_context(self):
+        self.widget.get_model().clear()
         for c in self.gtd_tree.contexts:
-            piter = self.append(None, [0, c])
-            for t in self.gtd_tree.context_tasks(c):
-                if t.project.area.realm.visible:
-                    self.append(piter, [1, t])
+            self.widget.get_model().append([c])
 
-    def view_by_project(self):
-        self.viewby = "project"
-        self.clear()
+    def filter_by_project(self):
+        self.widget.get_model().clear()
         for r in self.gtd_tree.realms:
             if r.visible:
                 for a in r.areas:
                     for p in a.projects:
-                        piter = self.append(None, [0, p])
-                        for t in p.tasks:
-                            self.append(piter, [1, t])
+                        self.widget.get_model().append([p])
 
-    def add_task_to_context(self, task, context):
-        if self.viewby == "context":
-            iter = self.get_iter_first()
-            while iter:
-                row_data = self[iter][1]
-                if row_data is context:
-                    self.append(iter, [1, task])
-                    break
-                iter = self.iter_next(iter)
+    def data_func(self, column, cell, model, iter, data):
+        obj = model[iter][0]
+        cell.set_property("markup", obj.title)
 
+    # signal callbacks
+    def on_filter_edited(self, cell, path, new_text, model, column):
+        model[path][column].title = new_text
+        # FIXME: notify other widgets interested in this value (ie checkbuttons)
 
-    def remove_task_from_context(self, task, context):
-        if self.viewby == "context":
-            iter = self.get_iter_first()
-            while iter:
-                row_data = self[iter][1]
-                if row_data is context:
-                    iter = self.iter_children(iter)
-                    while iter:
-                        if self[iter][1] is task:
-                            path = self.get_path(iter)
-                            self.remove(iter)
-                            self.row_deleted(path)
-                            break
-                    break
-                iter = self.iter_next(iter)
+    def on_filter_all(self, widget):
+        self.widget.get_selection().select_all()
+
+    def on_filter_none(self, widget):
+        self.widget.get_selection().unselect_all()
 
 
-class TaskTreeView(WidgetWrapper):
+class TaskListView(WidgetWrapper):
     def __init__(self, widget, gtd_tree):
         WidgetWrapper.__init__(self, widget)
-        self.widget.set_model(TaskTreeModel(gtd_tree))
+        self.gtd_tree = gtd_tree
+        #self.widget.set_model(TaskTreeModel(gtd_tree))
+        self.widget.set_model(gtk.ListStore(gobject.TYPE_PYOBJECT))
 
         # create the TreeViewColumns to display the data
         self.tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -175,8 +173,8 @@ class TaskTreeView(WidgetWrapper):
         self.cell1.connect('edited', self.edited, widget.get_model(), 1)
 
         # attach the CellRenderers to each column
-        self.tvcolumn0.pack_start(self.cell0, False)
-        self.tvcolumn1.pack_start(self.cell1, True)
+        self.tvcolumn0.pack_start(self.cell0) # expand True by default
+        self.tvcolumn1.pack_start(self.cell1)
 
         # display data directly from the gtd object, rather than setting attributes
         self.tvcolumn0.set_cell_data_func(self.cell0, self.task_data_func, "complete")
@@ -185,114 +183,117 @@ class TaskTreeView(WidgetWrapper):
         # make it searchable
         widget.set_search_column(1)
 
-        # Allow sorting on the column
-        self.tvcolumn1.set_sort_column_id(1)
-
-    # return the current gtd object
-    def get_current_data(self):
-        row_data = None
-        path = self.widget.get_cursor()[0]
-        if path:
-            row_data = self.widget.get_model()[path][1]
-        return row_data
-
-    def update_current_context(self, context, active):
-        row_data = self.get_current_data()
-        if row_data and isinstance(row_data, gtd.Task):
-            print "update_current_context: ", context.title, " ", active
-            update_tree = False
-            model = self.widget.get_model()
-            if active:
-                if not row_data.contexts.count(context):
-                    row_data.add_context(context)
-                    model.add_task_to_context(row_data, context)
-            else:
-                if row_data.contexts.count(context):
-                    row_data.remove_context(context)
-                    model.remove_task_from_context(row_data, context)
-
-    def update_current_project(self, project):
-        row_data = self.get_current_data()
-        if row_data and isinstance(row_data, gtd.Task):
-            if row_data.project is not project:
-                print "update_current_project: ", project.title
-                row_data.project = project
-                if self.widget.get_model().viewby == "project":
-                    print "    need to refresh model (by project)"
-
-    # signal callbacks
-    def on_task_tree_cursor_changed(self, tree):
-        path = tree.get_cursor()[0]
-        row_data = tree.get_model()[path][1]
-        task_title = GUI().get_widget("task_title").widget
-        task_notes = GUI().get_widget("task_notes").widget
-        if isinstance(row_data, gtd.Task):
-            task_title.set_text(row_data.title)
-            GUI().get_widget("task_contexts_table").set_active_contexts(row_data.contexts)
-            # FIXME: update project combo box
-            task_notes.get_buffer().set_text(row_data.notes)
-        elif isinstance(row_data, gtd.Context):
-            task_title.set_text("")
-            GUI().get_widget("task_contexts_table").set_active_contexts([row_data])
-            # FIXME: clear project combo box
-            task_notes.get_buffer().set_text("")
-        elif isinstance(row_data, gtd.Project):
-            task_title.set_text("")
-            # FIXME: clear contexts table
-            GUI().get_widget("task_contexts_table").uncheck_all()
-            # FIXME: set project combo box
-            print "FIXME: set project combo box to: " + row_data.title
-            task_notes.get_buffer().set_text("")
-
-    def toggled(self, cell, path, model, column):
-        complete = model[path][column]
-        row_data = model[path][1]
-        if isinstance(row_data, gtd.Task):
-            row_data.complete = not row_data.complete
-
-    def edited(self, cell, path, new_text, model, column):
-        row_data = model[path][column]
-        row_data.title = new_text
-        if isinstance(row_data, gtd.Task):
-            GUI().get_widget("task_title").widget.set_text(row_data.title)
-
-    # FIXME: use something like this so all we store in the tree is the task object itself
-    # may need a gtd_row abstract class and derived classes
-    # assign to a column like:
     def task_data_func(self, column, cell, model, iter, data):
-        obj = model[iter][1]
-        # FIXME: add project.complete var, and update to handle in first test below
+        task = model[iter][0]
         if data is "complete":
-            if isinstance(obj, gtd.Task):  # or isinstance(obj, gtd.Project)
-                cell.set_property("active", obj.complete)
-            else:
-                cell.set_property("active", False)
+            cell.set_property("active", task.complete)
         elif data is "title":
-            text = obj.title
-            if not isinstance(obj, gtd.Task):
-                text = "<b>%s</b>"%text
-            cell.set_property("markup", text)
+            cell.set_property("markup", task.title)
         else:
             # FIXME: throw an exception
             print "ERROR: didn't set toggle property for ", obj.title
 
+    # return the selected task
+    def get_current_task(self):
+        task = None
+        # FIXME: is this error checking necessary
+        path = self.widget.get_cursor()[0]
+        if path:
+            task = self.widget.get_model()[path][0]
+        return task
 
-# Example class using aggregation instead of inheritance
-class TaskViewBy(WidgetWrapper):
+    def update_current_context(self, context, active):
+        task = self.get_current_task()
+        if task:
+            update_tree = False
+            model = self.widget.get_model()
+            if active:
+                if not task.contexts.count(context):
+                    # FIXME: force refresh? need signals and slots
+                    task.add_context(context)
+            else:
+                if task.contexts.count(context):
+                    # FIXME: force refresh? need signals and slots
+                    task.remove_context(context)
+                    # FIXME: this should be done via some signals and slots mechanism of the gtd.Tree
+                    self.on_filter_selection_changed(GUI().get_widget("filter_list").widget.get_selection())
+
+    def update_current_project(self, project):
+        task = self.get_current_data()
+        if task:
+            if task.project is not project:
+                print "update_current_project: ", project.title
+                task.project = project
+                if self.widget.get_model().viewby == "project":
+                    print "    need to refresh model (by project)"
+
+    def on_filter_selection_changed(self, selection):
+        model = self.widget.get_model()
+        self.widget.get_model().clear()
+        selmodel, paths = selection.get_selected_rows()
+        # FIXME: I'm sure this set testing is horribly inefficient, optimize later
+        tasks = []
+        for p in paths:
+            obj = selmodel[p][0]
+            if isinstance(obj, gtd.Context):
+                # FIXME: obj.get_tasks() (or map the property tasks to a method?)
+                for t in self.gtd_tree.context_tasks(obj):
+                    if not t in set(tasks):
+                        tasks.append(t)
+                        model.append([t])
+            elif isinstance(obj, gtd.Project):
+                # FIXME: make for a consistent API? obj.get_tasks()
+                for t in obj.tasks:
+                    if not t in set(tasks):
+                        tasks.append(t)
+                        model.append([t])
+            else:
+                # FIXME: throw an exception
+                print "ERROR: unknown filter object"
+
+
+    # signal callbacks
+    def on_task_list_cursor_changed(self, tree):
+        path = tree.get_cursor()[0]
+        task = tree.get_model()[path][0]
+        task_title = GUI().get_widget("task_title").widget
+        task_notes = GUI().get_widget("task_notes").widget
+        if task:
+            task_title.set_text(task.title)
+            GUI().get_widget("task_contexts_table").set_active_contexts(task.contexts)
+            # FIXME: update project combo box
+            task_notes.get_buffer().set_text(task.notes)
+
+    def toggled(self, cell, path, model, column):
+        complete = model[path][column]
+        task = model[path][0]
+        if task:
+            task.complete = not task.complete
+
+    def edited(self, cell, path, new_text, model, column):
+        task = model[path][0]
+        task.title = new_text
+        if task:
+            GUI().get_widget("task_title").widget.set_text(task.title)
+
+
+# FIXME: perhaps this can really all be done in glade, and a callback in filter_list
+class TaskFilterBy(WidgetWrapper):
     def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
         # FIXME: pull the default view from a config
         self.widget.set_active(0)
 
     # signal callbacks
-    def on_taskviewby_changed(self, widget):
+    def on_filterby_changed(self, widget):
         view = widget.get_active()
-        model = GUI().get_widget("task_tree").widget.get_model()
+        filter_list = GUI().get_widget("filter_list")
         # FIXME: don't use magic numbers
         if view == 0:
-            model.view_by_context()
+            filter_list.filter_by_context()
         elif view == 1:
-            model.view_by_project()
+            filter_list.filter_by_project()
+
 
 class PydoWindow(WidgetWrapper):
     def __init__(self, widget):
@@ -365,6 +366,6 @@ class ContextTable(WidgetWrapper):
     # if not, we need to be careful not to act on an event that we did programmatically
     # vs. the user clicking the checkbox
     def on_checkbutton_toggled(self, cb):
-        tree = GUI().get_widget("task_tree")
+        tree = GUI().get_widget("task_list")
         tree.update_current_context(cb.context, cb.get_active())
 
