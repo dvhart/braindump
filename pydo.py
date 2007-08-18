@@ -30,7 +30,7 @@ import gtd
 class Pydo:
     def __init__(self):
         # aggregate widgets, with member callbacks
-        GUI("glade/pydo2.glade")
+        GUI("glade/pydo.glade")
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
