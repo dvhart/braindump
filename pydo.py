@@ -69,7 +69,7 @@ class Pydo:
 
         # FIXME: get the last selection and filterby from last time we were run
         GUI().get_widget("filter_list").widget.get_selection().select_all()
-            
+
 
 # test to see if we were run directly
 if __name__ == "__main__":

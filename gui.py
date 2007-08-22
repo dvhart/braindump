@@ -148,14 +148,16 @@ class FilterListView(WidgetWrapper):
 
     def on_filter_none(self, widget):
         self.widget.get_selection().unselect_all()
+        # FIXME: should select (No Context) or (No Project)
+        # never allow viewing no tasks at all (will cause problems creating 
+        # new tasks as they will just vanish from the view)
 
 
 class TaskListView(WidgetWrapper):
     def __init__(self, widget, gtd_tree):
         WidgetWrapper.__init__(self, widget)
         self.gtd_tree = gtd_tree
-        #self.widget.set_model(TaskTreeModel(gtd_tree))
-        self.widget.set_model(gtk.ListStore(gobject.TYPE_PYOBJECT))
+        self.widget.set_model(TaskListStore(self.gtd_tree))
 
         # create the TreeViewColumns to display the data
         self.tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -186,12 +188,16 @@ class TaskListView(WidgetWrapper):
     def task_data_func(self, column, cell, model, iter, data):
         task = model[iter][0]
         if data is "complete":
-            cell.set_property("active", task.complete)
+            if isinstance(task, gtd.NewTask):
+                cell.set_property("inconsistent", True)
+            else:
+                cell.set_property("active", task.complete)
+                cell.set_property("inconsistent", False)
         elif data is "title":
-            cell.set_property("markup", task.title)
+                cell.set_property("markup", task.title)
         else:
             # FIXME: throw an exception
-            print "ERROR: didn't set toggle property for ", obj.title
+            print "ERROR: didn't set %s property for "%data, obj.title
 
     # return the selected task
     def get_current_task(self):
@@ -204,7 +210,8 @@ class TaskListView(WidgetWrapper):
 
     def update_current_context(self, context, active):
         task = self.get_current_task()
-        if task:
+        # don't try this on None or gtd.NewTask objects
+        if isinstance(task, gtd.Task):
             update_tree = False
             model = self.widget.get_model()
             if active:
@@ -220,7 +227,8 @@ class TaskListView(WidgetWrapper):
 
     def update_current_project(self, project):
         task = self.get_current_task()
-        if task:
+        # don't try this on None or gtd.NewTask objects
+        if isinstance(task, gtd.Task):
             if task.project is not project:
                 print "update_current_project: ", project.title
                 # FIXME: this should be in one place... probably task- or tree- centric?
@@ -254,30 +262,35 @@ class TaskListView(WidgetWrapper):
                 # FIXME: throw an exception
                 print "ERROR: unknown filter object"
 
-
     # signal callbacks
     def on_task_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
         task = tree.get_model()[path][0]
-        task_title = GUI().get_widget("task_title").widget
-        task_notes = GUI().get_widget("task_notes").widget
         if task:
-            task_title.set_text(task.title)
-            GUI().get_widget("task_contexts_table").set_active_contexts(task.contexts)
-            # FIXME: update project combo box
+            if isinstance(task, gtd.NewTask):
+                GUI().get_widget("task_form_vbox").widget.set_sensitive(False)
+            else:
+                GUI().get_widget("task_form_vbox").widget.set_sensitive(True)
+            task_notes = GUI().get_widget("task_notes").widget
+            task_contexts = GUI().get_widget("task_contexts_table")
             task_notes.get_buffer().set_text(task.notes)
+            task_contexts.set_active_contexts(task.contexts)
+            # FIXME: update project combo box
 
     def toggled(self, cell, path, model, column):
         complete = model[path][column]
         task = model[path][0]
-        if task:
+        # don't try and set the complete field on a gtd.NewTask
+        if isinstance(task, gtd.Task):
             task.complete = not task.complete
 
     def edited(self, cell, path, new_text, model, column):
+        # FIXME: use a gtd.NewTask in the TaskListModel, rather than None
+        # then we can just treat title, etc as properties which, when invoked,
+        # create a new gtd.Task and add it to the Tree/Model
         task = model[path][0]
-        task.title = new_text
         if task:
-            GUI().get_widget("task_title").widget.set_text(task.title)
+            task.title = new_text
 
 
 # FIXME: perhaps this can really all be done in glade, and a callback in filter_list
@@ -373,7 +386,7 @@ class ContextTable(WidgetWrapper):
         tree.update_current_context(cb.context, cb.get_active())
 
 
-# Example gtdf datastore and tree listener, should be a good start towards
+# Example gtd datastore and tree listener, should be a good start towards
 # separated application logic from the widgets...
 class ProjectStore(gtk.ListStore, gtd.TreeListener):
     def __init__(self, gtd_tree):
@@ -402,6 +415,18 @@ class ProjectStore(gtk.ListStore, gtd.TreeListener):
     def on_project_removed(self, project):
         print 
         
+
+class TaskListStore(gtk.ListStore, gtd.TreeListener):
+    def __init__(self, gtd_tree):
+        # FIXME: use super() properly here
+        gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
+        self.gtd_tree = gtd_tree
+        self.new_task = gtd.NewTask("<i>Create new task...</i>")
+
+    def clear(self):
+        gtk.ListStore.clear(self)
+        self.append([self.new_task])
+ 
 
 # add all projects to the project combo box
 # FIXME: consider project listeners

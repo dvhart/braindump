@@ -92,14 +92,16 @@ class Project(Base):
 
 
 class Task(Base):
-    def __init__(self, title, project, contexts, notes, waiting, complete):
+    def __init__(self, title, project=None, contexts=[], notes="", waiting=False, complete=False):
         Base.__init__(self, title)
         self.project = project
         self.contexts = contexts
         self.notes = notes
         self.waiting = waiting
         self.complete = complete
-        self.project.add_task(self)
+        # FIXME: how do we connect this to the "NoneProject"
+        if project:
+            self.project.add_task(self)
 
     def add_context(self, context):
         if self.contexts.count(context) == 0:

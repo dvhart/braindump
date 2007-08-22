@@ -506,7 +506,7 @@ By Project</property>
 	      </child>
 
 	      <child>
-		<widget class="GtkVBox" id="vbox5">
+		<widget class="GtkVBox" id="task_form_vbox">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
 		  <property name="spacing">0</property>
@@ -554,60 +554,12 @@ By Project</property>
 		      <property name="spacing">0</property>
 
 		      <child>
-			<widget class="GtkHBox" id="hbox9">
+			<widget class="GtkComboBox" id="task_project">
 			  <property name="visible">True</property>
-			  <property name="homogeneous">False</property>
-			  <property name="spacing">0</property>
-
-			  <child>
-			    <widget class="GtkEntry" id="task_title">
-			      <property name="visible">True</property>
-			      <property name="can_focus">True</property>
-			      <property name="editable">True</property>
-			      <property name="visibility">True</property>
-			      <property name="max_length">0</property>
-			      <property name="text" translatable="yes"></property>
-			      <property name="has_frame">True</property>
-			      <property name="invisible_char">●</property>
-			      <property name="activates_default">False</property>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">True</property>
-			      <property name="fill">True</property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkComboBox" id="task_project">
-			      <property name="visible">True</property>
-			      <property name="items" translatable="yes"></property>
-			      <property name="add_tearoffs">False</property>
-			      <property name="focus_on_click">True</property>
-			      <signal name="changed" handler="on_task_project_changed" last_modification_time="Sun, 19 Aug 2007 23:40:15 GMT"/>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">False</property>
-			      <property name="fill">False</property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkButton" id="task_action">
-			      <property name="visible">True</property>
-			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">Action</property>
-			      <property name="use_underline">True</property>
-			      <property name="relief">GTK_RELIEF_NORMAL</property>
-			      <property name="focus_on_click">True</property>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">False</property>
-			      <property name="fill">False</property>
-			    </packing>
-			  </child>
+			  <property name="items" translatable="yes"></property>
+			  <property name="add_tearoffs">False</property>
+			  <property name="focus_on_click">True</property>
+			  <signal name="changed" handler="on_task_project_changed" last_modification_time="Sun, 19 Aug 2007 23:40:15 GMT"/>
 			</widget>
 			<packing>
 			  <property name="padding">0</property>
