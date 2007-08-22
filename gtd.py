@@ -101,6 +101,7 @@ class Task(Base):
         self.complete = complete
         # FIXME: how do we connect this to the "NoneProject"
         if project:
+            print "Task project is: ", project
             self.project.add_task(self)
 
     def add_context(self, context):
@@ -110,6 +111,25 @@ class Task(Base):
     def remove_context(self, context):
         if self.contexts.count(context):
             self.contexts.remove(context)
+
+# Placeholder class for "Click to create new task..." type items in lists
+# Perhaps this is better placed in the gui code, rather than here...
+class NewTask(object):
+    def __init__(self, title_str):
+        self.__title = title_str
+
+    def create_new_task(self, title):
+        new_task = Task(title)
+        # FIXME: somehow add this to the parent tree...
+        print "create a new task (%s) from the old one!" % new_task.title
+
+    title = property(lambda s: s.__title, create_new_task)
+    project = property(lambda s: None)
+    contexts = property(lambda s: [])
+    notes = property(lambda s: "")
+    waiting = property(lambda s: False)
+    complete = property(lambda s: False)
+
 
 
 class Tree(object):
