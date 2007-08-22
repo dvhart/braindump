@@ -114,6 +114,12 @@ class Tree(object):
     def __init__(self):
         self.contexts = []
         self.realms = []
+        self.event_listeners = {
+            "realm_visible_changed":[],
+            "project_renamed":[],
+            "project_added":[],
+            "project_removed":[]
+        }
 
         # load test data
         self.contexts = [
@@ -132,8 +138,6 @@ class Tree(object):
         Task("extend gnome list_item", deck, [self.contexts[3]], "notes B", False, False),
         Task("lay deck boards", deck, [self.contexts[1]], "use stained boards first", False, False)
     
-    # FIXME: the datastructure should be revisited after a usage analysis and these functions
-    # can then be optimized
     def context_tasks(self, context):
         tasks = []
         for r in self.realms:
@@ -143,13 +147,25 @@ class Tree(object):
                         tasks.append(t)
         return tasks
 
-    def project_tasks(self, project):
-        tasks = []
-        for t in self.tasks:
-            if t.project == project:
-                tasks.append(t)
-        return tasks
-        return self.tasks
+    def notify(self, event):
+        for listener in self.event_listeners[event]:
+            if event == "realm_visible_changed":
+                listener.event()
+
+
+# TreeListener Interface
+# FIXME: throw an exception rather than pass
+class TreeListener(object):
+    def __init__(self):
+        pass
+    def on_realm_visible_changed(self, realm):
+        pass
+    def on_project_renamed(self, project):
+        pass
+    def on_project_added(self, project):
+        pass
+    def on_project_remove(self, project):
+        pass
 
 
 def save(tree, filename):
