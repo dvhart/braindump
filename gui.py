@@ -219,13 +219,16 @@ class TaskListView(WidgetWrapper):
                     self.on_filter_selection_changed(GUI().get_widget("filter_list").widget.get_selection())
 
     def update_current_project(self, project):
-        task = self.get_current_data()
+        task = self.get_current_task()
         if task:
             if task.project is not project:
                 print "update_current_project: ", project.title
+                # FIXME: this should be in one place... probably task- or tree- centric?
+                task.project.remove_task(task)
                 task.project = project
-                if self.widget.get_model().viewby == "project":
-                    print "    need to refresh model (by project)"
+                project.add_task(task)
+                # FIXME: this should be done via some signals and slots mechanism of the gtd.Tree
+                self.on_filter_selection_changed(GUI().get_widget("filter_list").widget.get_selection())
 
     def on_filter_selection_changed(self, selection):
         model = self.widget.get_model()
@@ -368,4 +371,76 @@ class ContextTable(WidgetWrapper):
     def on_checkbutton_toggled(self, cb):
         tree = GUI().get_widget("task_list")
         tree.update_current_context(cb.context, cb.get_active())
+
+
+# Example gtdf datastore and tree listener, should be a good start towards
+# separated application logic from the widgets...
+class ProjectStore(gtk.ListStore, gtd.TreeListener):
+    def __init__(self, gtd_tree):
+        # FIXME: use super() properly here
+        gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
+        self.gtd_tree = gtd_tree
+        self.reload()
+
+    def reload(self):
+        for r in self.gtd_tree.realms:
+            if r.visible:
+                for a in r.areas:
+                    for p in a.projects:
+                        self.append([p])
+
+    # gtd.TreeListener interface
+    def on_realm_visible_changed(self, realm):
+        print realm.title, " visibility: ", realm.visible
+
+    def on_project_renamed(self, project):
+        print project.title, " was renamed"
+
+    def on_project_added(self, project):
+        print "project ", project.title, " was added"
+
+    def on_project_removed(self, project):
+        print 
+        
+
+# add all projects to the project combo box
+# FIXME: consider project listeners
+# we need to be able update when projects are added or removed, and when selected realms change
+# and when projects change which realm they pertain to
+class ProjectCombo(WidgetWrapper):
+    def __init__(self, widget, model):
+        WidgetWrapper.__init__(self, widget)
+ 
+        # FIXME: This causes a gtk warning... not sure how else to get the renderer,
+        # and we need it to set the cell_data_func... ??
+        #renderer = self.widget.get_child().get_cell_renderers()[0]
+        #self.widget.clear_attributes(renderer)
+        
+        # Altnernatively we create our own CellRendererText object and pack it in,
+        # but we should clear the old one out - but that gives the same warning ???
+        #self.widget.clear()
+        renderer = gtk.CellRendererText()
+        self.widget.pack_start(renderer)
+        print "Renderers: ", len(self.widget.get_child().get_cell_renderers())
+        self.widget.set_cell_data_func(renderer, self.cell_data_func)
+        self.widget.set_model(model)
+        self.widget.set_active(0)
+
+    def cell_data_func(self, column, cell, model, iter):
+        project = model[iter][0]
+        if project:
+            cell.set_property("text", project.title)
+        else:
+            # FIXME: throw an exception here
+            cell.set_property("text", "Null Project?")
+            
+    def get_active(self):
+        return self.widget.get_model()[self.widget.get_active()][0]
+
+    # FIXME: this should just emit a signal, slots should defined in other objects, and
+    # connected in the main application code.
+    def on_task_project_changed(self, widget):
+        print "task_project_changed"
+#        tree = GUI().get_widget("task_list")
+#        tree.update_current_project(self.get_active())
 

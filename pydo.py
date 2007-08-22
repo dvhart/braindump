@@ -47,16 +47,8 @@ class Pydo:
         FilterListView(GUI().get_widget("filter_list").widget, self.gtd_tree)
         TaskFilterBy(GUI().get_widget("taskfilterby").widget)
         ContextTable(GUI().get_widget("task_contexts_table").widget, self.gtd_tree)
-
-        # add all projects to the project combo box
-        # FIXME: consider project listeners
-        task_project = GUI().get_widget("task_project").widget
-        for r in self.gtd_tree.realms:
-            if r.visible:
-                for a in r.areas:
-                    for p in a.projects:
-                        task_project.append_text(p.title)
-        task_project.set_active(0)
+        # FIXME: use an app wide ProjectTreeModel
+        ProjectCombo(GUI().get_widget("task_project").widget, ProjectStore(self.gtd_tree))
 
         # add all areas to the project combo box
         # FIXME: consider area listeners
