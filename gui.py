@@ -311,7 +311,7 @@ class TaskFilterBy(WidgetWrapper):
             filter_list.filter_by_project()
 
 
-class PydoWindow(WidgetWrapper):
+class BrainDumpWindow(WidgetWrapper):
     def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
 

@@ -154,9 +154,9 @@ class Tree(object):
         self.realms = [Realm("Personal"), Realm("Professional")]
         staffdev = Area("Remodel", self.realms[0])
         staffdev = Area("Staff Development", self.realms[1])
-        pydo = Project("pydo", "", staffdev, 0)
+        braindump = Project("BrainDump", "", staffdev, 0)
         deck = Project("front deck", "", staffdev, 0)
-        Task("research gnome list_item", pydo, [self.contexts[3]], "notes A", False, False),
+        Task("research gnome list_item", braindump, [self.contexts[3]], "notes A", False, False),
         Task("extend gnome list_item", deck, [self.contexts[3]], "notes B", False, False),
         Task("lay deck boards", deck, [self.contexts[1]], "use stained boards first", False, False)
     

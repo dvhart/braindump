@@ -14,10 +14,10 @@ Darren hart <darren@dvhart.com>
 
 ------------
 
-PyDo is a Context based Todo and Note taking application, based largely on the
-productivity tips outlined in the book "Getting Things Done" by David Allen.
-Tasks are tagged with the context in which you plan to accomplish them (Phone
-Calls, Evening, Online, Weekends, etc.).
+BrainDump is a Context based Todo and Note taking application, based largely on
+the productivity tips outlined in the book "Getting Things Done" by David
+Allen.  Tasks are tagged with the context in which you plan to accomplish them
+(Phone Calls, Evening, Online, Weekends, etc.).
 
 Tasks are the leaf node of a tree like hierarchy:
 

@@ -3,6 +3,7 @@ even completely functional yet.  Right now I just start the app, pick some
 unimplemented bit, and hack away...  I'll update this file to remind me
 of things I can't just as easily do via inline '# FIXME's
 
+o look at adding braindump to http://pypi.python.org/pypi ?? timrc's suggestion
 o decide on consistent coding style
   o widget naming: update, update_btn, etc.
 o recurring tasks

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-#    Filename: pydo.py
+#    Filename: braindump.py
 #      Author: Darren Hart <darren@dvhart.com>
-# Description: Pydo application class and program initialization code
+# Description: BrainDump application class and program initialization code
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,10 +27,10 @@ import gnome
 import gtd
 
 # GUI Classses and callbacks
-class Pydo:
+class BrainDump:
     def __init__(self):
         # aggregate widgets, with member callbacks
-        GUI("glade/pydo.glade")
+        GUI("glade/braindump.glade")
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
@@ -42,7 +42,7 @@ class Pydo:
             self.gtd_tree = gtd.Tree()
             gtd.save(self.gtd_tree, "test.gtd")
 
-        PydoWindow(GUI().get_widget("pydo_window").widget)
+        BrainDumpWindow(GUI().get_widget("braindump_window").widget)
         TaskListView(GUI().get_widget("task_list").widget, self.gtd_tree)
         FilterListView(GUI().get_widget("filter_list").widget, self.gtd_tree)
         TaskFilterBy(GUI().get_widget("taskfilterby").widget)
@@ -76,10 +76,10 @@ if __name__ == "__main__":
     # FIXME: why the try block here? What are the props for?
     #try:
     #    props = { gnome.PARAM_APP_DATADIR : '/usr/share'}
-    #    prog = gnome.program_init('pydo', '0.01', properties=props)
+    #    prog = gnome.program_init('braindump', '0.01', properties=props)
     #except:
-    #    prog = gnome.program_init('pydo', '0.01')
+    #    prog = gnome.program_init('braindump', '0.01')
     #    prog.set_property('app-datadir', '/usr/share')
-    gnome.init("pydo", "0.01") # simpler alternative to the props/prog bits above
-    app = Pydo()
+    gnome.init("braindump", "0.01") # simpler alternative to the props/prog bits above
+    app = BrainDump()
     gtk.main()
