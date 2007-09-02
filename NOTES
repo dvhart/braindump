@@ -4,9 +4,16 @@ o consider keeping all state in the tree:
     o filterlist
 o if state is all in the tree, then widgets just have to connect
   to the right piece of the tree for a datamodel
+  - this should be implemented with the custom Project/Area/TaskListModels
+  - note that ProjectCombo and ProjectListView require their own model as the
+    ListView filters on area
 o widgets only change the datamodel, the datamodel updates all relevant
   widgets
     o this may involve intermediate gtk.TreeModels...
 o consider adding a task_filter_func() to the get_tasks() calls in gtd.* objects
     o this will apply the filter inline with the original recursive array
       generation, saving multiple O(N) operations, or hard coded loops
+o perhaps the *FilterListView objects can have a common base class and just implement
+  a custom reload() method
+o consider building area and realm tabs
+  - view/interact similar to task and project tabs for a common, consistent interface

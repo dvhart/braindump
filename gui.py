@@ -93,18 +93,20 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
 
     def on_toggled(self, userparam):
         self.realm.set_visible(self.get_active())
-        filter_list = GUI().get_widget("filter_list")
+        task_filter_list = GUI().get_widget("task_filter_list")
         # FIXME: the logic doesn't belong here
         if GUI().get_widget("taskfilterby").widget.get_active() == 0:
-            filter_list.filter_by_context()
+            task_filter_list.filter_by_context()
         else:
-            filter_list.filter_by_project()
+            task_filter_list.filter_by_project()
+        GUI().get_widget("area_filter_list").reload()
 
 
-class FilterListView(WidgetWrapper):
+class TaskFilterListView(WidgetWrapper):
     def __init__(self, widget, gtd_tree):
         WidgetWrapper.__init__(self, widget)
         self.gtd_tree = gtd_tree
+        # FIXME, we should toggle this model between an app wide contexts and projects store
         self.widget.set_model(gtk.ListStore(gobject.TYPE_PYOBJECT))
 
         # setup the column and cell renderer
@@ -143,10 +145,10 @@ class FilterListView(WidgetWrapper):
         model[path][column].title = new_text
         # FIXME: notify other widgets interested in this value (ie checkbuttons)
 
-    def on_filter_all(self, widget):
+    def on_task_filter_all(self, widget):
         self.widget.get_selection().select_all()
 
-    def on_filter_none(self, widget):
+    def on_task_filter_none(self, widget):
         self.widget.get_selection().unselect_all()
         # FIXME: should select (No Context) or (No Project)
         # never allow viewing no tasks at all (will cause problems creating 
@@ -223,7 +225,7 @@ class TaskListView(WidgetWrapper):
                     # FIXME: force refresh? need signals and slots
                     task.remove_context(context)
                     # FIXME: this should be done via some signals and slots mechanism of the gtd.Tree
-                    self.on_filter_selection_changed(GUI().get_widget("filter_list").widget.get_selection())
+                    self.on_filter_selection_changed(GUI().get_widget("task_filter_list").widget.get_selection())
 
     def update_current_project(self, project):
         task = self.get_current_task()
@@ -236,7 +238,7 @@ class TaskListView(WidgetWrapper):
                 task.project = project
                 project.add_task(task)
                 # FIXME: this should be done via some signals and slots mechanism of the gtd.Tree
-                self.on_filter_selection_changed(GUI().get_widget("filter_list").widget.get_selection())
+                self.on_filter_selection_changed(GUI().get_widget("task_filter_list").widget.get_selection())
 
     def on_filter_selection_changed(self, selection):
         model = self.widget.get_model()
@@ -285,15 +287,12 @@ class TaskListView(WidgetWrapper):
             task.complete = not task.complete
 
     def edited(self, cell, path, new_text, model, column):
-        # FIXME: use a gtd.NewTask in the TaskListModel, rather than None
-        # then we can just treat title, etc as properties which, when invoked,
-        # create a new gtd.Task and add it to the Tree/Model
         task = model[path][0]
         if task:
             task.title = new_text
 
 
-# FIXME: perhaps this can really all be done in glade, and a callback in filter_list
+# FIXME: perhaps this can really all be done in glade, and a callback in task_filter_list
 class TaskFilterBy(WidgetWrapper):
     def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
@@ -303,12 +302,148 @@ class TaskFilterBy(WidgetWrapper):
     # signal callbacks
     def on_filterby_changed(self, widget):
         view = widget.get_active()
-        filter_list = GUI().get_widget("filter_list")
+        task_filter_list = GUI().get_widget("task_filter_list")
         # FIXME: don't use magic numbers
         if view == 0:
-            filter_list.filter_by_context()
+            task_filter_list.filter_by_context()
         elif view == 1:
-            filter_list.filter_by_project()
+            task_filter_list.filter_by_project()
+
+
+class AreaFilterListView(WidgetWrapper):
+    def __init__(self, widget, gtd_tree):
+        WidgetWrapper.__init__(self, widget)
+        self.gtd_tree = gtd_tree
+        self.widget.set_model(AreaListStore(gtd_tree))
+
+        # setup the column and cell renderer
+        self.tvcolumn0 = gtk.TreeViewColumn()
+        self.cell0 = gtk.CellRendererText()
+        self.cell0.set_property('editable', True)
+        self.cell0.connect('edited', self.on_filter_edited, self.widget.get_model(), 0)
+        self.tvcolumn0.pack_start(self.cell0, False)
+        self.tvcolumn0.set_cell_data_func(self.cell0, self.data_func, "data")
+        self.widget.append_column(self.tvcolumn0)
+
+        # setup selection modes and callback
+        self.widget.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        self.widget.set_rubber_banding(True)
+        self.widget.get_selection().connect("changed", GUI().get_widget("project_list").on_filter_selection_changed)
+        self.reload()
+
+    def reload(self):
+        self.widget.get_model().reload()
+
+    def data_func(self, column, cell, model, iter, data):
+        obj = model[iter][0]
+        cell.set_property("markup", obj.title)
+
+    # signal callbacks
+    def on_filter_edited(self, cell, path, new_text, model, column):
+        model[path][column].title = new_text
+        # FIXME: notify other widgets interested in this value (ie checkbuttons)
+
+    def on_area_filter_all(self, widget):
+        self.widget.get_selection().select_all()
+
+    def on_area_filter_none(self, widget):
+        self.widget.get_selection().unselect_all()
+        # FIXME: should select (No Context) or (No Project)
+        # never allow viewing no tasks at all (will cause problems creating
+        # new tasks as they will just vanish from the view)
+
+
+class ProjectListView(WidgetWrapper):
+    def __init__(self, widget, gtd_tree):
+        WidgetWrapper.__init__(self, widget)
+        self.gtd_tree = gtd_tree
+        self.widget.set_model(ProjectListStore(self.gtd_tree, True))
+
+        # create the TreeViewColumns to display the data
+        self.tvcolumn0 = gtk.TreeViewColumn("Done")
+        self.tvcolumn1 = gtk.TreeViewColumn("Title")
+        self.tvcolumn2 = gtk.TreeViewColumn("Tasks")
+
+        # append the columns to the view
+        widget.append_column(self.tvcolumn0)
+        widget.append_column(self.tvcolumn1)
+        widget.append_column(self.tvcolumn2)
+
+        # create the CellRenderers
+        self.cell0 = gtk.CellRendererToggle()
+        self.cell0.connect('toggled', self.toggled, widget.get_model(), 0)
+        self.cell1 = gtk.CellRendererText()
+        self.cell1.set_property('editable', True)
+        self.cell1.connect('edited', self.edited, widget.get_model(), 1)
+        self.cell2 = gtk.CellRendererText()
+
+        # attach the CellRenderers to each column
+        self.tvcolumn0.pack_start(self.cell0, False)
+        self.tvcolumn1.pack_start(self.cell1) # expand True by default
+        self.tvcolumn1.pack_start(self.cell2, False)
+
+        # display data directly from the gtd object, rather than setting attributes
+        self.tvcolumn0.set_cell_data_func(self.cell0, self.project_data_func, "complete")
+        self.tvcolumn1.set_cell_data_func(self.cell1, self.project_data_func, "title")
+        self.tvcolumn1.set_cell_data_func(self.cell2, self.project_data_func, "tasks")
+
+        # make it searchable
+        widget.set_search_column(1)
+
+    def project_data_func(self, column, cell, model, iter, data):
+        project = model[iter][0]
+        if data is "complete":
+            if isinstance(project, gtd.NewProject):
+                cell.set_property("inconsistent", True)
+            else:
+                cell.set_property("active", project.complete)
+                cell.set_property("inconsistent", False)
+        elif data is "title":
+            cell.set_property("markup", project.title)
+        elif data is "tasks":
+            if isinstance(project, gtd.NewProject):
+                cell.set_property("markup", "")
+            else:
+                cell.set_property("markup", len(project.tasks))
+        else:
+            # FIXME: throw an exception
+            print "ERROR: didn't set %s property for "%data, obj.title
+
+    def on_filter_selection_changed(self, selection):
+        print "area selection changed"
+        model = self.widget.get_model()
+        self.widget.get_model().clear()
+        selmodel, paths = selection.get_selected_rows()
+        # FIXME: this should just be call to a method of ProjectListModel "filter_by_area(selection)
+        for path in paths:
+            area = selmodel[path][0]
+            for p in area.projects:
+                model.append([p])
+
+    # signal callbacks
+    def on_project_list_cursor_changed(self, tree):
+        path = tree.get_cursor()[0]
+        project = tree.get_model()[path][0]
+        if task:
+            if isinstance(task, gtd.NewTask):
+                GUI().get_widget("project_form_vbox").widget.set_sensitive(False)
+            else:
+                GUI().get_widget("project_form_vbox").widget.set_sensitive(True)
+            task_notes = GUI().get_widget("project_notes").widget
+            task_notes.get_buffer().set_text(task.notes)
+            # FIXME: update area combo box
+
+    def toggled(self, cell, path, model, column):
+        complete = model[path][column]
+        project = model[path][0]
+        # don't try and set the complete field on a gtd.NewTask
+        if isinstance(project, gtd.Project):
+            project.complete = not project.complete
+
+    def edited(self, cell, path, new_text, model, column):
+        project = model[path][0]
+        if project:
+            project.title = new_text
 
 
 class BrainDumpWindow(WidgetWrapper):
@@ -386,15 +521,58 @@ class ContextTable(WidgetWrapper):
         tree.update_current_context(cb.context, cb.get_active())
 
 
-# Example gtd datastore and tree listener, should be a good start towards
+# Area gtd datastore and tree listener, should be a good start towards
 # separated application logic from the widgets...
-class ProjectStore(gtk.ListStore, gtd.TreeListener):
+class AreaListStore(gtk.ListStore, gtd.TreeListener):
     def __init__(self, gtd_tree):
         # FIXME: use super() properly here
         gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
         self.gtd_tree = gtd_tree
         self.reload()
 
+    def reload(self):
+        self.clear()
+        for r in self.gtd_tree.realms:
+            if r.visible:
+                for a in r.areas:
+                    self.append([a])
+
+    # gtd.TreeListener interface
+    def on_realm_visible_changed(self, realm):
+        print realm.title, " visibility: ", realm.visible
+
+    def on_area_renamed(self, area):
+        print area.title, " renamed"
+
+    def on_area_added(self, area):
+        print "area ", area.title, " added"
+
+    def on_area_removed(self, area):
+        print "area ", area.title, " removed"
+
+
+# Project gtd datastore and tree listener, should be a good start towards
+# separated application logic from the widgets...
+class ProjectListStore(gtk.ListStore, gtd.TreeListener):
+    def __init__(self, gtd_tree, new_project=False):
+        # FIXME: use super() properly here
+        gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
+        self.gtd_tree = gtd_tree
+        if new_project:
+            self.new_project = gtd.NewProject("<i>Create new project...</i>")
+            self.append([self.new_project])
+        else:
+            self.new_project = None
+        self.reload()
+
+    def clear(self):
+        gtk.ListStore.clear(self)
+        if self.new_project:
+            self.append([self.new_project])
+
+    # FIXME: why do we have a reload() and TaskListStore doesn't?
+    # (I know why... but seems inconsistent)
+    # FIXME: doesn't reload imply clear() ?
     def reload(self):
         for r in self.gtd_tree.realms:
             if r.visible:
@@ -407,13 +585,13 @@ class ProjectStore(gtk.ListStore, gtd.TreeListener):
         print realm.title, " visibility: ", realm.visible
 
     def on_project_renamed(self, project):
-        print project.title, " was renamed"
+        print project.title, " renamed"
 
     def on_project_added(self, project):
-        print "project ", project.title, " was added"
+        print "project ", project.title, " added"
 
     def on_project_removed(self, project):
-        print 
+        print "project ", project.title, " removed"
         
 
 class TaskListStore(gtk.ListStore, gtd.TreeListener):

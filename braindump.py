@@ -43,12 +43,18 @@ class BrainDump:
             gtd.save(self.gtd_tree, "test.gtd")
 
         BrainDumpWindow(GUI().get_widget("braindump_window").widget)
+
+        # task tab widgets
         TaskListView(GUI().get_widget("task_list").widget, self.gtd_tree)
-        FilterListView(GUI().get_widget("filter_list").widget, self.gtd_tree)
+        TaskFilterListView(GUI().get_widget("task_filter_list").widget, self.gtd_tree)
         TaskFilterBy(GUI().get_widget("taskfilterby").widget)
         ContextTable(GUI().get_widget("task_contexts_table").widget, self.gtd_tree)
         # FIXME: use an app wide ProjectTreeModel
-        ProjectCombo(GUI().get_widget("task_project").widget, ProjectStore(self.gtd_tree))
+        ProjectCombo(GUI().get_widget("task_project").widget, ProjectListStore(self.gtd_tree))
+
+        # project tab widgets
+        ProjectListView(GUI().get_widget("project_list").widget, self.gtd_tree)
+        AreaFilterListView(GUI().get_widget("area_filter_list").widget, self.gtd_tree)
 
         # add all areas to the project combo box
         # FIXME: consider area listeners
@@ -68,7 +74,7 @@ class BrainDump:
             rtb.show()
 
         # FIXME: get the last selection and filterby from last time we were run
-        GUI().get_widget("filter_list").widget.get_selection().select_all()
+        GUI().get_widget("task_filter_list").widget.get_selection().select_all()
 
 
 # test to see if we were run directly

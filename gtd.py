@@ -76,19 +76,40 @@ class Area(Base):
 
 
 class Project(Base):
-    def __init__(self, title, notes, area, state):
+    def __init__(self, title, notes="", area=None, complete=False):
         self.tasks = []
         Base.__init__(self, title)
         self.notes = notes
         self.area = area
-        self.state = state # ie: complete, someday
         self.area.add_project(self)
+        self.complete = complete
 
     def add_task(self, task):
         self.tasks.append(task)
 
     def remove_task(self, task):
         self.tasks.remove(task)
+
+
+# Placeholder class for "Click to create new project..." type items in lists
+# Perhaps this is better placed in the gui code, rather than here...
+class NewProject(object):
+    def __init__(self, title_str):
+        self.__title = title_str
+
+    def create_new_project(self, title):
+        # FIXME: pick an appropriate area from the active filters
+        new_project = Project(title)
+        # FIXME: somehow add this to the parent tree...
+        print "create a new project (%s) from the old one!" % new_project.title
+
+    title = property(lambda s: s.__title, create_new_project)
+    tasks = property(lambda s: [])
+    project = property(lambda s: None)
+    contexts = property(lambda s: [])
+    notes = property(lambda s: "")
+    waiting = property(lambda s: False)
+    complete = property(lambda s: False)
 
 
 class Task(Base):
@@ -152,12 +173,12 @@ class Tree(object):
             Context("Computer"),
             Context("Calls")]
         self.realms = [Realm("Personal"), Realm("Professional")]
-        staffdev = Area("Remodel", self.realms[0])
+        remodel = Area("Remodel", self.realms[0])
         staffdev = Area("Staff Development", self.realms[1])
-        braindump = Project("BrainDump", "", staffdev, 0)
-        deck = Project("front deck", "", staffdev, 0)
+        braindump = Project("BrainDump", "", staffdev, False)
+        deck = Project("front deck", "", remodel, False)
         Task("research gnome list_item", braindump, [self.contexts[3]], "notes A", False, False),
-        Task("extend gnome list_item", deck, [self.contexts[3]], "notes B", False, False),
+        Task("extend gnome list_item", braindump, [self.contexts[3]], "notes B", False, False),
         Task("lay deck boards", deck, [self.contexts[1]], "use stained boards first", False, False)
     
     def context_tasks(self, context):
