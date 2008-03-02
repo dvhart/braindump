@@ -371,57 +371,43 @@ By Project</property>
 		      </child>
 
 		      <child>
-			<widget class="GtkAlignment" id="alignment1">
+			<widget class="GtkHBox" id="hbox10">
 			  <property name="visible">True</property>
-			  <property name="xalign">0.5</property>
-			  <property name="yalign">0.5</property>
-			  <property name="xscale">1</property>
-			  <property name="yscale">0</property>
-			  <property name="top_padding">0</property>
-			  <property name="bottom_padding">0</property>
-			  <property name="left_padding">0</property>
-			  <property name="right_padding">0</property>
+			  <property name="homogeneous">False</property>
+			  <property name="spacing">0</property>
 
 			  <child>
-			    <widget class="GtkHBox" id="hbox10">
+			    <widget class="GtkButton" id="task_filter_all">
 			      <property name="visible">True</property>
-			      <property name="homogeneous">False</property>
-			      <property name="spacing">0</property>
-
-			      <child>
-				<widget class="GtkButton" id="task_filter_all">
-				  <property name="visible">True</property>
-				  <property name="can_focus">True</property>
-				  <property name="label" translatable="yes">All</property>
-				  <property name="use_underline">True</property>
-				  <property name="relief">GTK_RELIEF_NORMAL</property>
-				  <property name="focus_on_click">True</property>
-				  <signal name="clicked" handler="on_task_filter_all" last_modification_time="Sun, 02 Sep 2007 06:12:36 GMT"/>
-				</widget>
-				<packing>
-				  <property name="padding">0</property>
-				  <property name="expand">True</property>
-				  <property name="fill">True</property>
-				</packing>
-			      </child>
-
-			      <child>
-				<widget class="GtkButton" id="task_filter_none">
-				  <property name="visible">True</property>
-				  <property name="can_focus">True</property>
-				  <property name="label" translatable="yes">None</property>
-				  <property name="use_underline">True</property>
-				  <property name="relief">GTK_RELIEF_NORMAL</property>
-				  <property name="focus_on_click">True</property>
-				  <signal name="clicked" handler="on_task_filter_none" last_modification_time="Sun, 02 Sep 2007 06:12:45 GMT"/>
-				</widget>
-				<packing>
-				  <property name="padding">0</property>
-				  <property name="expand">True</property>
-				  <property name="fill">True</property>
-				</packing>
-			      </child>
+			      <property name="can_focus">True</property>
+			      <property name="label" translatable="yes">All</property>
+			      <property name="use_underline">True</property>
+			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
+			      <signal name="clicked" handler="on_task_filter_all" last_modification_time="Sun, 02 Sep 2007 06:12:36 GMT"/>
 			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">True</property>
+			      <property name="fill">True</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkButton" id="task_filter_none">
+			      <property name="visible">True</property>
+			      <property name="can_focus">True</property>
+			      <property name="label" translatable="yes">None</property>
+			      <property name="use_underline">True</property>
+			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
+			      <signal name="clicked" handler="on_task_filter_none" last_modification_time="Sun, 02 Sep 2007 06:12:45 GMT"/>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">True</property>
+			      <property name="fill">True</property>
+			    </packing>
 			  </child>
 			</widget>
 			<packing>
@@ -653,27 +639,35 @@ By Project</property>
 		      <property name="spacing">0</property>
 
 		      <child>
+			<widget class="GtkLabel" id="label4">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">By Area</property>
+			  <property name="use_underline">False</property>
+			  <property name="use_markup">False</property>
+			  <property name="justify">GTK_JUSTIFY_LEFT</property>
+			  <property name="wrap">False</property>
+			  <property name="selectable">False</property>
+			  <property name="xalign">0</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
+			  <property name="width_chars">-1</property>
+			  <property name="single_line_mode">False</property>
+			  <property name="angle">0</property>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">False</property>
+			  <property name="fill">True</property>
+			</packing>
+		      </child>
+
+		      <child>
 			<widget class="GtkHBox" id="hbox12">
 			  <property name="visible">True</property>
 			  <property name="homogeneous">False</property>
 			  <property name="spacing">0</property>
-
-			  <child>
-			    <widget class="GtkButton" id="area_filter_none">
-			      <property name="visible">True</property>
-			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">None</property>
-			      <property name="use_underline">True</property>
-			      <property name="relief">GTK_RELIEF_NORMAL</property>
-			      <property name="focus_on_click">True</property>
-			      <signal name="clicked" handler="on_area_filter_none" last_modification_time="Sun, 02 Sep 2007 07:22:31 GMT"/>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">True</property>
-			      <property name="fill">True</property>
-			    </packing>
-			  </child>
 
 			  <child>
 			    <widget class="GtkButton" id="area_filter_all">
@@ -684,6 +678,23 @@ By Project</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
 			      <signal name="clicked" handler="on_area_filter_all" last_modification_time="Sun, 02 Sep 2007 07:22:41 GMT"/>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">True</property>
+			      <property name="fill">True</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkButton" id="area_filter_none">
+			      <property name="visible">True</property>
+			      <property name="can_focus">True</property>
+			      <property name="label" translatable="yes">None</property>
+			      <property name="use_underline">True</property>
+			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
+			      <signal name="clicked" handler="on_area_filter_none" last_modification_time="Sun, 02 Sep 2007 07:22:31 GMT"/>
 			    </widget>
 			    <packing>
 			      <property name="padding">0</property>
@@ -756,6 +767,7 @@ By Project</property>
 			  <property name="fixed_height_mode">False</property>
 			  <property name="hover_selection">False</property>
 			  <property name="hover_expand">False</property>
+			  <signal name="cursor_changed" handler="on_project_list_cursor_changed" last_modification_time="Sun, 02 Mar 2008 16:33:02 GMT"/>
 			</widget>
 		      </child>
 		    </widget>
@@ -773,7 +785,7 @@ By Project</property>
 	      </child>
 
 	      <child>
-		<widget class="GtkVBox" id="vbox7">
+		<widget class="GtkVBox" id="project_form_vbox">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
 		  <property name="spacing">0</property>
@@ -823,9 +835,10 @@ By Project</property>
 		      <child>
 			<widget class="GtkComboBox" id="project_area">
 			  <property name="visible">True</property>
-			  <property name="items" translatable="yes">Select Area</property>
+			  <property name="items" translatable="yes"></property>
 			  <property name="add_tearoffs">False</property>
 			  <property name="focus_on_click">True</property>
+			  <signal name="changed" handler="on_project_area_changed" last_modification_time="Sun, 02 Mar 2008 15:59:19 GMT"/>
 			</widget>
 			<packing>
 			  <property name="padding">0</property>

@@ -66,6 +66,17 @@ class AreaListStore(gtk.ListStore, gtd.TreeListener):
                 for a in r.areas:
                     self.append([a])
 
+    # return the iter, or None, corresponding to "area"
+    # consider a more consistent function name (with gtk names)
+    # like get_iter_from_area
+    def area_iter(self, area):
+        iter = self.get_iter_first()
+        while iter:
+            if self.get_value(iter, 0) == area:
+                return iter
+            iter = self.iter_next(iter)
+        return None
+
     # gtd.TreeListener interface
     def on_realm_visible_changed(self, realm):
         print realm.title, " visibility: ", realm.visible
@@ -108,6 +119,17 @@ class ProjectListStore(gtk.ListStore, gtd.TreeListener):
                 for a in r.areas:
                     for p in a.projects:
                         self.append([p])
+
+    # return the iter, or None, corresponding to "project"
+    # consider a more consistent function name (with gtk names)
+    # like get_iter_from_project
+    def project_iter(self, project):
+        iter = self.get_iter_first()
+        while iter:
+            if self.get_value(iter, 0) == project:
+                return iter
+            iter = self.iter_next(iter)
+        return None
 
     def filter_by_selection(self, selection):
         self.clear()

@@ -254,7 +254,7 @@ class TaskListView(WidgetWrapper):
             task_contexts = GUI().get_widget("task_contexts_table")
             task_notes.get_buffer().set_text(task.notes)
             task_contexts.set_active_contexts(task.contexts)
-            # FIXME: update project combo box
+            GUI().get_widget("task_project").set_active(task.project)
 
     def toggled(self, cell, path, model, column):
         complete = model[path][column]
@@ -369,6 +369,28 @@ class ProjectListView(WidgetWrapper):
         # make it searchable
         widget.set_search_column(1)
 
+    # return the selected project
+    def get_current_project(self):
+        project = None
+        # FIXME: is this error checking necessary
+        path = self.widget.get_cursor()[0]
+        if path:
+            project = self.widget.get_model()[path][0]
+        return project
+
+    def update_current_area(self, area):
+        project = self.get_current_project()
+        # don't try this on None or gtd.NewTask objects
+        if isinstance(project, gtd.Project):
+            if project.area is not area:
+                print "update_current_area: ", area.title
+                # FIXME: this should be in one place... probably project- or tree- centric?
+                project.area.remove_project(project)
+                project.area = area
+                area.add_project(project)
+                # FIXME: this should be done via some signals and slots mechanism of the gtd.Tree
+                self.on_filter_selection_changed(GUI().get_widget("area_filter_list").widget.get_selection())
+
     def project_data_func(self, column, cell, model, iter, data):
         project = model[iter][0]
         if data is "complete":
@@ -395,14 +417,14 @@ class ProjectListView(WidgetWrapper):
     def on_project_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
         project = tree.get_model()[path][0]
-        if task:
-            if isinstance(task, gtd.NewTask):
+        if project:
+            if isinstance(project, gtd.NewProject):
                 GUI().get_widget("project_form_vbox").widget.set_sensitive(False)
             else:
                 GUI().get_widget("project_form_vbox").widget.set_sensitive(True)
-            task_notes = GUI().get_widget("project_notes").widget
-            task_notes.get_buffer().set_text(task.notes)
-            # FIXME: update area combo box
+            project_notes = GUI().get_widget("project_notes").widget
+            project_notes.get_buffer().set_text(project.notes)
+            GUI().get_widget("project_area").set_active(project.area)
 
     def toggled(self, cell, path, model, column):
         complete = model[path][column]
@@ -528,10 +550,58 @@ class ProjectCombo(WidgetWrapper):
     def get_active(self):
         return self.widget.get_model()[self.widget.get_active()][0]
 
+    def set_active(self, project):
+        return self.widget.set_active_iter(self.widget.get_model().project_iter(project))
+
     # FIXME: this should just emit a signal, slots should defined in other objects, and
     # connected in the main application code.
     def on_task_project_changed(self, widget):
-        print "task_project_changed"
-#        tree = GUI().get_widget("task_list")
-#        tree.update_current_project(self.get_active())
+        print "task_project_changed: ", self.get_active().title
+        tree = GUI().get_widget("task_list")
+        tree.update_current_project(self.get_active())
+
+
+# add all areas to the area combo box
+# FIXME: consider area listeners
+# we need to be able update when areas are added or removed, and when selected realms change
+# and when areas change which realm they pertain to
+class AreaCombo(WidgetWrapper):
+    def __init__(self, widget, model):
+        WidgetWrapper.__init__(self, widget)
+
+        # FIXME: This causes a gtk warning... not sure how else to get the renderer,
+        # and we need it to set the cell_data_func... ??
+        #renderer = self.widget.get_child().get_cell_renderers()[0]
+        #self.widget.clear_attributes(renderer)
+
+        # Altnernatively we create our own CellRendererText object and pack it in,
+        # but we should clear the old one out - but that gives the same warning ???
+        #self.widget.clear()
+        renderer = gtk.CellRendererText()
+        self.widget.pack_start(renderer)
+        print "Renderers: ", len(self.widget.get_child().get_cell_renderers())
+        self.widget.set_cell_data_func(renderer, self.cell_data_func)
+        self.widget.set_model(model)
+        self.widget.set_active(0)
+
+    def cell_data_func(self, column, cell, model, iter):
+        area = model[iter][0]
+        if area:
+            cell.set_property("text", area.title)
+        else:
+            # FIXME: throw an exception here
+            cell.set_property("text", "Null Area?")
+
+    def get_active(self):
+        return self.widget.get_model()[self.widget.get_active()][0]
+
+    def set_active(self, area):
+        return self.widget.set_active_iter(self.widget.get_model().area_iter(area))
+
+    # FIXME: this should just emit a signal, slots should defined in other objects, and
+    # connected in the main application code.
+    def on_project_area_changed(self, widget):
+        print "project_area_changed: ", self.get_active().title
+        tree = GUI().get_widget("project_list")
+        tree.update_current_area(self.get_active())
 

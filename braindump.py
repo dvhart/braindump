@@ -56,15 +56,17 @@ class BrainDump:
         # project tab widgets
         ProjectListView(GUI().get_widget("project_list").widget, self.gtd_tree)
         AreaFilterListView(GUI().get_widget("area_filter_list").widget, self.gtd_tree)
+        # FIXME: use an app wide ProjectTreeModel
+        AreaCombo(GUI().get_widget("project_area").widget, AreaListStore(self.gtd_tree))
 
         # add all areas to the project combo box
         # FIXME: consider area listeners
-        project_area = GUI().get_widget("project_area").widget
-        for r in self.gtd_tree.realms:
-            if r.visible:
-                for a in r.areas:
-                    project_area.append_text(a.title)
-        project_area.set_active(0)
+#        project_area = GUI().get_widget("project_area").widget
+#        for r in self.gtd_tree.realms:
+#            if r.visible:
+#                for a in r.areas:
+#                    project_area.append_text(a.title)
+#        project_area.set_active(0)
 
         # add the realm toggle buttons
         # FIXME: custom toolbar? as a realm listener?
