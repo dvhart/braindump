@@ -23,6 +23,7 @@
 
 import gtk, gtk.glade
 from gui import *
+from gui_datastores import *
 import gnome
 import gtd
 
@@ -75,6 +76,7 @@ class BrainDump:
 
         # FIXME: get the last selection and filterby from last time we were run
         GUI().get_widget("task_filter_list").widget.get_selection().select_all()
+        GUI().get_widget("area_filter_list").widget.get_selection().select_all()
 
 
 # test to see if we were run directly

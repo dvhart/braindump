@@ -23,6 +23,7 @@
 import gobject
 import gtk, gtk.glade
 import gtd
+from gui_datastores import *
 
 
 # FIXME: is this base class correct?  I totally just guessed!
@@ -106,8 +107,10 @@ class TaskFilterListView(WidgetWrapper):
     def __init__(self, widget, gtd_tree):
         WidgetWrapper.__init__(self, widget)
         self.gtd_tree = gtd_tree
-        # FIXME, we should toggle this model between an app wide contexts and projects store
-        self.widget.set_model(gtk.ListStore(gobject.TYPE_PYOBJECT))
+        self.context_store = ContextListStore(gtd_tree)
+        self.project_store = ProjectListStore(gtd_tree)
+        # FIXME: which model should we do first?
+        self.widget.set_model(self.context_store)
 
         # setup the column and cell renderer
         self.tvcolumn0 = gtk.TreeViewColumn()
@@ -121,20 +124,14 @@ class TaskFilterListView(WidgetWrapper):
         # setup selection modes and callback
         self.widget.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         self.widget.set_rubber_banding(True)
+        # FIXME: this should be connected by the application...
         self.widget.get_selection().connect("changed", GUI().get_widget("task_list").on_filter_selection_changed)
 
     def filter_by_context(self):
-        self.widget.get_model().clear()
-        for c in self.gtd_tree.contexts:
-            self.widget.get_model().append([c])
+        self.widget.set_model(self.context_store)
 
     def filter_by_project(self):
-        self.widget.get_model().clear()
-        for r in self.gtd_tree.realms:
-            if r.visible:
-                for a in r.areas:
-                    for p in a.projects:
-                        self.widget.get_model().append([p])
+        self.widget.set_model(self.project_store)
 
     def data_func(self, column, cell, model, iter, data):
         obj = model[iter][0]
@@ -241,28 +238,8 @@ class TaskListView(WidgetWrapper):
                 self.on_filter_selection_changed(GUI().get_widget("task_filter_list").widget.get_selection())
 
     def on_filter_selection_changed(self, selection):
-        model = self.widget.get_model()
-        self.widget.get_model().clear()
-        selmodel, paths = selection.get_selected_rows()
-        # FIXME: I'm sure this set testing is horribly inefficient, optimize later
-        tasks = []
-        for p in paths:
-            obj = selmodel[p][0]
-            if isinstance(obj, gtd.Context):
-                # FIXME: obj.get_tasks() (or map the property tasks to a method?)
-                for t in self.gtd_tree.context_tasks(obj):
-                    if not t in set(tasks):
-                        tasks.append(t)
-                        model.append([t])
-            elif isinstance(obj, gtd.Project):
-                # FIXME: make for a consistent API? obj.get_tasks()
-                for t in obj.tasks:
-                    if not t in set(tasks):
-                        tasks.append(t)
-                        model.append([t])
-            else:
-                # FIXME: throw an exception
-                print "ERROR: unknown filter object"
+        self.widget.get_model().filter_by_selection(selection)
+        return
 
     # signal callbacks
     def on_task_list_cursor_changed(self, tree):
@@ -299,6 +276,7 @@ class TaskFilterBy(WidgetWrapper):
         # FIXME: pull the default view from a config
         self.widget.set_active(0)
 
+    # FIXME: this connection should be made by the app
     # signal callbacks
     def on_filterby_changed(self, widget):
         view = widget.get_active()
@@ -328,6 +306,7 @@ class AreaFilterListView(WidgetWrapper):
         # setup selection modes and callback
         self.widget.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         self.widget.set_rubber_banding(True)
+        # FIXME: this connection should be made in the application
         self.widget.get_selection().connect("changed", GUI().get_widget("project_list").on_filter_selection_changed)
         self.reload()
 
@@ -410,15 +389,7 @@ class ProjectListView(WidgetWrapper):
             print "ERROR: didn't set %s property for "%data, obj.title
 
     def on_filter_selection_changed(self, selection):
-        print "area selection changed"
-        model = self.widget.get_model()
-        self.widget.get_model().clear()
-        selmodel, paths = selection.get_selected_rows()
-        # FIXME: this should just be call to a method of ProjectListModel "filter_by_area(selection)
-        for path in paths:
-            area = selmodel[path][0]
-            for p in area.projects:
-                model.append([p])
+        self.widget.get_model().filter_by_selection(selection)
 
     # signal callbacks
     def on_project_list_cursor_changed(self, tree):
@@ -454,10 +425,12 @@ class BrainDumpWindow(WidgetWrapper):
     def on_window_destroy(self, widget):
         gtk.main_quit()
 
+
 class ContextCheckButton(gtk.CheckButton):
     def __init__(self, context):
         gtk.CheckButton.__init__(self, context.title)
         self.context = context
+
 
 # Class aggregrating GtkTable to list contexts for tasks
 class ContextTable(WidgetWrapper):
@@ -519,91 +492,6 @@ class ContextTable(WidgetWrapper):
     def on_checkbutton_toggled(self, cb):
         tree = GUI().get_widget("task_list")
         tree.update_current_context(cb.context, cb.get_active())
-
-
-# Area gtd datastore and tree listener, should be a good start towards
-# separated application logic from the widgets...
-class AreaListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree):
-        # FIXME: use super() properly here
-        gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
-        self.reload()
-
-    def reload(self):
-        self.clear()
-        for r in self.gtd_tree.realms:
-            if r.visible:
-                for a in r.areas:
-                    self.append([a])
-
-    # gtd.TreeListener interface
-    def on_realm_visible_changed(self, realm):
-        print realm.title, " visibility: ", realm.visible
-
-    def on_area_renamed(self, area):
-        print area.title, " renamed"
-
-    def on_area_added(self, area):
-        print "area ", area.title, " added"
-
-    def on_area_removed(self, area):
-        print "area ", area.title, " removed"
-
-
-# Project gtd datastore and tree listener, should be a good start towards
-# separated application logic from the widgets...
-class ProjectListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree, new_project=False):
-        # FIXME: use super() properly here
-        gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
-        if new_project:
-            self.new_project = gtd.NewProject("<i>Create new project...</i>")
-            self.append([self.new_project])
-        else:
-            self.new_project = None
-        self.reload()
-
-    def clear(self):
-        gtk.ListStore.clear(self)
-        if self.new_project:
-            self.append([self.new_project])
-
-    # FIXME: why do we have a reload() and TaskListStore doesn't?
-    # (I know why... but seems inconsistent)
-    # FIXME: doesn't reload imply clear() ?
-    def reload(self):
-        for r in self.gtd_tree.realms:
-            if r.visible:
-                for a in r.areas:
-                    for p in a.projects:
-                        self.append([p])
-
-    # gtd.TreeListener interface
-    def on_realm_visible_changed(self, realm):
-        print realm.title, " visibility: ", realm.visible
-
-    def on_project_renamed(self, project):
-        print project.title, " renamed"
-
-    def on_project_added(self, project):
-        print "project ", project.title, " added"
-
-    def on_project_removed(self, project):
-        print "project ", project.title, " removed"
-        
-
-class TaskListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree):
-        # FIXME: use super() properly here
-        gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
-        self.new_task = gtd.NewTask("<i>Create new task...</i>")
-
-    def clear(self):
-        gtk.ListStore.clear(self)
-        self.append([self.new_task])
  
 
 # add all projects to the project combo box
