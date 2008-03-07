@@ -101,12 +101,14 @@ class BrainDump:
         self.project_store = ProjectStore()
         self.project_store_filter_by_realm = self.project_store.filter_by_realm(True)
         self.project_store_filter_by_realm_no_action = self.project_store.filter_by_realm(False)
+        self.task_store = TaskStore()
         self.context_store = ContextStore()
         self.context_store_filter_no_action = self.context_store.filter_actions(False)
 
         # Connect Signals
         GTD().sig_realm_visible_changed.connect(self.area_store.refilter)
         GTD().sig_realm_visible_changed.connect(self.project_store.refilter)
+        # The others should trickle down ...
 
         GTD().sig_area_renamed.connect(self.area_store.on_area_renamed)
         GTD().sig_area_added.connect(self.area_store.on_area_added)
@@ -115,6 +117,10 @@ class BrainDump:
         GTD().sig_project_renamed.connect(self.project_store.on_project_renamed)
         GTD().sig_project_added.connect(self.project_store.on_project_added)
         GTD().sig_project_removed.connect(self.project_store.on_project_removed)
+
+        GTD().sig_task_renamed.connect(self.task_store.on_task_renamed)
+        GTD().sig_task_added.connect(self.task_store.on_task_added)
+        GTD().sig_task_removed.connect(self.task_store.on_task_removed)
 
         GTD().sig_context_renamed.connect(self.context_store.on_context_renamed)
         GTD().sig_context_added.connect(self.context_store.on_context_added)
@@ -130,13 +136,13 @@ class BrainDump:
         BrainDumpWindow(GUI().get_widget("braindump_window").widget)
 
         # task tab widgets
-        TaskListView(GUI().get_widget("task_list").widget)
-
+        TaskFilterBy(GUI().get_widget("taskfilterby").widget)
         task_filter_list = TaskFilterListView(GUI().get_widget("task_filter_list").widget,
                                               self.context_store_filter_no_action, self.project_store_filter_by_realm_no_action)
-        GTD().sig_realm_visible_changed.connect(task_filter_list.on_realm_visible_changed)
 
-        TaskFilterBy(GUI().get_widget("taskfilterby").widget)
+        self.task_store_filter_by_selection = self.task_store.filter_by_selection(task_filter_list.widget.get_selection(), True)
+        TaskListView(GUI().get_widget("task_list").widget, self.task_store_filter_by_selection)
+        task_filter_list.widget.get_selection().connect("changed", self.task_store.refilter)
 
         context_table = ContextTable(GUI().get_widget("task_contexts_table").widget)
         GTD().sig_context_renamed.connect(context_table.on_context_renamed)
@@ -147,8 +153,10 @@ class BrainDump:
         GTD().sig_project_renamed.connect(project_combo.on_project_renamed)
 
         # project tab widgets
-        ProjectListView(GUI().get_widget("project_list").widget, self.project_store_filter_by_realm)
         area_filter_list = AreaFilterListView(GUI().get_widget("area_filter_list").widget, self.area_store_filter_by_realm_no_action)
+        area_filter_list.widget.get_selection().connect("changed", self.project_store.refilter)
+        self.project_store_filter_by_area = self.project_store.filter_by_area(area_filter_list.widget.get_selection(), True)
+        ProjectListView(GUI().get_widget("project_list").widget, self.project_store_filter_by_area)
         GTD().sig_realm_visible_changed.connect(area_filter_list.on_realm_visible_changed)
 
         area_combo = AreaCombo(GUI().get_widget("project_area").widget, self.area_store_filter_by_realm_no_action)

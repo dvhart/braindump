@@ -27,31 +27,6 @@ import gtk, gtk.glade
 import gui
 from gtd_action_rows import *
 
-#FIXME: not sure what to do with these yet...
-class NoneProject(object):
-    def __init__(self, title_str):
-        self.__title = title_str
-
-    title = property(lambda s: s.__title)
-    area = property(lambda s: None)
-    tasks = property(lambda s: [])
-    project = property(lambda s: None)
-    contexts = property(lambda s: [])
-    notes = property(lambda s: "")
-    waiting = property(lambda s: False)
-    complete = property(lambda s: False)
-
-class NoneTask(object):
-    def __init__(self, title_str):
-        self.__title = title_str
-
-    title = property(lambda s: s.__title)
-    project = property(lambda s: None)
-    contexts = property(lambda s: [])
-    notes = property(lambda s: "")
-    waiting = property(lambda s: False)
-    complete = property(lambda s: False)
-
 
 class GTDStoreFilter(gobject.GObject):
     def __init__(self):
@@ -151,7 +126,7 @@ class ProjectStore(GTDStoreRealmFilter):
                     self.model.append([p])
 
     def filter_by_area(self, selection, show_actions):
-        filter = self.model.filter_new()
+        filter = self.filter_new()
         filter.set_visible_func(self.filter_by_area_visible, [selection, show_actions])
         return filter
 
@@ -168,7 +143,7 @@ class ProjectStore(GTDStoreRealmFilter):
         selection, show_actions = data
         selmodel, paths = selection.get_selected_rows()
         value = model[iter][0]
-        if isinstance(value, gtd.Area):
+        if not isinstance(value, NewArea):
             for path in paths:
                 if value.area is selmodel[path][0]:
                     return True
@@ -187,35 +162,47 @@ class ProjectStore(GTDStoreRealmFilter):
         print "project ", project.title, " removed"
 
 
-class TaskListStore(gtk.ListStore):
+class TaskStore(GTDStoreRealmFilter):
     def __init__(self):
-        # FIXME: use super() properly here
-        gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.new_task = NewTask("<i>Create new task...</i>")
+        GTDStoreRealmFilter.__init__(self)
+        self.model.append([NewTask("<i>Create new task...</i>")])
+        for r in GTD().realms:
+            for a in r.areas:
+                for p in a.projects:
+                    for t in p.tasks:
+                        self.model.append([t])
 
-    def clear(self):
-        gtk.ListStore.clear(self)
-        self.append([self.new_task])
+    def filter_by_selection(self, selection, show_actions):
+        filter = self.filter_new()
+        filter.set_visible_func(self.filter_by_selection_visible, [selection, show_actions])
+        return filter
 
-    def filter_by_selection(self, selection):
-        # FIXME: I'm sure this set testing is horribly inefficient, optimize later
-        self.clear()
-        tasks = []
+    def filter_by_selection_visible(self, model, iter, data):
+        selection, show_actions = data
         selmodel, paths = selection.get_selected_rows()
-        for p in paths:
-            obj = selmodel[p][0]
-            if isinstance(obj, gtd.Context):
-                # FIXME: obj.get_tasks() (or map the property tasks to a method?)
-                for t in GTD().context_tasks(obj):
-                    if not t in set(tasks):
-                        tasks.append(t)
-                        self.append([t])
-            elif isinstance(obj, gtd.Project):
-                # FIXME: make for a consistent API? obj.get_tasks()
-                for t in obj.tasks:
-                    if not t in set(tasks):
-                        tasks.append(t)
-                        self.append([t])
-            else:
-                # FIXME: throw an exception
-                print "ERROR: unknown filter object"
+        task = model[iter][0]
+        if not isinstance(task, NewTask):
+            for path in paths:
+                comp = selmodel[path][0] # either a project or a context
+                if isinstance(comp, gtd.Context):
+                    if task.contexts.count(comp):
+                        return True
+                elif isinstance(comp, gtd.Project):
+                    if task.project is comp:
+                        return True
+                else:
+                    print "ERROR: cannot filter Task on", comp.__class__
+            return False
+        else:
+            return show_actions
+
+
+    # FIXME: update the store in response to these signals
+    def on_task_renamed(self, task):
+        print "task ", task.title, " renamed"
+
+    def on_task_added(self, task):
+        print "task ", task.title, " added"
+
+    def on_task_removed(self, task):
+        print "task ", task.title, " removed"

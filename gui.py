@@ -101,8 +101,6 @@ class TaskFilterListView(WidgetWrapper):
         # setup selection modes and callback
         self.widget.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         self.widget.set_rubber_banding(True)
-        # FIXME: this should be connected by the application...
-        self.widget.get_selection().connect("changed", GUI().get_widget("task_list").on_filter_selection_changed)
 
     def filter_by_context(self):
         self.widget.set_model(self.context_store)
@@ -143,9 +141,9 @@ class TaskFilterListView(WidgetWrapper):
 
 
 class TaskListView(WidgetWrapper):
-    def __init__(self, widget):
+    def __init__(self, widget, task_store):
         WidgetWrapper.__init__(self, widget)
-        self.widget.set_model(TaskListStore())
+        self.widget.set_model(task_store)
 
         # create the TreeViewColumns to display the data
         self.tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -226,10 +224,6 @@ class TaskListView(WidgetWrapper):
                 # FIXME: this should be done via some signals and slots mechanism of the gtd.Tree
                 self.on_filter_selection_changed(GUI().get_widget("task_filter_list").widget.get_selection())
 
-    def on_filter_selection_changed(self, selection):
-        self.widget.get_model().filter_by_selection(selection)
-        return
-
     # signal callbacks
     def on_task_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
@@ -294,11 +288,6 @@ class AreaFilterListView(WidgetWrapper):
         # setup selection modes and callback
         self.widget.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         self.widget.set_rubber_banding(True)
-        # FIXME: this connection should be made in the application
-        self.widget.get_selection().connect("changed", GUI().get_widget("project_list").on_filter_selection_changed)
-
-#    def reload(self):
-#        self.widget.get_model().reload()
 
     def data_func(self, column, cell, model, iter, data):
         obj = model[iter][0]
@@ -328,7 +317,6 @@ class ProjectListView(WidgetWrapper):
     def __init__(self, widget, project_store):
         WidgetWrapper.__init__(self, widget)
         self.widget.set_model(project_store)
-        self.project_store = project_store
 
         # create the TreeViewColumns to display the data
         self.tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -381,7 +369,7 @@ class ProjectListView(WidgetWrapper):
                 project.area = area
                 area.add_project(project)
                 # FIXME: this should be done via some signals and slots mechanism of the gtd.Tree
-                self.on_filter_selection_changed(GUI().get_widget("area_filter_list").widget.get_selection())
+                #self.on_filter_selection_changed(GUI().get_widget("area_filter_list").widget.get_selection())
 
     def project_data_func(self, column, cell, model, iter, data):
         project = model[iter][0]
@@ -404,9 +392,6 @@ class ProjectListView(WidgetWrapper):
         else:
             # FIXME: throw an exception
             print "ERROR: didn't set %s property for "%data, obj.title
-
-    def on_filter_selection_changed(self, selection):
-        self.widget.set_model(self.project_store.filter_by_area(selection, True))
 
     # signal callbacks
     def on_project_list_cursor_changed(self, tree):
