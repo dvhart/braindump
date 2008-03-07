@@ -22,6 +22,7 @@
 
 import gobject
 import gtd
+from gtd import GTD
 import gtk, gtk.glade
 
 
@@ -29,14 +30,13 @@ import gtk, gtk.glade
 # separated application logic from the widgets...
 # FIXME: add a NewContext like Project and Task stores
 class ContextListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree):
+    def __init__(self):
         gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
         self.reload()
 
     def reload(self):
         self.clear()
-        for c in self.gtd_tree.contexts:
+        for c in GTD().contexts:
             self.append([c])
 
     # gtd.TreeListener interface
@@ -53,15 +53,14 @@ class ContextListStore(gtk.ListStore, gtd.TreeListener):
 # Area gtd datastore and tree listener, should be a good start towards
 # separated application logic from the widgets...
 class AreaListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree):
+    def __init__(self):
         # FIXME: use super() properly here
         gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
         self.reload()
 
     def reload(self):
         self.clear()
-        for r in self.gtd_tree.realms:
+        for r in GTD().realms:
             if r.visible:
                 for a in r.areas:
                     self.append([a])
@@ -94,10 +93,9 @@ class AreaListStore(gtk.ListStore, gtd.TreeListener):
 # Project gtd datastore and tree listener, should be a good start towards
 # separated application logic from the widgets...
 class ProjectListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree, new_project=False):
+    def __init__(self, new_project=False):
         # FIXME: use super() properly here
         gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
         if new_project:
             self.new_project = gtd.NewProject("<i>Create new project...</i>")
             self.append([self.new_project])
@@ -114,7 +112,7 @@ class ProjectListStore(gtk.ListStore, gtd.TreeListener):
     # (I know why... but seems inconsistent)
     def reload(self):
         self.clear()
-        for r in self.gtd_tree.realms:
+        for r in GTD().realms:
             if r.visible:
                 for a in r.areas:
                     for p in a.projects:
@@ -154,10 +152,9 @@ class ProjectListStore(gtk.ListStore, gtd.TreeListener):
 
 
 class TaskListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree):
+    def __init__(self):
         # FIXME: use super() properly here
         gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
         self.new_task = gtd.NewTask("<i>Create new task...</i>")
 
     def clear(self):
@@ -173,7 +170,7 @@ class TaskListStore(gtk.ListStore, gtd.TreeListener):
             obj = selmodel[p][0]
             if isinstance(obj, gtd.Context):
                 # FIXME: obj.get_tasks() (or map the property tasks to a method?)
-                for t in self.gtd_tree.context_tasks(obj):
+                for t in GTD().context_tasks(obj):
                     if not t in set(tasks):
                         tasks.append(t)
                         self.append([t])

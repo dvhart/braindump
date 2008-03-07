@@ -6,10 +6,30 @@ of things I can't just as easily do via inline '# FIXME's
 o look at adding braindump to http://pypi.python.org/pypi ?? timrc's suggestion
 o decide on consistent coding style
   o widget naming: update, update_btn, etc.
-o recurring tasks
-o task and project resource attachments (with twisty to hide)
 o task complete doesn't get immediately updated for the same task
   listed in other categories (but the title does, oddly enough)
 o connect task_project combo box to TaskListView
 o Add tree sorter functions
 o have the filter row animate (swell, glow, whatever) when something is added/removed
+o need some logging levels / infrastructure
+
+GTD Data Model
+o task and project resource attachments (with twisty to hide)
+o due date
+o recurring tasks
+o use TreeFilterModels (all from the same data stores)
+o consider one large datastore that we create filtered models of
+
+Signals and Slots Scope
+o right now the scope is at the GTD tree level, rather than at the individual items.
+  There are situations where it might make sense to have the individual widgets listen
+  to the individual tree elements (like the context check boxes listening for a context
+  rename event, while the context_table needs to listen for Added and Removed contexts)
+o need to connect all the *removed signals
+o work to base all gui updates from updates to the data models.  ie. we shouldn't have to 
+  explicitly connect the conext_rename to the context_table.... right?
+
+Backing Store
+o consider usin ics files, especially if that would aid integration into things like the
+  gnome clock/calendar panel applet (today's tasks in the applet, etc.)
+

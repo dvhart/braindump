@@ -21,6 +21,7 @@
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
 import pickle
+from singleton import *
 
 class Base(object):
     def __init__(self, title):
@@ -152,9 +153,11 @@ class NewTask(object):
     complete = property(lambda s: False)
 
 
+# The top-level GTD tree
+class GTD(object):
+    __metaclass__ = Singleton
 
-class Tree(object):
-    def __init__(self):
+    def __init__(self, filename):
         self.contexts = []
         self.realms = []
         self.event_listeners = {

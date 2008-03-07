@@ -20,25 +20,10 @@
 #
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
-import gobject
 import gtk, gtk.glade
+from singleton import *
 import gtd
 from gui_datastores import *
-
-
-# FIXME: is this base class correct?  I totally just guessed!
-# FIXME: try and understand what the hell is actually going on in this mess
-#        perhaps there is a more elegant (read understandable) way of accomplishing this?
-class GSingleton(gobject.GObjectMeta):
-    def __init__(self, name, bases, dict):
-        super(GSingleton, self).__init__(name, bases, dict)
-        self.instance = None
-
-    def __call__(self, *args, **kw):
-        if self.instance is None:
-            print "corner case: allow for access to bound variables in __init__"
-            self.instance = super(GSingleton, self).__call__(*args, **kw)
-        return self.instance
 
 
 class GUI(gtk.glade.XML):
@@ -104,11 +89,10 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
 
 
 class TaskFilterListView(WidgetWrapper):
-    def __init__(self, widget, gtd_tree):
+    def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
-        self.gtd_tree = gtd_tree
-        self.context_store = ContextListStore(gtd_tree)
-        self.project_store = ProjectListStore(gtd_tree)
+        self.context_store = ContextListStore()
+        self.project_store = ProjectListStore()
         # FIXME: which model should we do first?
         self.widget.set_model(self.context_store)
 
@@ -153,10 +137,9 @@ class TaskFilterListView(WidgetWrapper):
 
 
 class TaskListView(WidgetWrapper):
-    def __init__(self, widget, gtd_tree):
+    def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
-        self.gtd_tree = gtd_tree
-        self.widget.set_model(TaskListStore(self.gtd_tree))
+        self.widget.set_model(TaskListStore())
 
         # create the TreeViewColumns to display the data
         self.tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -289,10 +272,9 @@ class TaskFilterBy(WidgetWrapper):
 
 
 class AreaFilterListView(WidgetWrapper):
-    def __init__(self, widget, gtd_tree):
+    def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
-        self.gtd_tree = gtd_tree
-        self.widget.set_model(AreaListStore(gtd_tree))
+        self.widget.set_model(AreaListStore())
 
         # setup the column and cell renderer
         self.tvcolumn0 = gtk.TreeViewColumn()
@@ -333,10 +315,9 @@ class AreaFilterListView(WidgetWrapper):
 
 
 class ProjectListView(WidgetWrapper):
-    def __init__(self, widget, gtd_tree):
+    def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
-        self.gtd_tree = gtd_tree
-        self.widget.set_model(ProjectListStore(self.gtd_tree, True))
+        self.widget.set_model(ProjectListStore(True))
 
         # create the TreeViewColumns to display the data
         self.tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -456,17 +437,16 @@ class ContextCheckButton(gtk.CheckButton):
 
 # Class aggregrating GtkTable to list contexts for tasks
 class ContextTable(WidgetWrapper):
-    def __init__(self, widget, gtd_tree):
+    def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
         self.table = gtk.Table()
         widget.add(self.table)
         self.table.show()
-        self.gtd_tree = gtd_tree
         self.last_allocation = None
         self.context_cbs = {}
         self.max_width = 0
         # FIXME: move to a context listener function or something...
-        for context in self.gtd_tree.contexts:
+        for context in GTD().contexts:
             cb = ContextCheckButton(context)
             cb.connect("toggled", self.on_checkbutton_toggled)
             self.context_cbs[context] = cb
