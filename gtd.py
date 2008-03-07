@@ -25,9 +25,9 @@ from singleton import *
 from notify.all import *
 from oproperty import *
 
-__realm_none = None
-__area_none = None
-__project_none = None
+realm_none = None
+area_none = None
+project_none = None
 
 
 class Base(object):
@@ -81,9 +81,24 @@ class Realm(Base):
         self.visible = visible
         GTD().sig_realm_visible_changed(self)
 
+class RealmNone(Realm):
+    __metaclass__ =  Singleton
+
+    def __init__(self):
+        Base.__init__(self, "None")
+        self.visible = True
+        self.areas = []
+
+    def set_title(self, title):
+        print "Oops, tried to set title on", self.__class__
+
+    def remove_area(self, area):
+        if area is not AreaNone():
+            Realm.remove_area(self, area)
+
 
 class Area(Base):
-    def __init__(self, title, realm=__realm_none):
+    def __init__(self, title, realm=RealmNone()):
         self.projects = []
         Base.__init__(self, title)
         self.realm = realm
@@ -106,9 +121,25 @@ class Area(Base):
     def remove_project(self, project):
         self.projects.remove(project)
 
+class AreaNone(Area):
+    __metaclass__ =  Singleton
+
+    def __init__(self):
+        Base.__init__(self, "None")
+        self.projects = []
+        self.realm = RealmNone()
+        self.realm.add_area(self)
+    
+    def set_title(self, title):
+        print "Oops, tried to set title on", self.__class__
+
+    def remove_project(self, project):
+        if project is not ProjectNone():
+            Area.remove_project(project)
+
 
 class Project(Base):
-    def __init__(self, title, notes="", area=__area_none, complete=False):
+    def __init__(self, title, notes="", area=AreaNone(), complete=False):
         self.tasks = []
         Base.__init__(self, title)
         self.area = area
@@ -129,9 +160,24 @@ class Project(Base):
     def remove_task(self, task):
         self.tasks.remove(task)
 
+class ProjectNone(Project):
+    __metaclass__ = Singleton
+
+    def __init__(self):
+        Base.__init__(self, "None")
+        self.tasks = []
+        self.area = AreaNone()
+        self.area.add_project(self)
+        self.notes = ""
+        self.complete = False
+
+    def set_title(self, title):
+        print "Oops, tried to set title on", self.__class__
+
+
 
 class Task(Base):
-    def __init__(self, title, project=__project_none, contexts=[], notes="", waiting=False, complete=False):
+    def __init__(self, title, project=ProjectNone(), contexts=[], notes="", waiting=False, complete=False):
         Base.__init__(self, title)
         self.project = project
         self.contexts = contexts
@@ -162,11 +208,8 @@ class GTD(object):
     __metaclass__ = Singleton
 
     def __init__(self, filename):
-        __realm_none = Realm("None", True)
-        __area_none = Area("None", self.realm_none)
-        __project_none = Project("None", "", self.area_project)
         self.contexts = []
-        self.realms = [__realm_none]
+        self.realms = [RealmNone()]
 
         # PyNotify Signals
         self.sig_realm_visible_changed = Signal()
@@ -213,7 +256,8 @@ class GTD(object):
                         tasks.append(t)
         return tasks
 
-
+# Named constructor to avoid recursive calls to __init__ due to tree elements calling GTD() for signal emission
+# FIXME: freakishly ugly hack, was supposed to be a named constructor of GTD class... not sur ehow python would do that
 def save(tree, filename):
     print "saving tree to %s\n" % filename
     f = open(filename, 'w')
