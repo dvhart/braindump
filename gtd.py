@@ -23,6 +23,11 @@
 import pickle
 from singleton import *
 
+__realm_none = None
+__area_none = None
+__project_none = None
+
+
 class Base(object):
     def __init__(self, title):
         self.title = title
@@ -57,7 +62,7 @@ class Realm(Base):
 
 
 class Area(Base):
-    def __init__(self, title, realm):
+    def __init__(self, title, realm=__realm_none):
         self.projects = []
         Base.__init__(self, title)
         self.realm = realm
@@ -77,7 +82,7 @@ class Area(Base):
 
 
 class Project(Base):
-    def __init__(self, title, notes="", area=None, complete=False):
+    def __init__(self, title, notes="", area=__area_none, complete=False):
         self.tasks = []
         Base.__init__(self, title)
         self.notes = notes
@@ -114,7 +119,7 @@ class NewProject(object):
 
 
 class Task(Base):
-    def __init__(self, title, project=None, contexts=[], notes="", waiting=False, complete=False):
+    def __init__(self, title, project=__project_none, contexts=[], notes="", waiting=False, complete=False):
         Base.__init__(self, title)
         self.project = project
         self.contexts = contexts
@@ -158,8 +163,11 @@ class GTD(object):
     __metaclass__ = Singleton
 
     def __init__(self, filename):
+        __realm_none = Realm("None", True)
+        __area_none = Area("None", self.realm_none)
+        __project_none = Project("None", "", self.area_project)
         self.contexts = []
-        self.realms = []
+        self.realms = [__realm_none]
         self.event_listeners = {
             "realm_visible_changed":[],
             "project_renamed":[],
