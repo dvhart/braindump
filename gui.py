@@ -79,13 +79,6 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
 
     def on_toggled(self, userparam):
         self.realm.set_visible(self.get_active())
-        task_filter_list = GUI().get_widget("task_filter_list")
-        # FIXME: the logic doesn't belong here
-        if GUI().get_widget("taskfilterby").widget.get_active() == 0:
-            task_filter_list.filter_by_context()
-        else:
-            task_filter_list.filter_by_project()
-        GUI().get_widget("area_filter_list").reload()
 
 
 class TaskFilterListView(WidgetWrapper):
@@ -100,7 +93,7 @@ class TaskFilterListView(WidgetWrapper):
         self.tvcolumn0 = gtk.TreeViewColumn()
         self.cell0 = gtk.CellRendererText()
         self.cell0.set_property('editable', True)
-        self.cell0.connect('edited', self.on_filter_edited, self.widget.get_model(), 0)
+        self.cell0.connect('edited', self.on_filter_edited, lambda: self.widget.get_model(), 0)
         self.tvcolumn0.pack_start(self.cell0, False)
         self.tvcolumn0.set_cell_data_func(self.cell0, self.data_func, "data")
         self.widget.append_column(self.tvcolumn0)
@@ -121,10 +114,9 @@ class TaskFilterListView(WidgetWrapper):
         obj = model[iter][0]
         cell.set_property("markup", obj.title)
 
-    # signal callbacks
-    def on_filter_edited(self, cell, path, new_text, model, column):
-        model[path][column].title = new_text
-        # FIXME: notify other widgets interested in this value (ie checkbuttons)
+    # gtk signal callbacks
+    def on_filter_edited(self, cell, path, new_text, model_lambda, column):
+        model_lambda()[path][column].title = new_text
 
     def on_task_filter_all(self, widget):
         self.widget.get_selection().select_all()
@@ -134,6 +126,16 @@ class TaskFilterListView(WidgetWrapper):
         # FIXME: should select (No Context) or (No Project)
         # never allow viewing no tasks at all (will cause problems creating 
         # new tasks as they will just vanish from the view)
+
+    # pynotify signal handlers
+    def on_realm_visible_changed(self, realm):
+        # FIXME: the filter_by should somehow be passed in, this widget should not need to know the
+        # name or API of the taskfilterbywidget
+        print "taskfilterby:", realm.title, " visibility changed to ", realm.visible
+        if GUI().get_widget("taskfilterby").widget.get_active() == 0:
+            self.filter_by_context()
+        else:
+            self.filter_by_project()
 
 
 class TaskListView(WidgetWrapper):
@@ -302,7 +304,6 @@ class AreaFilterListView(WidgetWrapper):
     # signal callbacks
     def on_filter_edited(self, cell, path, new_text, model, column):
         model[path][column].title = new_text
-        # FIXME: notify other widgets interested in this value (ie checkbuttons)
 
     def on_area_filter_all(self, widget):
         self.widget.get_selection().select_all()
@@ -312,6 +313,11 @@ class AreaFilterListView(WidgetWrapper):
         # FIXME: should select (No Context) or (No Project)
         # never allow viewing no tasks at all (will cause problems creating
         # new tasks as they will just vanish from the view)
+
+    # pynotify signal handlers
+    def on_realm_visible_changed(self, realm):
+        # FIXME: we don't actually _need_ a new method, but this is easier to read
+        self.reload()
 
 
 class ProjectListView(WidgetWrapper):
@@ -436,6 +442,7 @@ class ContextCheckButton(gtk.CheckButton):
 
 
 # Class aggregrating GtkTable to list contexts for tasks
+# FIXME: consider making this use a ContextListStore?
 class ContextTable(WidgetWrapper):
     def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
@@ -486,6 +493,19 @@ class ContextTable(WidgetWrapper):
                 self.table.attach(cb, x, x+1, y, y+1)
                 cb.show()
                 i = i + 1
+
+    # pyotify signal Handlers
+    # FIXME: this might be better off at the ContextCeckButton and gtd.Context level,
+    #        for now, this higher level interface simplifies things a bit...
+    def on_context_renamed(self, context):
+        for c, cb in self.context_cbs.iteritems():
+            if cb.context == context:
+                cb.set_label(context.title)
+                break
+    def on_context_added(self, context):
+        print "FIXME: separate context table population from init and implement on_context_added()"
+    def on_context_removed(self, context):
+        print "FIXME: separate context table population from init and implement on_context_removed()"
 
     # checkbox callbacks
     # FIXME: is there a way to set the active property without triggering the signal?
@@ -540,6 +560,9 @@ class ProjectCombo(WidgetWrapper):
         tree = GUI().get_widget("task_list")
         tree.update_current_project(self.get_active())
 
+    def on_project_renamed(self, project):
+        self.widget.queue_draw()
+
 
 # add all areas to the area combo box
 # FIXME: consider area listeners
@@ -585,3 +608,7 @@ class AreaCombo(WidgetWrapper):
         tree = GUI().get_widget("project_list")
         tree.update_current_area(self.get_active())
 
+    # FIXME: I don't _think_ we can do this with the TreeModel signals, since the value
+    # of the row doesn't actually change... still a pointer to the same object
+    def on_area_renamed(self, area):
+        self.widget.queue_draw()

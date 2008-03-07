@@ -37,3 +37,8 @@ weekly reviews.  As such, those tasks can be accomplished without the use of
 dialog boxes, excessive mouse clicks, etc.  I intend to make the app save state
 automatically - so there will be no "Save" or "Save As" symmantics, just an
 "Open" to work with a different data file.
+
+Dependencies
+------------
+python      2.5.1       I developed on 2.5.1, not sure what is actually required
+py-notify   0.1.14      http://home.gna.org/py-notify/

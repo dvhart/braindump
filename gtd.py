@@ -22,6 +22,8 @@
 
 import pickle
 from singleton import *
+from notify.all import *
+from oproperty import *
 
 __realm_none = None
 __area_none = None
@@ -30,12 +32,25 @@ __project_none = None
 
 class Base(object):
     def __init__(self, title):
-        self.title = title
+        self.__title = title
+
+    def set_title(self, title):
+        self.__title = title
+
+    title = OProperty(lambda s: s.__title, set_title)
 
 
 class Context(Base):
     def __init__(self, title):
         Base.__init__(self, title)
+        GTD().sig_context_added(self)
+
+    def set_title(self, title):
+        Base.set_title(self, title)
+        # FIXME: alternatively we could just have a renamed_signal that we assign and call from the base class,
+        # rather than using the special OProperty derived set_title calls... Need to give this some thought, both
+        # have pros/cons, but OProprety seems generally useful...
+        GTD().sig_context_renamed(self)
 
 
 class Realm(Base):
@@ -43,6 +58,12 @@ class Realm(Base):
         self.areas = []
         self.visible = visible
         Base.__init__(self, title)
+
+        GTD().sig_realm_added(self)
+
+    def set_title(self, title):
+        Base.set_title(self, title)
+        GTD().sig_realm_renamed(self)
 
     def get_tasks(self):
         tasks = []
@@ -58,7 +79,7 @@ class Realm(Base):
 
     def set_visible(self, visible):
         self.visible = visible
-        print self.title + " visibility = " + str(visible)
+        GTD().sig_realm_visible_changed(self)
 
 
 class Area(Base):
@@ -67,6 +88,11 @@ class Area(Base):
         Base.__init__(self, title)
         self.realm = realm
         self.realm.add_area(self)
+        GTD().sig_area_added(self)
+
+    def set_title(self, title):
+        Base.set_title(self, title)
+        GTD().sig_area_renamed(self)
 
     def get_tasks(self):
         tasks = []
@@ -85,10 +111,17 @@ class Project(Base):
     def __init__(self, title, notes="", area=__area_none, complete=False):
         self.tasks = []
         Base.__init__(self, title)
-        self.notes = notes
         self.area = area
-        self.area.add_project(self)
+        self.notes = notes
+        if self.area:
+            print "Project area is: ", self.area
+            self.area.add_project(self)
         self.complete = complete
+        GTD().sig_project_added(self)
+
+    def set_title(self, title):
+        Base.set_title(self, title)
+        GTD().sig_project_renamed(self)
 
     def add_task(self, task):
         self.tasks.append(task)
@@ -106,10 +139,9 @@ class NewProject(object):
     def create_new_project(self, title):
         # FIXME: pick an appropriate area from the active filters
         new_project = Project(title)
-        # FIXME: somehow add this to the parent tree...
-        print "create a new project (%s) from the old one!" % new_project.title
 
     title = property(lambda s: s.__title, create_new_project)
+    area = property(lambda s: None)
     tasks = property(lambda s: [])
     project = property(lambda s: None)
     contexts = property(lambda s: [])
@@ -127,9 +159,14 @@ class Task(Base):
         self.waiting = waiting
         self.complete = complete
         # FIXME: how do we connect this to the "NoneProject"
-        if project:
-            print "Task project is: ", project
+        if self.project:
+            print "Task project is: ", self.project
             self.project.add_task(self)
+        GTD().sig_project_added(self)
+
+    def set_title(self, title):
+        Base.set_title(self, title)
+        GTD().sig_task_renamed(self)
 
     def add_context(self, context):
         if self.contexts.count(context) == 0:
@@ -147,8 +184,6 @@ class NewTask(object):
 
     def create_new_task(self, title):
         new_task = Task(title)
-        # FIXME: somehow add this to the parent tree...
-        print "create a new task (%s) from the old one!" % new_task.title
 
     title = property(lambda s: s.__title, create_new_task)
     project = property(lambda s: None)
@@ -168,13 +203,26 @@ class GTD(object):
         __project_none = Project("None", "", self.area_project)
         self.contexts = []
         self.realms = [__realm_none]
-        self.event_listeners = {
-            "realm_visible_changed":[],
-            "project_renamed":[],
-            "project_added":[],
-            "project_removed":[]
-        }
 
+        # PyNotify Signals
+        self.sig_realm_visible_changed = Signal()
+        self.sig_realm_renamed = Signal()
+        self.sig_realm_added = Signal()
+        self.sig_realm_removed = Signal()
+        self.sig_area_renamed = Signal()
+        self.sig_area_added = Signal()
+        self.sig_area_removed = Signal()
+        self.sig_project_renamed = Signal()
+        self.sig_project_added = Signal()
+        self.sig_project_removed = Signal()
+        self.sig_task_renamed = Signal()
+        self.sig_task_added = Signal()
+        self.sig_task_removed = Signal()
+        self.sig_context_renamed = Signal()
+        self.sig_context_added = Signal()
+        self.sig_context_removed = Signal()
+
+    def load_test_data(self):
         # load test data
         self.contexts = [
             Context("Evening"),
@@ -200,26 +248,6 @@ class GTD(object):
                     if t.contexts.count(context):
                         tasks.append(t)
         return tasks
-
-    def notify(self, event):
-        for listener in self.event_listeners[event]:
-            if event == "realm_visible_changed":
-                listener.event()
-
-
-# TreeListener Interface
-# FIXME: throw an exception rather than pass
-class TreeListener(object):
-    def __init__(self):
-        pass
-    def on_realm_visible_changed(self, realm):
-        pass
-    def on_project_renamed(self, project):
-        pass
-    def on_project_added(self, project):
-        pass
-    def on_project_remove(self, project):
-        pass
 
 
 def save(tree, filename):

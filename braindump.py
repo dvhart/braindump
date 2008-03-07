@@ -26,6 +26,61 @@ from gui import *
 from gui_datastores import *
 import gnome
 import gtd
+from gtd import GTD
+
+class GTDSignalTest:
+    def __init__(self):
+        self.title = "GTDSignalTest" # FIXME: I'm sure Python can print the class of an instance...
+        GTD().sig_realm_visible_changed.connect(self.on_realm_visible_changed)
+        GTD().sig_realm_renamed.connect(self.on_realm_renamed)
+        GTD().sig_realm_added.connect(self.on_realm_added)
+        GTD().sig_realm_removed.connect(self.on_realm_removed)
+        GTD().sig_area_renamed.connect(self.on_area_renamed)
+        GTD().sig_area_added.connect(self.on_area_added)
+        GTD().sig_area_removed.connect(self.on_area_removed)
+        GTD().sig_project_renamed.connect(self.on_project_renamed)
+        GTD().sig_project_added.connect(self.on_project_added)
+        GTD().sig_project_removed.connect(self.on_project_removed)
+        GTD().sig_task_renamed.connect(self.on_task_renamed)
+        GTD().sig_task_added.connect(self.on_task_added)
+        GTD().sig_task_removed.connect(self.on_task_removed)
+        GTD().sig_context_renamed.connect(self.on_context_renamed)
+        GTD().sig_context_added.connect(self.on_context_added)
+        GTD().sig_context_removed.connect(self.on_context_removed)
+
+    def on_realm_visible_changed(self, realm):
+        print self.title, "on_realm_visible_changed:", realm.title, ".visible =", realm.visible
+    def on_realm_renamed(self, realm):
+        print self.title, "realm_renamed:", realm.title
+    def on_realm_added(self, realm):
+        print self.title, "realm_added:", realm.title
+    def on_realm_removed(self, realm):
+        print self.title, "realm_removed:", realm.title
+    def on_area_renamed(self, area):
+        print self.title, "area_renamed:", area.title
+    def on_area_added(self, area):
+        print self.title, "area_added:", area.title
+    def on_area_removed(self, area):
+        print self.title, "area_removed:", area.title
+    def on_project_renamed(self, project):
+        print self.title, "project_renamed:", project.title
+    def on_project_added(self, project):
+        print self.title, "project_added:", project.title
+    def on_project_removed(self, project):
+        print self.title, "project_removed:", project.title
+    def on_task_renamed(self, task):
+        print self.title, "task_renamed:", task.title
+    def on_task_added(self, task):
+        print self.title, "task_added:", task.title
+    def on_task_removed(self, task):
+        print self.title, "task_removed:", task.title
+    def on_context_renamed(self, context):
+        print self.title, "context_renamed:", context.title
+    def on_context_added(self, context):
+        print self.title, "context_added:", context.title
+    def on_context_removed(self, context):
+        print self.title, "context_removed:", context.title
+
 
 # GUI Classses and callbacks
 class BrainDump:
@@ -36,42 +91,49 @@ class BrainDump:
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
         self.filename = None
+        GTD(self.filename)
+        if self.filename == None:
+            GTD().load_test_data()
+        self.gst = GTDSignalTest() # DELETEME.... later :)
 
-        if self.filename:
-            self.gtd_tree = gtd.load(self.filename)
-        else:
-            self.gtd_tree = gtd.Tree()
-            gtd.save(self.gtd_tree, "test.gtd")
+        # FIXME: figure out how to do this with a singleton
+        #if self.filename:
+        #    self.gtd_tree = gtd.load(self.filename)
+        #else:
+        #    self.gtd_tree = gtd.Tree()
+        #    gtd.save(self.gtd_tree, "test.gtd")
 
         BrainDumpWindow(GUI().get_widget("braindump_window").widget)
 
         # task tab widgets
-        TaskListView(GUI().get_widget("task_list").widget, self.gtd_tree)
-        TaskFilterListView(GUI().get_widget("task_filter_list").widget, self.gtd_tree)
+        TaskListView(GUI().get_widget("task_list").widget)
+
+        task_filter_list = TaskFilterListView(GUI().get_widget("task_filter_list").widget)
+        GTD().sig_realm_visible_changed.connect(task_filter_list.on_realm_visible_changed)
+
         TaskFilterBy(GUI().get_widget("taskfilterby").widget)
-        ContextTable(GUI().get_widget("task_contexts_table").widget, self.gtd_tree)
+
+        context_table = ContextTable(GUI().get_widget("task_contexts_table").widget)
+        GTD().sig_context_renamed.connect(context_table.on_context_renamed)
+        GTD().sig_context_added.connect(context_table.on_context_added)
+        GTD().sig_context_removed.connect(context_table.on_context_removed)
+
         # FIXME: use an app wide ProjectTreeModel
-        ProjectCombo(GUI().get_widget("task_project").widget, ProjectListStore(self.gtd_tree))
+        project_combo = ProjectCombo(GUI().get_widget("task_project").widget, ProjectListStore())
+        GTD().sig_project_renamed.connect(project_combo.on_project_renamed)
 
         # project tab widgets
-        ProjectListView(GUI().get_widget("project_list").widget, self.gtd_tree)
-        AreaFilterListView(GUI().get_widget("area_filter_list").widget, self.gtd_tree)
+        ProjectListView(GUI().get_widget("project_list").widget)
+        area_filter_list = AreaFilterListView(GUI().get_widget("area_filter_list").widget)
+        GTD().sig_realm_visible_changed.connect(area_filter_list.on_realm_visible_changed)
         # FIXME: use an app wide ProjectTreeModel
-        AreaCombo(GUI().get_widget("project_area").widget, AreaListStore(self.gtd_tree))
-
-        # add all areas to the project combo box
-        # FIXME: consider area listeners
-#        project_area = GUI().get_widget("project_area").widget
-#        for r in self.gtd_tree.realms:
-#            if r.visible:
-#                for a in r.areas:
-#                    project_area.append_text(a.title)
-#        project_area.set_active(0)
+        area_combo = AreaCombo(GUI().get_widget("project_area").widget, AreaListStore())
+        GTD().sig_area_renamed.connect(area_combo.on_area_renamed)
 
         # add the realm toggle buttons
         # FIXME: custom toolbar? as a realm listener?
         realm_toggles = GUI().get_widget("realm_toggles").widget
-        for realm in self.gtd_tree.realms:
+        for realm in GTD().realms:
             rtb = RealmToggleToolButton(realm)
             realm_toggles.insert(rtb, -1)
             rtb.show()
