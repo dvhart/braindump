@@ -130,26 +130,6 @@ class Project(Base):
         self.tasks.remove(task)
 
 
-# Placeholder class for "Click to create new project..." type items in lists
-# Perhaps this is better placed in the gui code, rather than here...
-class NewProject(object):
-    def __init__(self, title_str):
-        self.__title = title_str
-
-    def create_new_project(self, title):
-        # FIXME: pick an appropriate area from the active filters
-        new_project = Project(title)
-
-    title = property(lambda s: s.__title, create_new_project)
-    area = property(lambda s: None)
-    tasks = property(lambda s: [])
-    project = property(lambda s: None)
-    contexts = property(lambda s: [])
-    notes = property(lambda s: "")
-    waiting = property(lambda s: False)
-    complete = property(lambda s: False)
-
-
 class Task(Base):
     def __init__(self, title, project=__project_none, contexts=[], notes="", waiting=False, complete=False):
         Base.__init__(self, title)
@@ -175,22 +155,6 @@ class Task(Base):
     def remove_context(self, context):
         if self.contexts.count(context):
             self.contexts.remove(context)
-
-# Placeholder class for "Click to create new task..." type items in lists
-# Perhaps this is better placed in the gui code, rather than here...
-class NewTask(object):
-    def __init__(self, title_str):
-        self.__title = title_str
-
-    def create_new_task(self, title):
-        new_task = Task(title)
-
-    title = property(lambda s: s.__title, create_new_task)
-    project = property(lambda s: None)
-    contexts = property(lambda s: [])
-    notes = property(lambda s: "")
-    waiting = property(lambda s: False)
-    complete = property(lambda s: False)
 
 
 # The top-level GTD tree

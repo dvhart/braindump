@@ -82,10 +82,10 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
 
 
 class TaskFilterListView(WidgetWrapper):
-    def __init__(self, widget):
+    def __init__(self, widget, context_store, project_store):
         WidgetWrapper.__init__(self, widget)
-        self.context_store = ContextListStore()
-        self.project_store = ProjectListStore()
+        self.context_store = context_store
+        self.project_store = project_store
         # FIXME: which model should we do first?
         self.widget.set_model(self.context_store)
 
@@ -108,11 +108,15 @@ class TaskFilterListView(WidgetWrapper):
         self.widget.set_model(self.context_store)
 
     def filter_by_project(self):
+        print "project store is a: ", self.project_store.__class__
         self.widget.set_model(self.project_store)
 
     def data_func(self, column, cell, model, iter, data):
-        obj = model[iter][0]
-        cell.set_property("markup", obj.title)
+        task = model[iter][0]
+        if isinstance(task, gtd.Base):
+            cell.set_property("markup", task.title)
+        else:
+            cell.set_property("markup", task)
 
     # gtk signal callbacks
     def on_filter_edited(self, cell, path, new_text, model_lambda, column):
@@ -172,7 +176,7 @@ class TaskListView(WidgetWrapper):
     def task_data_func(self, column, cell, model, iter, data):
         task = model[iter][0]
         if data is "complete":
-            if isinstance(task, gtd.NewTask):
+            if isinstance(task, NewTask):
                 cell.set_property("inconsistent", True)
             else:
                 cell.set_property("active", task.complete)
@@ -194,7 +198,7 @@ class TaskListView(WidgetWrapper):
 
     def update_current_context(self, context, active):
         task = self.get_current_task()
-        # don't try this on None or gtd.NewTask objects
+        # don't try this on None or NewTask objects
         if isinstance(task, gtd.Task):
             update_tree = False
             model = self.widget.get_model()
@@ -211,10 +215,10 @@ class TaskListView(WidgetWrapper):
 
     def update_current_project(self, project):
         task = self.get_current_task()
-        # don't try this on None or gtd.NewTask objects
+        # don't try this on None or NewTask objects
         if isinstance(task, gtd.Task):
             if task.project is not project:
-                print "update_current_project: ", project.title
+                print "update_current_project: "#FIXME: doesn't work with none, project.title
                 # FIXME: this should be in one place... probably task- or tree- centric?
                 task.project.remove_task(task)
                 task.project = project
@@ -231,7 +235,7 @@ class TaskListView(WidgetWrapper):
         path = tree.get_cursor()[0]
         task = tree.get_model()[path][0]
         if task:
-            if isinstance(task, gtd.NewTask):
+            if isinstance(task, NewTask):
                 GUI().get_widget("task_form_vbox").widget.set_sensitive(False)
             else:
                 GUI().get_widget("task_form_vbox").widget.set_sensitive(True)
@@ -244,7 +248,7 @@ class TaskListView(WidgetWrapper):
     def toggled(self, cell, path, model, column):
         complete = model[path][column]
         task = model[path][0]
-        # don't try and set the complete field on a gtd.NewTask
+        # don't try and set the complete field on a NewTask
         if isinstance(task, gtd.Task):
             task.complete = not task.complete
 
@@ -274,9 +278,9 @@ class TaskFilterBy(WidgetWrapper):
 
 
 class AreaFilterListView(WidgetWrapper):
-    def __init__(self, widget):
+    def __init__(self, widget, area_store):
         WidgetWrapper.__init__(self, widget)
-        self.widget.set_model(AreaListStore())
+        self.widget.set_model(area_store)
 
         # setup the column and cell renderer
         self.tvcolumn0 = gtk.TreeViewColumn()
@@ -292,10 +296,9 @@ class AreaFilterListView(WidgetWrapper):
         self.widget.set_rubber_banding(True)
         # FIXME: this connection should be made in the application
         self.widget.get_selection().connect("changed", GUI().get_widget("project_list").on_filter_selection_changed)
-        self.reload()
 
-    def reload(self):
-        self.widget.get_model().reload()
+#    def reload(self):
+#        self.widget.get_model().reload()
 
     def data_func(self, column, cell, model, iter, data):
         obj = model[iter][0]
@@ -316,14 +319,16 @@ class AreaFilterListView(WidgetWrapper):
 
     # pynotify signal handlers
     def on_realm_visible_changed(self, realm):
+        pass
         # FIXME: we don't actually _need_ a new method, but this is easier to read
-        self.reload()
+#        self.reload()
 
 
 class ProjectListView(WidgetWrapper):
-    def __init__(self, widget):
+    def __init__(self, widget, project_store):
         WidgetWrapper.__init__(self, widget)
-        self.widget.set_model(ProjectListStore(True))
+        self.widget.set_model(project_store)
+        self.project_store = project_store
 
         # create the TreeViewColumns to display the data
         self.tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -367,10 +372,10 @@ class ProjectListView(WidgetWrapper):
 
     def update_current_area(self, area):
         project = self.get_current_project()
-        # don't try this on None or gtd.NewTask objects
+        # don't try this on None or NewTask objects
         if isinstance(project, gtd.Project):
             if project.area is not area:
-                print "update_current_area: ", area.title
+                print "update_current_area: "#FIXME:doesn't work with None, area.title
                 # FIXME: this should be in one place... probably project- or tree- centric?
                 project.area.remove_project(project)
                 project.area = area
@@ -381,42 +386,45 @@ class ProjectListView(WidgetWrapper):
     def project_data_func(self, column, cell, model, iter, data):
         project = model[iter][0]
         if data is "complete":
-            if isinstance(project, gtd.NewProject):
-                cell.set_property("inconsistent", True)
-            else:
+            if isinstance(project, gtd.Project):
                 cell.set_property("active", project.complete)
                 cell.set_property("inconsistent", False)
-        elif data is "title":
-            cell.set_property("markup", project.title)
-        elif data is "tasks":
-            if isinstance(project, gtd.NewProject):
-                cell.set_property("markup", "")
             else:
+                cell.set_property("inconsistent", True)
+        elif data is "title":
+            if isinstance(project, gtd.Project): # FIXME: minimize isinstance() calls (use a ActionItem base class or something)
+                cell.set_property("markup", project.title)
+            else:
+                cell.set_property("markup", project)
+        elif data is "tasks":
+            if isinstance(project, gtd.Project):
                 cell.set_property("markup", len(project.tasks))
+            else:
+                cell.set_property("markup", "")
         else:
             # FIXME: throw an exception
             print "ERROR: didn't set %s property for "%data, obj.title
 
     def on_filter_selection_changed(self, selection):
-        self.widget.get_model().filter_by_selection(selection)
+        self.widget.set_model(self.project_store.filter_by_area(selection, True))
 
     # signal callbacks
     def on_project_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
         project = tree.get_model()[path][0]
-        if project:
-            if isinstance(project, gtd.NewProject):
-                GUI().get_widget("project_form_vbox").widget.set_sensitive(False)
-            else:
-                GUI().get_widget("project_form_vbox").widget.set_sensitive(True)
+        if isinstance(project, gtd.Project):
+            GUI().get_widget("project_form_vbox").widget.set_sensitive(True)
             project_notes = GUI().get_widget("project_notes").widget
             project_notes.get_buffer().set_text(project.notes)
             GUI().get_widget("project_area").set_active(project.area)
+        else:
+            GUI().get_widget("project_form_vbox").widget.set_sensitive(False)
+            GUI().get_widget("project_area").set_active(None)
 
     def toggled(self, cell, path, model, column):
         complete = model[path][column]
         project = model[path][0]
-        # don't try and set the complete field on a gtd.NewTask
+        # don't try and set the complete field on a NewTask
         if isinstance(project, gtd.Project):
             project.complete = not project.complete
 
@@ -548,15 +556,42 @@ class ProjectCombo(WidgetWrapper):
             cell.set_property("text", "Null Project?")
             
     def get_active(self):
-        return self.widget.get_model()[self.widget.get_active()][0]
+        iter = self.widget.get_active_iter()
+        if iter:
+            return self.widget.get_model()[iter][0]
+        else:
+            return None # FIXME: None? class NoneProject ?
 
+    # FIXME: this is hideous
     def set_active(self, project):
-        return self.widget.set_active_iter(self.widget.get_model().project_iter(project))
+        if isinstance(project, gtd.Project):
+            iter = self.project_iter(project)
+            if iter:
+                return self.widget.set_active_iter(self.project_iter(project))
+            else:
+                return self.widget.set_active(-1)
+        else:
+            return self.widget.set_active(-1)
+
+    # return the iter, or None, corresponding to "project"
+    # consider a more consistent function name (with gtk names)
+    # like get_iter_from_project
+    # FIXME: If we use generic stores, then we either have to
+    # to do this method here, or we store the wrapped class for reference...
+    # the latter might be preferable
+    def project_iter(self, project):
+        model = self.widget.get_model()
+        iter = model.get_iter_first()
+        while iter:
+            if model.get_value(iter, 0) == project:
+                return iter
+            iter = model.iter_next(iter)
+        return None
 
     # FIXME: this should just emit a signal, slots should defined in other objects, and
     # connected in the main application code.
     def on_task_project_changed(self, widget):
-        print "task_project_changed: ", self.get_active().title
+        print "task_project_changed: "#FIXME:doesn't work with None, self.get_active().title
         tree = GUI().get_widget("task_list")
         tree.update_current_project(self.get_active())
 
@@ -596,15 +631,34 @@ class AreaCombo(WidgetWrapper):
             cell.set_property("text", "Null Area?")
 
     def get_active(self):
-        return self.widget.get_model()[self.widget.get_active()][0]
+        iter = self.widget.get_active_iter()
+        if iter:
+            return self.widget.get_model()[iter][0]
+        else:
+            return None
 
     def set_active(self, area):
-        return self.widget.set_active_iter(self.widget.get_model().area_iter(area))
+        if isinstance(area, gtd.Area):
+            return self.widget.set_active_iter(self.area_iter(area))
+        else:
+            return self.widget.set_active(-1)
+
+    # return the iter, or None, corresponding to "area"
+    # consider a more consistent function name (with gtk names)
+    # like get_iter_from_area
+    def area_iter(self, area):
+        model = self.widget.get_model()
+        iter = model.get_iter_first()
+        while iter:
+            if model.get_value(iter, 0) == area:
+                return iter
+            iter = model.iter_next(iter)
+        return None
 
     # FIXME: this should just emit a signal, slots should defined in other objects, and
     # connected in the main application code.
     def on_project_area_changed(self, widget):
-        print "project_area_changed: ", self.get_active().title
+        print "project_area_changed: "#FIXME:doesn't work with None, self.get_active().title
         tree = GUI().get_widget("project_list")
         tree.update_current_area(self.get_active())
 

@@ -22,26 +22,87 @@
 
 import gobject
 import gtd
+from gtd import GTD
 import gtk, gtk.glade
+import gui
+from gtd_action_rows import *
+
+#FIXME: not sure what to do with these yet...
+class NoneProject(object):
+    def __init__(self, title_str):
+        self.__title = title_str
+
+    title = property(lambda s: s.__title)
+    area = property(lambda s: None)
+    tasks = property(lambda s: [])
+    project = property(lambda s: None)
+    contexts = property(lambda s: [])
+    notes = property(lambda s: "")
+    waiting = property(lambda s: False)
+    complete = property(lambda s: False)
+
+class NoneTask(object):
+    def __init__(self, title_str):
+        self.__title = title_str
+
+    title = property(lambda s: s.__title)
+    project = property(lambda s: None)
+    contexts = property(lambda s: [])
+    notes = property(lambda s: "")
+    waiting = property(lambda s: False)
+    complete = property(lambda s: False)
 
 
-# Context gtd datastore and tree listener, should be a good start towards
-# separated application logic from the widgets...
+class GTDStoreFilter(gobject.GObject):
+    def __init__(self):
+        self.model = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        self.filters = []
+
+    def filter_new(self):
+        filter = self.model.filter_new()
+        self.filters.append(filter)
+        return filter
+
+    # force all derivative filters to refresh
+    def refilter(self, data):
+        for f in self.filters:
+            f.refilter()
+
+
+class GTDStoreRealmFilter(GTDStoreFilter):
+    def __init__(self):
+        GTDStoreFilter.__init__(self)
+
+    def filter_by_realm(self, show_actions):
+        filter = self.filter_new()
+        filter.set_visible_func(self.filter_by_realm_visible, show_actions)
+        return filter
+
+    def filter_by_realm_visible(self, realm):
+        print "ERROR: this is an abstract base class" # FIXME: how do I really make it an ABC ?
+        return False
+        
+
+# Context gtd datastore
 # FIXME: add a NewContext like Project and Task stores
-class ContextListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree):
-        gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
-        self.reload()
+class ContextStore(GTDStoreFilter):
+    def __init__(self):
+        GTDStoreFilter.__init__(self)
+        self.model.append([NewContext("<i>Create new context...</i>")]) # FIXME: ActionRow classes maybe?
+        for c in GTD().contexts:
+            self.model.append([c])
+    
+    def filter_actions(self, show_actions):
+        filter = self.filter_new()
+        filter.set_visible_func(self.filter_actions_visible, show_actions)
+        return filter
+        
+    def filter_actions_visible(self, model, iter, data):
+        return isinstance(model[iter][0], gtd.Context)
 
-    def reload(self):
-        self.clear()
-        for c in self.gtd_tree.contexts:
-            self.append([c])
-
-    # gtd.TreeListener interface
+    # FIXME: update the store in response to these signals
     def on_context_renamed(self, context):
-        print context.title, " renamed"
+        print "context ", context.title, " renamed"
 
     def on_context_added(self, context):
         print "context ", context.title, " added"
@@ -50,39 +111,27 @@ class ContextListStore(gtk.ListStore, gtd.TreeListener):
         print "context ", context.title, " removed"
 
 
-# Area gtd datastore and tree listener, should be a good start towards
-# separated application logic from the widgets...
-class AreaListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree):
-        # FIXME: use super() properly here
-        gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
-        self.reload()
+# Area gtd datastore
+class AreaStore(GTDStoreRealmFilter):
+    def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
+        GTDStoreRealmFilter.__init__(self)
+        self.model.append([NewArea("<i>Create new area...</i>")]) # FIXME: ActionRow classes maybe?
+        for r in GTD().realms:
+            for a in r.areas:
+                self.model.append([a])
 
-    def reload(self):
-        self.clear()
-        for r in self.gtd_tree.realms:
-            if r.visible:
-                for a in r.areas:
-                    self.append([a])
+    # Filter visibility methods
+    def filter_by_realm_visible(self, model, iter, data):
+        show_actions = data
+        area = model[iter][0]
+        if not isinstance(area, NewArea):
+            return area.realm.visible
+        else:
+            return show_actions
 
-    # return the iter, or None, corresponding to "area"
-    # consider a more consistent function name (with gtk names)
-    # like get_iter_from_area
-    def area_iter(self, area):
-        iter = self.get_iter_first()
-        while iter:
-            if self.get_value(iter, 0) == area:
-                return iter
-            iter = self.iter_next(iter)
-        return None
-
-    # gtd.TreeListener interface
-    def on_realm_visible_changed(self, realm):
-        print realm.title, " visibility: ", realm.visible
-
+    # FIXME: update the store in response to these signals
     def on_area_renamed(self, area):
-        print area.title, " renamed"
+        print "area ", area.title, " renamed"
 
     def on_area_added(self, area):
         print "area ", area.title, " added"
@@ -91,60 +140,45 @@ class AreaListStore(gtk.ListStore, gtd.TreeListener):
         print "area ", area.title, " removed"
 
 
-# Project gtd datastore and tree listener, should be a good start towards
-# separated application logic from the widgets...
-class ProjectListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree, new_project=False):
-        # FIXME: use super() properly here
-        gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
-        if new_project:
-            self.new_project = gtd.NewProject("<i>Create new project...</i>")
-            self.append([self.new_project])
+# Project gtd datastore
+class ProjectStore(GTDStoreRealmFilter):
+    def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
+        GTDStoreRealmFilter.__init__(self)
+        self.model.append([NewProject("<i>Create new project...</i>")]) # FIXME: ActionRow classes maybe?
+        for r in GTD().realms:
+            for a in r.areas:
+                for p in a.projects:
+                    self.model.append([p])
+
+    def filter_by_area(self, selection, show_actions):
+        filter = self.model.filter_new()
+        filter.set_visible_func(self.filter_by_area_visible, [selection, show_actions])
+        return filter
+
+    # Filter visibility methods
+    def filter_by_realm_visible(self, model, iter, data):
+        show_actions = data
+        project = model[iter][0]
+        if not isinstance(project, NewProject):
+            return project.area.realm.visible
         else:
-            self.new_project = None
-        self.reload()
+            return show_actions
 
-    def clear(self):
-        gtk.ListStore.clear(self)
-        if self.new_project:
-            self.append([self.new_project])
-
-    # FIXME: why do we have a reload() and TaskListStore doesn't?
-    # (I know why... but seems inconsistent)
-    def reload(self):
-        self.clear()
-        for r in self.gtd_tree.realms:
-            if r.visible:
-                for a in r.areas:
-                    for p in a.projects:
-                        self.append([p])
-
-    # return the iter, or None, corresponding to "project"
-    # consider a more consistent function name (with gtk names)
-    # like get_iter_from_project
-    def project_iter(self, project):
-        iter = self.get_iter_first()
-        while iter:
-            if self.get_value(iter, 0) == project:
-                return iter
-            iter = self.iter_next(iter)
-        return None
-
-    def filter_by_selection(self, selection):
-        self.clear()
+    def filter_by_area_visible(self, model, iter, data):
+        selection, show_actions = data
         selmodel, paths = selection.get_selected_rows()
-        for path in paths:
-            area = selmodel[path][0]
-            for p in area.projects:
-                self.append([p])
+        value = model[iter][0]
+        if isinstance(value, gtd.Area):
+            for path in paths:
+                if value.area is selmodel[path][0]:
+                    return True
+            return False
+        else:
+            return show_actions
 
-    # gtd.TreeListener interface
-    def on_realm_visible_changed(self, realm):
-        print realm.title, " visibility: ", realm.visible
-
+    # FIXME: update the store in response to these signals
     def on_project_renamed(self, project):
-        print project.title, " renamed"
+        print "project ", project.title, " renamed"
 
     def on_project_added(self, project):
         print "project ", project.title, " added"
@@ -153,12 +187,11 @@ class ProjectListStore(gtk.ListStore, gtd.TreeListener):
         print "project ", project.title, " removed"
 
 
-class TaskListStore(gtk.ListStore, gtd.TreeListener):
-    def __init__(self, gtd_tree):
+class TaskListStore(gtk.ListStore):
+    def __init__(self):
         # FIXME: use super() properly here
         gtk.ListStore.__init__(self, gobject.TYPE_PYOBJECT)
-        self.gtd_tree = gtd_tree
-        self.new_task = gtd.NewTask("<i>Create new task...</i>")
+        self.new_task = NewTask("<i>Create new task...</i>")
 
     def clear(self):
         gtk.ListStore.clear(self)
@@ -173,7 +206,7 @@ class TaskListStore(gtk.ListStore, gtd.TreeListener):
             obj = selmodel[p][0]
             if isinstance(obj, gtd.Context):
                 # FIXME: obj.get_tasks() (or map the property tasks to a method?)
-                for t in self.gtd_tree.context_tasks(obj):
+                for t in GTD().context_tasks(obj):
                     if not t in set(tasks):
                         tasks.append(t)
                         self.append([t])
