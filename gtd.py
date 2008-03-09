@@ -188,7 +188,7 @@ class Task(Base):
         if self.project:
             print "Task project is: ", self.project
             self.project.add_task(self)
-        GTD().sig_project_added(self)
+        GTD().sig_task_added(self)
 
     def set_title(self, title):
         Base.set_title(self, title)

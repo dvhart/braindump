@@ -28,8 +28,8 @@ class NewContext(Context):
 
     # When our title is changed by the user, we just create a new context and emit the signal
     def set_title(self, title):
-        context = Context(title)
-        GTD().sig_context_added(context)
+        if not title == self.title:
+            context = Context(title)
 
 
 class NewRealm(Realm):
@@ -37,8 +37,8 @@ class NewRealm(Realm):
         Realm.__init__(self, title, False)
 
     def set_title(self, title):
-        realm = Realm(title)
-        GTD().sig_realm_added(realm)
+        if not title == self.title:
+            realm = Realm(title)
 
     def add_area(self, area):
         print "Oops, trying to add area to a", self.__class__
@@ -52,8 +52,8 @@ class NewArea(Area):
         Area.__init__(self, title) # FIXME: hrm... should realm be None... or a special "VisibleRealm" ?
 
     def set_title(self, title):
-        area = Area(title)
-        GTD().sig_area_added(area)
+        if not title == self.title:
+            area = Area(title)
 
     def add_project(self, project):
         print "Oops, trying to add project to a", self.__class__
@@ -64,8 +64,8 @@ class NewProject(Project):
         Project.__init__(self, title)
 
     def set_title(self, title):
-        project = Project(title)
-        GTD().sig_project_added(project)
+        if not title == self.title:
+            project = Project(title)
 
     def add_task(self, task):
         print "Oops, trying to add task to a", self.__class__
@@ -79,8 +79,8 @@ class NewTask(Task):
         Task.__init__(self, title)
 
     def set_title(self, title):
-        task = Task(title)
-        GTD().sig_task_added(task)
+        if not title == self.title:
+            task = Task(title)
 
     def add_context(self, context):
         print "Oops, trying to add context to a", self.__class__

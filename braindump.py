@@ -96,16 +96,23 @@ class BrainDump:
             GTD().load_test_data()
         self.gst = GTDSignalTest() # DELETEME.... later :)
         
+         # Instantiate the various GUI datastores and filters from the GTD() singleton tree
         self.realm_store = RealmStore()
         self.realm_store_action = self.realm_store.filter_actions(True)
         self.realm_store_filter_no_action = self.realm_store.filter_actions(False)
+
         self.area_store = AreaStore()
+        self.area_store_filter_by_realm = self.area_store.filter_by_realm(True)
         self.area_store_filter_by_realm_no_action = self.area_store.filter_by_realm(False)
+
         self.project_store = ProjectStore()
         self.project_store_filter_by_realm = self.project_store.filter_by_realm(True)
         self.project_store_filter_by_realm_no_action = self.project_store.filter_by_realm(False)
+
         self.task_store = TaskStore()
+
         self.context_store = ContextStore()
+        self.context_store_action = self.context_store.filter_actions(True)
         self.context_store_filter_no_action = self.context_store.filter_actions(False)
 
         # Connect Signals
@@ -133,21 +140,18 @@ class BrainDump:
         GTD().sig_context_added.connect(self.context_store.on_context_added)
         GTD().sig_context_removed.connect(self.context_store.on_context_removed)
 
-        # FIXME: figure out how to do this with a singleton
-        #if self.filename:
-        #    self.gtd_tree = gtd.load(self.filename)
-        #else:
-        #    self.gtd_tree = gtd.Tree()
-        #    gtd.save(self.gtd_tree, "test.gtd")
 
+        # Build the GUI and connect the signals
         BrainDumpWindow(GUI().get_widget("braindump_window").widget)
 
-        # task tab widgets
+        # Task Tab
         TaskFilterBy(GUI().get_widget("taskfilterby").widget)
         task_filter_list = TaskFilterListView(GUI().get_widget("task_filter_list").widget,
-                                              self.context_store_filter_no_action, self.project_store_filter_by_realm_no_action)
+                                              self.context_store_action,
+                                              self.project_store_filter_by_realm_no_action)
 
-        self.task_store_filter_by_selection = self.task_store.filter_by_selection(task_filter_list.widget.get_selection(), True)
+        self.task_store_filter_by_selection = \
+            self.task_store.filter_by_selection(task_filter_list.widget.get_selection(), True)
         TaskListView(GUI().get_widget("task_list").widget, self.task_store_filter_by_selection)
         task_filter_list.widget.get_selection().connect("changed", self.task_store.refilter)
 
@@ -156,18 +160,20 @@ class BrainDump:
         GTD().sig_context_added.connect(context_table.on_context_added)
         GTD().sig_context_removed.connect(context_table.on_context_removed)
 
-        project_combo = ProjectCombo(GUI().get_widget("task_project").widget, self.project_store_filter_by_realm_no_action)
+        project_combo = ProjectCombo(GUI().get_widget("task_project").widget,
+                                     self.project_store_filter_by_realm_no_action)
         GTD().sig_project_renamed.connect(project_combo.on_project_renamed)
 
-        # project tab widgets
-        area_filter_list = AreaFilterListView(GUI().get_widget("area_filter_list").widget, self.area_store_filter_by_realm_no_action)
+        # Project Tab
+        area_filter_list = AreaFilterListView(GUI().get_widget("area_filter_list").widget,
+                                              self.area_store_filter_by_realm)
         area_filter_list.widget.get_selection().connect("changed", self.project_store.refilter)
-        self.project_store_filter_by_area = self.project_store.filter_by_area(area_filter_list.widget.get_selection(), True)
+        self.project_store_filter_by_area = \
+            self.project_store.filter_by_area(area_filter_list.widget.get_selection(), True)
         ProjectListView(GUI().get_widget("project_list").widget, self.project_store_filter_by_area)
-        GTD().sig_realm_visible_changed.connect(area_filter_list.on_realm_visible_changed)
 
-        area_combo = AreaCombo(GUI().get_widget("project_area").widget, self.area_store_filter_by_realm_no_action)
-        GTD().sig_area_renamed.connect(area_combo.on_area_renamed) # FIXME: should be able to drive with just updates to the parent store?
+        area_combo = AreaCombo(GUI().get_widget("project_area").widget,
+                               self.area_store_filter_by_realm_no_action)
 
         # add the realm toggle buttons
         realm_toggles = RealmToggles(GUI().get_widget("realm_toggles").widget,

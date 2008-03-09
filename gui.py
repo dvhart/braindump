@@ -114,14 +114,14 @@ class RealmToggles(WidgetWrapper):
         # FIXME: need to reload the TBs.... recreate them?
 
     # Implement ListStore signal handlers
-    def on_row_changed(self, model, path, iter, data):
+    def on_row_changed(self, model, path, iter):
         print "RealmToggles: on_row_changed"
 
-    def on_row_deleted(self, model, path, data):
+    def on_row_deleted(self, model, path):
         print "RealmToggles: on_row_deleted"
         # FIXME: need to reload the TBs.... recreate them?
 
-    def on_row_inserted(self, model, path, iter, data):
+    def on_row_inserted(self, model, path, iter):
         print "RealmToggles: on_row_inserted"
 
 
@@ -155,10 +155,10 @@ class TaskFilterListView(WidgetWrapper):
 
     def data_func(self, column, cell, model, iter, data):
         task = model[iter][0]
-        if isinstance(task, gtd.Base):
-            cell.set_property("markup", task.title)
-        else:
-            cell.set_property("markup", task)
+        title = task.title
+        if isinstance(task, NewContext) or isinstance(task, NewProject):
+            title = "<i>"+title+"</i>"
+        cell.set_property("markup", title)
 
     # gtk signal callbacks
     def on_filter_edited(self, cell, path, new_text, model_lambda, column):
@@ -224,7 +224,10 @@ class TaskListView(WidgetWrapper):
                 cell.set_property("active", task.complete)
                 cell.set_property("inconsistent", False)
         elif data is "title":
-                cell.set_property("markup", task.title)
+            title = task.title
+            if isinstance(task, NewTask):
+                title = "<i>"+title+"</i>"
+            cell.set_property("markup", title)
         else:
             # FIXME: throw an exception
             print "ERROR: didn't set %s property for "%data, obj.title
@@ -334,8 +337,11 @@ class AreaFilterListView(WidgetWrapper):
         self.widget.set_rubber_banding(True)
 
     def data_func(self, column, cell, model, iter, data):
-        obj = model[iter][0]
-        cell.set_property("markup", obj.title)
+        area = model[iter][0]
+        title = area.title
+        if isinstance(area, NewArea):
+            title = "<i>"+title+"</i>"
+        cell.set_property("markup", title)
 
     # signal callbacks
     def on_filter_edited(self, cell, path, new_text, model, column):
@@ -424,10 +430,10 @@ class ProjectListView(WidgetWrapper):
             else:
                 cell.set_property("inconsistent", True)
         elif data is "title":
-            if isinstance(project, gtd.Project): # FIXME: minimize isinstance() calls (use a ActionItem base class or something)
-                cell.set_property("markup", project.title)
-            else:
-                cell.set_property("markup", project)
+            title = project.title
+            if isinstance(project, NewProject):
+                title = "<i>"+title+"</i>"
+            cell.set_property("markup", title)
         elif data is "tasks":
             if isinstance(project, gtd.Project):
                 cell.set_property("markup", len(project.tasks))

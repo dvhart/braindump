@@ -78,20 +78,20 @@ class RealmStore(GTDStoreFilter):
 
     # FIXME: update the store in response to these signals
     def on_realm_renamed(self, context):
-        print "realm ", realm.title, " renamed"
+        print "FIXME: realm ", realm.title, " renamed"
 
     def on_realm_added(self, realm):
-        print "realm ", realm.title, " added"
+        self.model.append([realm])
 
     def on_realm_removed(self, realm):
-        print "realm ", realm.title, " removed"
+        print "FIXME: realm ", realm.title, " removed"
 
 
 # Context gtd datastore
 class ContextStore(GTDStoreFilter):
     def __init__(self):
         GTDStoreFilter.__init__(self)
-        self.model.append([NewContext("<i>Create new context...</i>")]) # FIXME: ActionRow classes maybe?
+        self.model.append([NewContext("Create new context...")]) # FIXME: ActionRow classes maybe?
         for c in GTD().contexts:
             self.model.append([c])
     
@@ -108,20 +108,20 @@ class ContextStore(GTDStoreFilter):
 
     # FIXME: update the store in response to these signals
     def on_context_renamed(self, context):
-        print "context ", context.title, " renamed"
+        print "FIXME: context ", context.title, " renamed"
 
     def on_context_added(self, context):
-        print "context ", context.title, " added"
+        self.model.append([context])
 
     def on_context_removed(self, context):
-        print "context ", context.title, " removed"
+        print "FIXME: context ", context.title, " removed"
 
 
 # Area gtd datastore
 class AreaStore(GTDStoreRealmFilter):
     def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
         GTDStoreRealmFilter.__init__(self)
-        self.model.append([NewArea("<i>Create new area...</i>")]) # FIXME: ActionRow classes maybe?
+        self.model.append([NewArea("Create new area...")]) # FIXME: ActionRow classes maybe?
         for r in GTD().realms:
             for a in r.areas:
                 self.model.append([a])
@@ -135,22 +135,35 @@ class AreaStore(GTDStoreRealmFilter):
         else:
             return show_actions
 
-    # FIXME: update the store in response to these signals
+    # GTD signal handlers
     def on_area_renamed(self, area):
-        print "area ", area.title, " renamed"
+        # FIXME: should I just use the foreach() routine?
+        iter = self.model.get_iter_first()
+        while iter:
+            if self.model[iter][0] == area:
+                self.model.row_changed(self.model.get_path(iter), iter)
+                return
+            iter = self.model.iter_next(iter)
+        print "ERROR: ", area.title, " not found in AreaStore"
 
     def on_area_added(self, area):
-        print "area ", area.title, " added"
+        self.model.append([area])
 
     def on_area_removed(self, area):
-        print "area ", area.title, " removed"
+        # FIXME: should I just use the foreach() routine?
+        iter = self.model.get_iter_first()
+        while iter:
+            if self.model[iter][0] == area:
+                self.model.remove(iter)
+                return
+            iter = self.model.iter_next(iter)
 
 
 # Project gtd datastore
 class ProjectStore(GTDStoreRealmFilter):
     def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
         GTDStoreRealmFilter.__init__(self)
-        self.model.append([NewProject("<i>Create new project...</i>")]) # FIXME: ActionRow classes maybe?
+        self.model.append([NewProject("Create new project...")]) # FIXME: ActionRow classes maybe?
         for r in GTD().realms:
             for a in r.areas:
                 for p in a.projects:
@@ -174,7 +187,7 @@ class ProjectStore(GTDStoreRealmFilter):
         selection, show_actions = data
         selmodel, paths = selection.get_selected_rows()
         value = model[iter][0]
-        if not isinstance(value, NewArea):
+        if not isinstance(value, NewProject):
             for path in paths:
                 if value.area is selmodel[path][0]:
                     return True
@@ -184,19 +197,19 @@ class ProjectStore(GTDStoreRealmFilter):
 
     # FIXME: update the store in response to these signals
     def on_project_renamed(self, project):
-        print "project ", project.title, " renamed"
+        print "FIXME: project ", project.title, " renamed"
 
     def on_project_added(self, project):
-        print "project ", project.title, " added"
+        self.model.append([project])
 
     def on_project_removed(self, project):
-        print "project ", project.title, " removed"
+        print "FIXME: project ", project.title, " removed"
 
 
 class TaskStore(GTDStoreRealmFilter):
     def __init__(self):
         GTDStoreRealmFilter.__init__(self)
-        self.model.append([NewTask("<i>Create new task...</i>")])
+        self.model.append([NewTask("Create new task...")])
         for r in GTD().realms:
             for a in r.areas:
                 for p in a.projects:
@@ -231,10 +244,10 @@ class TaskStore(GTDStoreRealmFilter):
 
     # FIXME: update the store in response to these signals
     def on_task_renamed(self, task):
-        print "task ", task.title, " renamed"
+        print "FIXME: task ", task.title, " renamed"
 
     def on_task_added(self, task):
-        print "task ", task.title, " added"
+        self.model.append([task])
 
     def on_task_removed(self, task):
-        print "task ", task.title, " removed"
+        print "FIXME: task ", task.title, " removed"
