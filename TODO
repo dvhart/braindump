@@ -12,13 +12,14 @@ o connect task_project combo box to TaskListView
 o Add tree sorter functions
 o have the filter row animate (swell, glow, whatever) when something is added/removed
 o need some logging levels / infrastructure
+o currently using pynotify - perhaps we should be using the signals from gobject?
 
 GTD Data Model
 o task and project resource attachments (with twisty to hide)
 o due date
 o recurring tasks
-o use TreeFilterModels (all from the same data stores)
-o consider one large datastore that we create filtered models of
+o Create a base GTDAction class that all actions will derive from
+  (only needed if we come up with more than NewX)
 
 Signals and Slots Scope
 o right now the scope is at the GTD tree level, rather than at the individual items.

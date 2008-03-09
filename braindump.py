@@ -96,6 +96,9 @@ class BrainDump:
             GTD().load_test_data()
         self.gst = GTDSignalTest() # DELETEME.... later :)
         
+        self.realm_store = RealmStore()
+        self.realm_store_action = self.realm_store.filter_actions(True)
+        self.realm_store_filter_no_action = self.realm_store.filter_actions(False)
         self.area_store = AreaStore()
         self.area_store_filter_by_realm_no_action = self.area_store.filter_by_realm(False)
         self.project_store = ProjectStore()
@@ -106,9 +109,13 @@ class BrainDump:
         self.context_store_filter_no_action = self.context_store.filter_actions(False)
 
         # Connect Signals
+        GTD().sig_realm_renamed.connect(self.realm_store.on_realm_renamed)
+        GTD().sig_realm_added.connect(self.realm_store.on_realm_added)
+        GTD().sig_realm_removed.connect(self.realm_store.on_realm_removed)
+
         GTD().sig_realm_visible_changed.connect(self.area_store.refilter)
         GTD().sig_realm_visible_changed.connect(self.project_store.refilter)
-        # The others should trickle down ...
+        GTD().sig_realm_visible_changed.connect(self.task_store.refilter)
 
         GTD().sig_area_renamed.connect(self.area_store.on_area_renamed)
         GTD().sig_area_added.connect(self.area_store.on_area_added)
@@ -163,12 +170,8 @@ class BrainDump:
         GTD().sig_area_renamed.connect(area_combo.on_area_renamed) # FIXME: should be able to drive with just updates to the parent store?
 
         # add the realm toggle buttons
-        # FIXME: custom toolbar? as a realm listener?
-        realm_toggles = GUI().get_widget("realm_toggles").widget
-        for realm in GTD().realms:
-            rtb = RealmToggleToolButton(realm)
-            realm_toggles.insert(rtb, -1)
-            rtb.show()
+        realm_toggles = RealmToggles(GUI().get_widget("realm_toggles").widget,
+                                     self.realm_store_action)
 
         # FIXME: get the last selection and filterby from last time we were run
         GUI().get_widget("task_filter_list").widget.get_selection().select_all()

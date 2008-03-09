@@ -74,11 +74,55 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
         gtk.ToggleToolButton.__init__(self)
         self.set_property("label", self.realm.title)
         self.connect("toggled", self.on_toggled)
-        # FIXME: init this from the config (stored in tree ?)
         self.set_active(self.realm.visible)
 
     def on_toggled(self, userparam):
         self.realm.set_visible(self.get_active())
+
+
+# Class aggregating GTKToolbar and RealmToggleToolButtons
+class RealmToggles(WidgetWrapper):
+    def __init__(self, widget, realm_store):
+        WidgetWrapper.__init__(self, widget)
+        for row in realm_store:
+            realm = row[0]
+            # FIXME: create a custom widget, so we can override render and keep it's disply
+            # bound to the contents of the realm object it contains...
+            # FIXME: sort these in alpha order, with any actions at the end
+            # FIXME: consider eliminating the NewRealm and just handle this inside this widget
+            if isinstance(realm, NewRealm):
+                rw = gtk.ToolItem()
+                entry = gtk.Entry()
+                entry.set_text(realm.title)
+                entry.connect("activate", self.on_new_realm, realm)
+                entry.show()
+                rw.add(entry)
+                self.widget.insert(rw, -1)
+            else:
+                rw = RealmToggleToolButton(realm)
+                self.widget.insert(rw, 0)
+            rw.show()
+        realm_store.connect("row-changed", self.on_row_changed)
+        realm_store.connect("row-deleted", self.on_row_deleted)
+        realm_store.connect("row-inserted", self.on_row_inserted)
+
+    # FIXME: Ideally, we would connect a "new_realm" signal to the creation of a new realm \
+    # from the app..
+    def on_new_realm(self, entry, realm):
+        new_realm = Realm(entry.get_text())
+        entry.set_text(realm.title)
+        # FIXME: need to reload the TBs.... recreate them?
+
+    # Implement ListStore signal handlers
+    def on_row_changed(self, model, path, iter, data):
+        print "RealmToggles: on_row_changed"
+
+    def on_row_deleted(self, model, path, data):
+        print "RealmToggles: on_row_deleted"
+        # FIXME: need to reload the TBs.... recreate them?
+
+    def on_row_inserted(self, model, path, iter, data):
+        print "RealmToggles: on_row_inserted"
 
 
 class TaskFilterListView(WidgetWrapper):
@@ -432,7 +476,6 @@ class ContextCheckButton(gtk.CheckButton):
     def __init__(self, context):
         gtk.CheckButton.__init__(self, context.title)
         self.context = context
-
 
 # Class aggregrating GtkTable to list contexts for tasks
 # FIXME: consider making this use a ContextListStore?

@@ -58,8 +58,36 @@ class GTDStoreRealmFilter(GTDStoreFilter):
         return False
         
 
+class RealmStore(GTDStoreFilter):
+    def __init__(self):
+        GTDStoreFilter.__init__(self)
+        self.model.append([NewRealm("Create new realm...")])
+        for r in GTD().realms:
+            self.model.append([r])
+
+    def filter_actions(self, show_actions):
+        filter = self.filter_new()
+        filter.set_visible_func(self.filter_actions_visible, show_actions)
+        return filter
+
+    def filter_actions_visible(self, model, iter, data):
+        show_actions = data
+        if isinstance(model[iter][0], NewRealm):
+            return show_actions
+        return True
+
+    # FIXME: update the store in response to these signals
+    def on_realm_renamed(self, context):
+        print "realm ", realm.title, " renamed"
+
+    def on_realm_added(self, realm):
+        print "realm ", realm.title, " added"
+
+    def on_realm_removed(self, realm):
+        print "realm ", realm.title, " removed"
+
+
 # Context gtd datastore
-# FIXME: add a NewContext like Project and Task stores
 class ContextStore(GTDStoreFilter):
     def __init__(self):
         GTDStoreFilter.__init__(self)
@@ -73,7 +101,10 @@ class ContextStore(GTDStoreFilter):
         return filter
         
     def filter_actions_visible(self, model, iter, data):
-        return isinstance(model[iter][0], gtd.Context)
+        show_actions = data
+        if isinstance(model[iter][0], NewContext):
+            return show_actions
+        return True
 
     # FIXME: update the store in response to these signals
     def on_context_renamed(self, context):
@@ -182,16 +213,17 @@ class TaskStore(GTDStoreRealmFilter):
         selmodel, paths = selection.get_selected_rows()
         task = model[iter][0]
         if not isinstance(task, NewTask):
-            for path in paths:
-                comp = selmodel[path][0] # either a project or a context
-                if isinstance(comp, gtd.Context):
-                    if task.contexts.count(comp):
-                        return True
-                elif isinstance(comp, gtd.Project):
-                    if task.project is comp:
-                        return True
-                else:
-                    print "ERROR: cannot filter Task on", comp.__class__
+            if task.project.area.realm.visible:
+                for path in paths:
+                    comp = selmodel[path][0] # either a project or a context
+                    if isinstance(comp, gtd.Context):
+                        if task.contexts.count(comp):
+                            return True
+                    elif isinstance(comp, gtd.Project):
+                        if task.project is comp:
+                            return True
+                    else:
+                        print "ERROR: cannot filter Task on", comp.__class__
             return False
         else:
             return show_actions
