@@ -13,6 +13,18 @@ o Add tree sorter functions
 o have the filter row animate (swell, glow, whatever) when something is added/removed
 o need some logging levels / infrastructure
 o currently using pynotify - perhaps we should be using the signals from gobject?
+o consider using a treeview for tasks, and break them up into "Today" "Tomorrow"|"This Week" "Later/No Date"
+o Use a gtk_button_box instead of a toolbar for the realm buttons? (shouldn't have to wrap them then)
+
+Default Parent GTD Nodes
+o When creating new items (projects, areas, tasks) we have to select something as
+the parent node.  For a task that's a project (and the default contexts need to be known
+too).  Suggest using radio buttons (checkbuttons in the case of contexts) in the 
+filter-view so we know what to use when creating new items with the action_rows.  For
+Realms... perhaps they have three states: invisible, visible, and visible-default.  If
+no default of any is selected, then the NonePath (or no contexts) should be used
+o The Task and Proect Views should always display items from the NonePath, and perhaps
+render them in such as way as to indicate to the user that they need to update them.
 
 GTD Data Model
 o task and project resource attachments (with twisty to hide)
