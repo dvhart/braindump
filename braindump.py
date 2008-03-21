@@ -99,7 +99,9 @@ class BrainDump:
          # Instantiate the various GUI datastores and filters from the GTD() singleton tree
         self.realm_store = RealmStore()
         self.realm_store_action = self.realm_store.filter_actions(True)
-        self.realm_store_filter_no_action = self.realm_store.filter_actions(False)
+        self.realm_store_no_action = self.realm_store.filter_actions(False)
+
+        self.realm_area_store = RealmAreaStore()
 
         self.area_store = AreaStore()
         self.area_store_filter_by_realm = self.area_store.filter_by_realm(True)
@@ -166,7 +168,7 @@ class BrainDump:
 
         # Project Tab
         area_filter_list = AreaFilterListView(GUI().get_widget("area_filter_list").widget,
-                                              self.area_store_filter_by_realm)
+                                              self.area_store_filter_by_realm_no_action)
         area_filter_list.widget.get_selection().connect("changed", self.project_store.refilter)
         self.project_store_filter_by_area = \
             self.project_store.filter_by_area(area_filter_list.widget.get_selection(), True)
@@ -177,11 +179,17 @@ class BrainDump:
 
         # add the realm toggle buttons
         realm_toggles = RealmToggles(GUI().get_widget("realm_toggles").widget,
-                                     self.realm_store_action)
+                                     self.realm_store_no_action)
 
         # FIXME: get the last selection and filterby from last time we were run
         GUI().get_widget("task_filter_list").widget.get_selection().select_all()
         GUI().get_widget("area_filter_list").widget.get_selection().select_all()
+
+        # Build the menu bar (and connect the signals)
+        MenuBar(GUI().get_widget("menubar").widget)
+
+        # FIXME: figure out how dialogs should be hidden/closed/not destroyed...
+        realm_area_dialog = RealmAreaDialog(GUI().get_widget("realm_area_dialog").widget, self.realm_area_store)
 
 
 # test to see if we were run directly

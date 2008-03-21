@@ -30,6 +30,7 @@ from gtd_action_rows import *
 
 class GTDStoreFilter(gobject.GObject):
     def __init__(self):
+        # FIXME: why am I using GObject?  Should I call GObject.__init__(self) here?
         self.model = gtk.ListStore(gobject.TYPE_PYOBJECT)
         self.filters = []
 
@@ -158,6 +159,52 @@ class AreaStore(GTDStoreRealmFilter):
                 return
             iter = self.model.iter_next(iter)
 
+# Realm and Area 2 level datastore
+class RealmAreaStore(gobject.GObject):
+    def __init__(self):
+        gobject.GObject.__init__(self)
+        self.model = gtk.TreeStore(gobject.TYPE_PYOBJECT)
+        self.model.append(None, [NewRealm("Create new realm...")])
+        for r in GTD().realms:
+            iter = self.model.append(None, [r])
+            # FIXME: add these as children to the realm just added
+            self.model.append(iter, [NewArea("Create new area...")]) # FIXME: ActionRow classes maybe?
+            for a in r.areas:
+                self.model.append(iter, [a])
+
+    # FIXME: can we derive from RealmStore and AreaStore
+    # FIXME: update the store in response to these signals
+    def on_realm_renamed(self, context):
+        print "FIXME: realm ", realm.title, " renamed"
+
+    def on_realm_added(self, realm):
+        self.model.append([realm])
+
+    def on_realm_removed(self, realm):
+        print "FIXME: realm ", realm.title, " removed"
+
+    # GTD signal handlers
+    def on_area_renamed(self, area):
+        # FIXME: should I just use the foreach() routine?
+        iter = self.model.get_iter_first()
+        while iter:
+            if self.model[iter][0] == area:
+                self.model.row_changed(self.model.get_path(iter), iter)
+                return
+            iter = self.model.iter_next(iter)
+        print "ERROR: ", area.title, " not found in AreaStore"
+
+    def on_area_added(self, area):
+        self.model.append([area])
+
+    def on_area_removed(self, area):
+        # FIXME: should I just use the foreach() routine?
+        iter = self.model.get_iter_first()
+        while iter:
+            if self.model[iter][0] == area:
+                self.model.remove(iter)
+                return
+            iter = self.model.iter_next(iter)
 
 # Project gtd datastore
 class ProjectStore(GTDStoreRealmFilter):

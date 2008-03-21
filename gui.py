@@ -30,9 +30,16 @@ class GUI(gtk.glade.XML):
     __metaclass__ = GSingleton
     widgets = {}
 
-    def __init__(self, file=""):
-        print "Calling __init__ with file="+file
-        gtk.glade.XML.__init__(self, file)
+    def __init__(self, file="", widget=None):
+        print "Calling __init__ with file=", file, " widget=", widget
+        self.file = file
+        gtk.glade.XML.__init__(self, self.file, widget)
+
+    def __get_widget(self, name):
+        gtk_widget = gtk.glade.XML.get_widget(self, name)
+        if not gtk_widget:
+            print "ERROR: failed to find widget: ", name
+        return WidgetWrapperBase(gtk_widget)
 
     def register_widget(self, wrapped_widget):
         name = wrapped_widget.widget.get_name()
@@ -44,14 +51,19 @@ class GUI(gtk.glade.XML):
 
     # Return the wrapped widget if it exists, create one for consistent usage if not
     def get_widget(self, name):
+        widget = None
         if self.widgets.has_key(name):
             widget = self.widgets[name]
+            if widget == None:
+                self.widgets.remove(name)
+                widget = self.__get_widget(name)
         else:
-            gtk_widget = gtk.glade.XML.get_widget(self, name)
-            if not gtk_widget:
-                print "ERROR: failed to find widget: ", name
-            widget = WidgetWrapperBase(gtk_widget)
+            widget = self.__get_widget(name)
         return widget
+
+    # FIXME: testing this (not clear on dialog lifecycle)
+    def get_dialog_xml(self, name):
+        return gtk.glade.XML(self.file, name)
 
 
 # FIXME: rather than having to reference .widget, is it possible to superimpose
@@ -82,33 +94,6 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
     def __on_toggled(self, userparam):
         self.realm.set_visible(self.get_active())
 
-class RealmToolEntry(gtk.ToolItem):
-    def __init__(self, realm):
-        gtk.ToolItem.__init__(self)
-        self.realm = realm
-        self.entry = gtk.Entry()
-        self.entry.set_text(self.realm.title)
-        self.entry.connect("activate", self.__on_edited)
-        self.entry.connect("event", self.__on_clicked)
-        self.entry.connect("focus-out-event", self.__on_focus_out)
-        self.entry.show()
-        self.add(self.entry)
-        self.select_on_click = True
-
-    def __on_edited(self, entry):
-        self.realm.title = self.entry.get_text()
-        self.entry.set_text(self.realm.title)
-
-    def __on_clicked(self, entry, event, data=None):
-        if self.select_on_click and event.type == gtk.gdk.BUTTON_RELEASE and \
-           (entry.flags() & gtk.HAS_FOCUS):
-            self.entry.select_region(0, -1)
-            self.select_on_click = False
-
-    def __on_focus_out(self, entry, event, data=None):
-        self.entry.select_region(0, 0)
-        self.select_on_click = True
-
 # Class aggregating GTKToolbar and RealmToggleToolButtons
 class RealmToggles(WidgetWrapper):
     def __init__(self, widget, realm_store):
@@ -126,12 +111,8 @@ class RealmToggles(WidgetWrapper):
         # FIXME: sort these in alpha order, with any actions at the end
         # FIXME: consider eliminating the NewRealm and just handle this inside this widget
         self.realms.append(realm)
-        if isinstance(realm, NewRealm):
-            rw = RealmToolEntry(realm)
-            self.widget.insert(rw, -1)
-        else:
-            rw = RealmToggleToolButton(realm)
-            self.widget.insert(rw, 0)
+        rw = RealmToggleToolButton(realm)
+        self.widget.insert(rw, 0)
         rw.show()
 
     # Implement ListStore signal handlers
@@ -419,6 +400,7 @@ class ProjectListView(WidgetWrapper):
         # display data directly from the gtd object, rather than setting attributes
         self.tvcolumn0.set_cell_data_func(self.cell0, self.project_data_func, "complete")
         self.tvcolumn1.set_cell_data_func(self.cell1, self.project_data_func, "title")
+        # FIXME: shouldn't this next one be tvcolumn2?
         self.tvcolumn1.set_cell_data_func(self.cell2, self.project_data_func, "tasks")
 
         # make it searchable
@@ -493,6 +475,48 @@ class ProjectListView(WidgetWrapper):
         if project:
             project.title = new_text
 
+
+class RealmAreaTreeView(WidgetWrapper):
+    def __init__(self, widget, realm_area_store):
+        WidgetWrapper.__init__(self, widget)
+        self.widget.set_model(realm_area_store)
+
+        # create the TreeViewColumns to display the data
+        self.tvcolumn1 = gtk.TreeViewColumn("Title")
+
+        # append the columns to the view
+        widget.append_column(self.tvcolumn1)
+
+        # create the CellRenderers
+        self.cell1 = gtk.CellRendererText()
+        self.cell1.set_property('editable', True)
+        self.cell1.connect('edited', self.edited, widget.get_model(), 1)
+
+        # attach the CellRenderers to each column
+        self.tvcolumn1.pack_start(self.cell1) # expand True by default
+
+        # display data directly from the gtd object, rather than setting attributes
+        self.tvcolumn1.set_cell_data_func(self.cell1, self.realm_area_data_func, "title")
+
+        # make it searchable
+        widget.set_search_column(0)
+
+    def realm_area_data_func(self, column, cell, model, iter, data):
+        project = model[iter][0]
+        if data is "title":
+            title = project.title
+            if isinstance(project, NewProject):
+                title = "<i>"+title+"</i>"
+            cell.set_property("markup", title)
+        else:
+            # FIXME: throw an exception
+            print "ERROR: didn't set %s property for "%data, obj.title
+
+    # signal callbacks
+    def edited(self, cell, path, new_text, model, column):
+        project = model[path][0]
+        if project:
+            project.title = new_text
 
 class BrainDumpWindow(WidgetWrapper):
     def __init__(self, widget):
@@ -725,3 +749,38 @@ class AreaCombo(WidgetWrapper):
     # of the row doesn't actually change... still a pointer to the same object
     def on_area_renamed(self, area):
         self.widget.queue_draw()
+
+# menu bar callbacks
+class MenuBar(WidgetWrapper):
+    def __init__(self, widget):
+        WidgetWrapper.__init__(self, widget)
+
+    def on_realms_and_areas_activate(self, menuitem):
+        GUI().get_widget("realm_area_dialog").show()
+
+class RealmAreaDialog(WidgetWrapper):
+    def __init__(self, widget, realm_area_store):
+        WidgetWrapper.__init__(self, widget)
+        self.realm_area_store = realm_area_store
+
+        # append the columns to the view
+        self.realm_area_tree = RealmAreaTreeView(GUI().get_widget("realm_area_tree").widget, self.realm_area_store.model)
+
+    # FIXME: Maybe make these private?  Should this logic be somewhere else? (Controller?)
+    def on_realm_area_dialog_delete(self, dialog, event):
+        self.hide()
+        return True
+
+    def on_realm_area_dialog_response(self, dialog, response):
+        if response == gtk.RESPONSE_OK:
+            self.hide()
+        elif response == gtk.RESPONSE_DELETE_EVENT:
+            pass
+        else:
+            print "ERROR: unexpected response: ", response
+
+    def hide(self):
+        self.widget.hide()
+
+    def show(self):
+        self.widget.show()
