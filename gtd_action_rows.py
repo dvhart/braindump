@@ -22,9 +22,20 @@
 
 from gtd import *
 
-class NewContext(Context):
+# Abstract base class for simple type comparison in Tree|List View code
+class GTDActionRow(object):
     def __init__(self, title):
-        Context.__init__(self, title)
+        self.__title = title
+
+    def set_title(self, title):
+        pass
+
+    title = OProperty(lambda s: s.__title, set_title)
+
+
+class NewContext(GTDActionRow):
+    def __init__(self, title):
+        GTDActionRow.__init__(self, title)
 
     # When our title is changed by the user, we just create a new context and emit the signal
     def set_title(self, title):
@@ -32,57 +43,38 @@ class NewContext(Context):
             context = Context(title)
 
 
-class NewRealm(Realm):
+class NewRealm(GTDActionRow):
     def __init__(self, title):
-        Realm.__init__(self, title, False)
+        GTDActionRow.__init__(self, title)
 
     def set_title(self, title):
         if not title == self.title:
             realm = Realm(title)
 
-    def add_area(self, area):
-        print "Oops, trying to add area to a", self.__class__
 
-    def set_visible(self, visible):
-        print "Oops, trying to change visibility of a", self.__class__
-
-
-class NewArea(Area):
-    def __init__(self, title):
-        Area.__init__(self, title) # FIXME: hrm... should realm be None... or a special "VisibleRealm" ?
+class NewArea(GTDActionRow):
+    def __init__(self, title, realm=RealmNone()):
+        GTDActionRow.__init__(self, title)
+        self.realm = realm
 
     def set_title(self, title):
         if not title == self.title:
-            area = Area(title)
-
-    def add_project(self, project):
-        print "Oops, trying to add project to a", self.__class__
+            area = Area(title, self.realm)
 
 
-class NewProject(Project):
+class NewProject(GTDActionRow):
     def __init__(self, title):
-        Project.__init__(self, title)
+        GTDActionRow.__init__(self, title)
 
     def set_title(self, title):
         if not title == self.title:
             project = Project(title)
 
-    def add_task(self, task):
-        print "Oops, trying to add task to a", self.__class__
 
-    def remove_task(self, task):
-        self.tasks.remove(task)
-
-
-class NewTask(Task):
+class NewTask(GTDActionRow):
     def __init__(self, title):
-        Task.__init__(self, title)
+        GTDActionRow.__init__(self, title)
 
     def set_title(self, title):
         if not title == self.title:
             task = Task(title)
-
-    def add_context(self, context):
-        print "Oops, trying to add context to a", self.__class__
-
-

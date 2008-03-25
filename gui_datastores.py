@@ -73,12 +73,12 @@ class RealmStore(GTDStoreFilter):
 
     def filter_actions_visible(self, model, iter, data):
         show_actions = data
-        if isinstance(model[iter][0], NewRealm):
+        if isinstance(model[iter][0], GTDActionRow):
             return show_actions
         return True
 
     # FIXME: update the store in response to these signals
-    def on_realm_renamed(self, context):
+    def on_realm_renamed(self, realm):
         print "FIXME: realm ", realm.title, " renamed"
 
     def on_realm_added(self, realm):
@@ -103,7 +103,7 @@ class ContextStore(GTDStoreFilter):
         
     def filter_actions_visible(self, model, iter, data):
         show_actions = data
-        if isinstance(model[iter][0], NewContext):
+        if isinstance(model[iter][0], GTDActionRow):
             return show_actions
         return True
 
@@ -122,7 +122,7 @@ class ContextStore(GTDStoreFilter):
 class AreaStore(GTDStoreRealmFilter):
     def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
         GTDStoreRealmFilter.__init__(self)
-        self.model.append([NewArea("Create new area...")]) # FIXME: ActionRow classes maybe?
+        self.model.append([NewArea("Create new area...")])
         for r in GTD().realms:
             for a in r.areas:
                 self.model.append([a])
@@ -131,14 +131,13 @@ class AreaStore(GTDStoreRealmFilter):
     def filter_by_realm_visible(self, model, iter, data):
         show_actions = data
         area = model[iter][0]
-        if not isinstance(area, NewArea):
-            return area.realm.visible
-        else:
+        if isinstance(area, GTDActionRow):
             return show_actions
+        else:
+            return area.realm.visible
 
     # GTD signal handlers
     def on_area_renamed(self, area):
-        # FIXME: should I just use the foreach() routine?
         iter = self.model.get_iter_first()
         while iter:
             if self.model[iter][0] == area:
@@ -151,7 +150,6 @@ class AreaStore(GTDStoreRealmFilter):
         self.model.append([area])
 
     def on_area_removed(self, area):
-        # FIXME: should I just use the foreach() routine?
         iter = self.model.get_iter_first()
         while iter:
             if self.model[iter][0] == area:
@@ -167,44 +165,67 @@ class RealmAreaStore(gobject.GObject):
         self.model.append(None, [NewRealm("Create new realm...")])
         for r in GTD().realms:
             iter = self.model.append(None, [r])
-            # FIXME: add these as children to the realm just added
-            self.model.append(iter, [NewArea("Create new area...")]) # FIXME: ActionRow classes maybe?
+            self.model.append(iter, [NewArea("Create new area...", r)])
             for a in r.areas:
                 self.model.append(iter, [a])
 
-    # FIXME: can we derive from RealmStore and AreaStore
-    # FIXME: update the store in response to these signals
-    def on_realm_renamed(self, context):
-        print "FIXME: realm ", realm.title, " renamed"
+    def __area_iter(self, area):
+        realm_iter = self.model.get_iter_first()
+        while realm_iter:
+            area_iter = self.model.iter_children(realm_iter)
+            while area_iter:
+                if self.model[area_iter][0] == area:
+                    return area_iter
+                area_iter = self.model.iter_next(area_iter)
+            realm_iter = self.model.iter_next(realm_iter)
+        return None
 
-    def on_realm_added(self, realm):
-        self.model.append([realm])
-
-    def on_realm_removed(self, realm):
-        print "FIXME: realm ", realm.title, " removed"
+    def __realm_iter(self, realm):
+        iter = self.model.get_iter_first()
+        while iter:
+            if self.model[iter][0] == realm:
+                return iter
+            iter = self.model.iter_next(iter)
+        return None
 
     # GTD signal handlers
+    # FIXME: can we derive from RealmStore and AreaStore
+    def on_realm_renamed(self, realm):
+        iter = self.__realm_iter(realm)
+        if iter:
+            self.model.row_changed(self.model.get_path(iter), iter)
+        else:
+            print "ERROR: ", area.title, " not found in RealmAreaStore"
+
+    def on_realm_added(self, realm):
+        iter = self.model.append(None, [realm])
+        self.model.append(iter, [NewArea("Create new area...", realm)])
+
+    def on_realm_removed(self, realm):
+        # FIXME: what about children (including NewArea) ?
+        iter = self.__realm_iter(realm)
+        if iter:
+                self.model.remove(iter)
+        else:
+            print "ERROR: ", realm.title, " not found in RealmAreaStore"
+
     def on_area_renamed(self, area):
-        # FIXME: should I just use the foreach() routine?
-        iter = self.model.get_iter_first()
-        while iter:
-            if self.model[iter][0] == area:
-                self.model.row_changed(self.model.get_path(iter), iter)
-                return
-            iter = self.model.iter_next(iter)
-        print "ERROR: ", area.title, " not found in AreaStore"
+        iter = self.__area_iter(area)
+        if iter:
+            self.model.row_changed(self.model.get_path(iter), iter)
+        else:
+            print "ERROR: ", area.title, " not found in RealmAreaStore"
 
     def on_area_added(self, area):
-        self.model.append([area])
+        realm_iter = self.__realm_iter(area.realm)
+        self.model.append(realm_iter, [area])
 
     def on_area_removed(self, area):
-        # FIXME: should I just use the foreach() routine?
-        iter = self.model.get_iter_first()
-        while iter:
-            if self.model[iter][0] == area:
-                self.model.remove(iter)
-                return
-            iter = self.model.iter_next(iter)
+        iter = self.__area_iter(area)
+        if iter:
+            self.model.remove(iter)
+        else:
+            print "ERROR: ", area.title, " not found in RealmAreaStore"
 
 # Project gtd datastore
 class ProjectStore(GTDStoreRealmFilter):
@@ -225,16 +246,16 @@ class ProjectStore(GTDStoreRealmFilter):
     def filter_by_realm_visible(self, model, iter, data):
         show_actions = data
         project = model[iter][0]
-        if not isinstance(project, NewProject):
-            return project.area.realm.visible
-        else:
+        if isinstance(project, GTDActionRow):
             return show_actions
+        else:
+            return project.area.realm.visible
 
     def filter_by_area_visible(self, model, iter, data):
         selection, show_actions = data
         selmodel, paths = selection.get_selected_rows()
         value = model[iter][0]
-        if not isinstance(value, NewProject):
+        if not isinstance(value, GTDActionRow):
             for path in paths:
                 if value.area is selmodel[path][0]:
                     return True
@@ -272,7 +293,9 @@ class TaskStore(GTDStoreRealmFilter):
         selection, show_actions = data
         selmodel, paths = selection.get_selected_rows()
         task = model[iter][0]
-        if not isinstance(task, NewTask):
+        if isinstance(task, GTDActionRow):
+            return show_actions
+        else:
             if task.project.area.realm.visible:
                 for path in paths:
                     comp = selmodel[path][0] # either a project or a context
@@ -282,12 +305,11 @@ class TaskStore(GTDStoreRealmFilter):
                     elif isinstance(comp, gtd.Project):
                         if task.project is comp:
                             return True
+                    elif isinstance(comp, GTDActionRow):
+                        continue
                     else:
                         print "ERROR: cannot filter Task on", comp.__class__
             return False
-        else:
-            return show_actions
-
 
     # FIXME: update the store in response to these signals
     def on_task_renamed(self, task):

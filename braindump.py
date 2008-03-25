@@ -122,6 +122,13 @@ class BrainDump:
         GTD().sig_realm_added.connect(self.realm_store.on_realm_added)
         GTD().sig_realm_removed.connect(self.realm_store.on_realm_removed)
 
+        GTD().sig_realm_renamed.connect(self.realm_area_store.on_realm_renamed)
+        GTD().sig_realm_added.connect(self.realm_area_store.on_realm_added)
+        GTD().sig_realm_removed.connect(self.realm_area_store.on_realm_removed)
+        GTD().sig_area_renamed.connect(self.realm_area_store.on_area_renamed)
+        GTD().sig_area_added.connect(self.realm_area_store.on_area_added)
+        GTD().sig_area_removed.connect(self.realm_area_store.on_area_removed)
+
         GTD().sig_realm_visible_changed.connect(self.area_store.refilter)
         GTD().sig_realm_visible_changed.connect(self.project_store.refilter)
         GTD().sig_realm_visible_changed.connect(self.task_store.refilter)
@@ -188,8 +195,10 @@ class BrainDump:
         # Build the menu bar (and connect the signals)
         MenuBar(GUI().get_widget("menubar").widget)
 
-        # FIXME: figure out how dialogs should be hidden/closed/not destroyed...
+        # Build the realms and areas dialog (and connect the signals)
         realm_area_dialog = RealmAreaDialog(GUI().get_widget("realm_area_dialog").widget, self.realm_area_store)
+        # Build the GTD Row popup menu (and connect the signals)
+        gtd_row_popup = GTDRowPopup(GUI().get_widget("gtd_row_popup").widget)
 
 
 # test to see if we were run directly

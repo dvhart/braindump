@@ -109,7 +109,6 @@ class RealmToggles(WidgetWrapper):
         # FIXME: create a custom widget, so we can override render and keep it's disply
         # bound to the contents of the realm object it contains...
         # FIXME: sort these in alpha order, with any actions at the end
-        # FIXME: consider eliminating the NewRealm and just handle this inside this widget
         self.realms.append(realm)
         rw = RealmToggleToolButton(realm)
         self.widget.insert(rw, 0)
@@ -162,11 +161,24 @@ class TaskFilterListView(WidgetWrapper):
     def data_func(self, column, cell, model, iter, data):
         task = model[iter][0]
         title = task.title
-        if isinstance(task, NewContext) or isinstance(task, NewProject):
+        if isinstance(task, GTDActionRow):
             title = "<i>"+title+"</i>"
         cell.set_property("markup", title)
 
+    def get_current(self):
+        path = self.widget.get_cursor()[0]
+        obj = self.widget.get_model()[path][0]
+        return obj
+
     # gtk signal callbacks
+    def on_task_filter_list_button_press(self, widget, event):
+        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
+            popup = GUI().get_widget(widget.get_name()) 
+            popup.tree_view = self
+            widget.popup(None, None, None, event.button, event.time)
+            return True
+        return False
+
     def on_filter_edited(self, cell, path, new_text, model_lambda, column):
         model_lambda()[path][column].title = new_text
 
@@ -224,14 +236,14 @@ class TaskListView(WidgetWrapper):
     def task_data_func(self, column, cell, model, iter, data):
         task = model[iter][0]
         if data is "complete":
-            if isinstance(task, NewTask):
+            if isinstance(task, GTDActionRow):
                 cell.set_property("inconsistent", True)
             else:
                 cell.set_property("active", task.complete)
                 cell.set_property("inconsistent", False)
         elif data is "title":
             title = task.title
-            if isinstance(task, NewTask):
+            if isinstance(task, GTDActionRow):
                 title = "<i>"+title+"</i>"
             cell.set_property("markup", title)
         else:
@@ -239,7 +251,7 @@ class TaskListView(WidgetWrapper):
             print "ERROR: didn't set %s property for "%data, obj.title
 
     # return the selected task
-    def get_current_task(self):
+    def get_current(self):
         task = None
         # FIXME: is this error checking necessary
         path = self.widget.get_cursor()[0]
@@ -248,8 +260,7 @@ class TaskListView(WidgetWrapper):
         return task
 
     def update_current_context(self, context, active):
-        task = self.get_current_task()
-        # don't try this on None or NewTask objects
+        task = self.get_current()
         if isinstance(task, gtd.Task):
             update_tree = False
             model = self.widget.get_model()
@@ -265,8 +276,7 @@ class TaskListView(WidgetWrapper):
                     self.on_filter_selection_changed(GUI().get_widget("task_filter_list").widget.get_selection())
 
     def update_current_project(self, project):
-        task = self.get_current_task()
-        # don't try this on None or NewTask objects
+        task = self.get_current()
         if isinstance(task, gtd.Task):
             if task.project is not project:
                 print "update_current_project: "#FIXME: doesn't work with none, project.title
@@ -277,12 +287,20 @@ class TaskListView(WidgetWrapper):
                 # FIXME: this should be done via some signals and slots mechanism of the gtd.Tree
                 self.on_filter_selection_changed(GUI().get_widget("task_filter_list").widget.get_selection())
 
-    # signal callbacks
+    # gtk signal callbacks
+    def on_task_list_button_press(self, widget, event):
+        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
+            popup = GUI().get_widget(widget.get_name()) 
+            popup.tree_view = self
+            widget.popup(None, None, None, event.button, event.time)
+            return True
+        return False
+
     def on_task_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
         task = tree.get_model()[path][0]
         if task:
-            if isinstance(task, NewTask):
+            if isinstance(task, GTDActionRow):
                 GUI().get_widget("task_form_vbox").widget.set_sensitive(False)
             else:
                 GUI().get_widget("task_form_vbox").widget.set_sensitive(True)
@@ -295,7 +313,6 @@ class TaskListView(WidgetWrapper):
     def toggled(self, cell, path, model, column):
         complete = model[path][column]
         task = model[path][0]
-        # don't try and set the complete field on a NewTask
         if isinstance(task, gtd.Task):
             task.complete = not task.complete
 
@@ -345,11 +362,24 @@ class AreaFilterListView(WidgetWrapper):
     def data_func(self, column, cell, model, iter, data):
         area = model[iter][0]
         title = area.title
-        if isinstance(area, NewArea):
+        if isinstance(area, GTDActionRow):
             title = "<i>"+title+"</i>"
         cell.set_property("markup", title)
 
+    def get_current(self):
+        path = self.widget.get_cursor()[0]
+        obj = self.widget.get_model()[path][0]
+        return obj
+
     # signal callbacks
+    def on_area_filter_list_button_press(self, widget, event):
+        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
+            popup = GUI().get_widget(widget.get_name()) 
+            popup.tree_view = self
+            widget.popup(None, None, None, event.button, event.time)
+            return True
+        return False
+
     def on_filter_edited(self, cell, path, new_text, model, column):
         model[path][column].title = new_text
 
@@ -407,7 +437,7 @@ class ProjectListView(WidgetWrapper):
         widget.set_search_column(1)
 
     # return the selected project
-    def get_current_project(self):
+    def get_current(self):
         project = None
         # FIXME: is this error checking necessary
         path = self.widget.get_cursor()[0]
@@ -416,8 +446,7 @@ class ProjectListView(WidgetWrapper):
         return project
 
     def update_current_area(self, area):
-        project = self.get_current_project()
-        # don't try this on None or NewTask objects
+        project = self.get_current()
         if isinstance(project, gtd.Project):
             if project.area is not area:
                 print "update_current_area: "#FIXME:doesn't work with None, area.title
@@ -438,7 +467,7 @@ class ProjectListView(WidgetWrapper):
                 cell.set_property("inconsistent", True)
         elif data is "title":
             title = project.title
-            if isinstance(project, NewProject):
+            if isinstance(project, GTDActionRow):
                 title = "<i>"+title+"</i>"
             cell.set_property("markup", title)
         elif data is "tasks":
@@ -450,7 +479,15 @@ class ProjectListView(WidgetWrapper):
             # FIXME: throw an exception
             print "ERROR: didn't set %s property for "%data, obj.title
 
-    # signal callbacks
+    # gtk signal callbacks
+    def on_project_list_button_press(self, widget, event):
+        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
+            popup = GUI().get_widget(widget.get_name()) 
+            popup.tree_view = self
+            widget.popup(None, None, None, event.button, event.time)
+            return True
+        return False
+
     def on_project_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
         project = tree.get_model()[path][0]
@@ -466,7 +503,6 @@ class ProjectListView(WidgetWrapper):
     def toggled(self, cell, path, model, column):
         complete = model[path][column]
         project = model[path][0]
-        # don't try and set the complete field on a NewTask
         if isinstance(project, gtd.Project):
             project.complete = not project.complete
 
@@ -481,42 +517,54 @@ class RealmAreaTreeView(WidgetWrapper):
         WidgetWrapper.__init__(self, widget)
         self.widget.set_model(realm_area_store)
 
-        # create the TreeViewColumns to display the data
+        # create the TreeViewColumn to display the data
         self.tvcolumn1 = gtk.TreeViewColumn("Title")
-
-        # append the columns to the view
-        widget.append_column(self.tvcolumn1)
-
-        # create the CellRenderers
         self.cell1 = gtk.CellRendererText()
         self.cell1.set_property('editable', True)
-        self.cell1.connect('edited', self.edited, widget.get_model(), 1)
-
-        # attach the CellRenderers to each column
+        self.cell1.connect('edited', self.on_edited, widget.get_model(), 1) # FIXME: what if model changes?
         self.tvcolumn1.pack_start(self.cell1) # expand True by default
-
-        # display data directly from the gtd object, rather than setting attributes
         self.tvcolumn1.set_cell_data_func(self.cell1, self.realm_area_data_func, "title")
+        widget.append_column(self.tvcolumn1)
 
-        # make it searchable
-        widget.set_search_column(0)
+        self.widget.expand_all()
 
     def realm_area_data_func(self, column, cell, model, iter, data):
         project = model[iter][0]
         if data is "title":
             title = project.title
-            if isinstance(project, NewProject):
+            #FIXME: nice to have a common NewGTDElement class...
+            if isinstance(project, GTDActionRow):
                 title = "<i>"+title+"</i>"
             cell.set_property("markup", title)
         else:
             # FIXME: throw an exception
             print "ERROR: didn't set %s property for "%data, obj.title
 
-    # signal callbacks
-    def edited(self, cell, path, new_text, model, column):
-        project = model[path][0]
-        if project:
-            project.title = new_text
+    # return the gtd element of the current row
+    # FIXME: all tree views should implement this (others have get_current...)
+    # Perhaps make the have a base class?  All the next three functions should
+    # be identical for all tree_views...
+    def get_current(self):
+        path = self.widget.get_cursor()[0]
+        obj = self.widget.get_model()[path][0]
+        return obj
+
+    # gtk signal callbacks
+    def on_edited(self, cell, path, new_text, model, column):
+        obj = model[path][0]
+        if obj:
+            obj.title = new_text
+
+    # connected to event_after, widget will be the popup menu
+    # see glade signal properties for the realm_area_tree for details
+    # FIXME: take advantage of the connect_object approach elsewhere
+    def on_realms_and_areas_button_press(self, widget, event):
+        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
+            popup = GUI().get_widget(widget.get_name()) 
+            popup.tree_view = self
+            widget.popup(None, None, None, event.button, event.time)
+            return True
+        return False
 
 class BrainDumpWindow(WidgetWrapper):
     def __init__(self, widget):
@@ -758,13 +806,33 @@ class MenuBar(WidgetWrapper):
     def on_realms_and_areas_activate(self, menuitem):
         GUI().get_widget("realm_area_dialog").show()
 
+class GTDRowPopup(WidgetWrapper):
+    def __init__(self, widget):
+        WidgetWrapper.__init__(self, widget)
+        self.tree_view = None
+    
+    # gtk signal handlers
+    def on_gtd_row_popup_rename(self, widget):
+        print "on_rename"
+        print "tree_view is a", self.tree_view.__class__
+        obj = self.tree_view.get_current()
+        print "current element is a", obj.__class__
+
+    def on_gtd_row_popup_delete(self, widget):
+        print "on_delete"
+        obj = self.tree_view.get_current()
+        print "current element is a", obj.__class__
+
+
 class RealmAreaDialog(WidgetWrapper):
     def __init__(self, widget, realm_area_store):
         WidgetWrapper.__init__(self, widget)
         self.realm_area_store = realm_area_store
-
-        # append the columns to the view
         self.realm_area_tree = RealmAreaTreeView(GUI().get_widget("realm_area_tree").widget, self.realm_area_store.model)
+        # FIXME: experimenting...
+        #self.popup = GUI().get_widget("gtd_popup_menu").widget
+        #self.realm_area_tree.widget.connect_object("event_after", self.button_press, self.popup)
+        #self.popup.show()
 
     # FIXME: Maybe make these private?  Should this logic be somewhere else? (Controller?)
     def on_realm_area_dialog_delete(self, dialog, event):
@@ -784,3 +852,6 @@ class RealmAreaDialog(WidgetWrapper):
 
     def show(self):
         self.widget.show()
+
+    def menuitem_response(self, widget, string):
+        print string

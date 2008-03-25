@@ -15,6 +15,7 @@ o need some logging levels / infrastructure
 o currently using pynotify - perhaps we should be using the signals from gobject?
 o consider using a treeview for tasks, and break them up into "Today" "Tomorrow"|"This Week" "Later/No Date"
 o Use a gtk_button_box instead of a toolbar for the realm buttons? (shouldn't have to wrap them then)
+o expand newly created realms in the realms and areas dialog boxes
 
 Default Parent GTD Nodes
 o When creating new items (projects, areas, tasks) we have to select something as
@@ -30,10 +31,8 @@ GTD Data Model
 o task and project resource attachments (with twisty to hide)
 o due date
 o recurring tasks
-o Create a base GTDAction class that all actions will derive from
-  (only needed if we come up with more than NewX)
 
-Signals and Slots Scope
+Signals and Slots
 o right now the scope is at the GTD tree level, rather than at the individual items.
   There are situations where it might make sense to have the individual widgets listen
   to the individual tree elements (like the context check boxes listening for a context
@@ -41,8 +40,17 @@ o right now the scope is at the GTD tree level, rather than at the individual it
 o need to connect all the *removed signals
 o work to base all gui updates from updates to the data models.  ie. we shouldn't have to 
   explicitly connect the conext_rename to the context_table.... right?
+o look into gobject signals, we may be able to axe the py-notify dependency
+o consider removing all the signals from glade since they require globally unique names
+  - alternatively leave the long-4$$ names, but move them out of the wrapped widgets
+    and into a "control.py" file... I just hate the whole "all callbacks in a single file"
+    idea.... sigh...
 
 Backing Store
 o consider usin ics files, especially if that would aid integration into things like the
   gnome clock/calendar panel applet (today's tasks in the applet, etc.)
 
+Popup Menus
+o example: /usr/share/doc/python-gtk2-tutorial/html/examples/menu.py
+o implement rename and delete handlers
+o prevent popup from working on GTDActionRow's
