@@ -77,22 +77,33 @@ class RealmStore(GTDStoreFilter):
             return show_actions
         return True
 
-    # FIXME: update the store in response to these signals
     def on_realm_renamed(self, realm):
-        print "FIXME: realm ", realm.title, " renamed"
+        iter = self.model.get_iter_first()
+        while iter:
+            obj = self.model[iter][0]
+            if obj == realm:
+                self.model.row_changed(self.model.get_path(iter), iter)
+                break
+            iter = self.model.iter_next(iter)
 
     def on_realm_added(self, realm):
         self.model.append([realm])
 
     def on_realm_removed(self, realm):
-        print "FIXME: realm ", realm.title, " removed"
+        iter = self.model.get_iter_first()
+        while iter:
+            obj = self.model[iter][0]
+            if obj == realm:
+                path = self.model.get_path(iter)
+                self.model.remove(iter)
+                break
+            iter = self.model.iter_next(iter)
 
 
-# Context gtd datastore
 class ContextStore(GTDStoreFilter):
     def __init__(self):
         GTDStoreFilter.__init__(self)
-        self.model.append([NewContext("Create new context...")]) # FIXME: ActionRow classes maybe?
+        self.model.append([NewContext("Create new context...")])
         for c in GTD().contexts:
             self.model.append([c])
     

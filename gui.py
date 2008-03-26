@@ -80,13 +80,11 @@ class WidgetWrapper(WidgetWrapperBase):
         GUI().signal_autoconnect(self)
 
 
-# FIXME: merge these two into a single widget for toggling and editing realms
-# probably just a container with two children, and we toggle which is visible
-# decide how to trigger the editable one... right click->rename? double-click?
 class RealmToggleToolButton(gtk.ToggleToolButton):
-    def __init__(self, realm):
+    def __init__(self, realm, path):
         gtk.ToggleToolButton.__init__(self)
         self.realm = realm
+        self.path = path # path in backing gui datastore, needed for removal
         self.set_property("label", self.realm.title)
         self.connect("toggled", self.__on_toggled)
         self.set_active(self.realm.visible)
@@ -94,40 +92,46 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
     def __on_toggled(self, userparam):
         self.realm.set_visible(self.get_active())
 
+    # FIXME: is there a less manual way to do this? Override render? or expose?
+    # Perhaps using a label widget?
+    def update(self):
+        self.set_property("label", self.realm.title)
+
+
 # Class aggregating GTKToolbar and RealmToggleToolButtons
 class RealmToggles(WidgetWrapper):
     def __init__(self, widget, realm_store):
-        self.realms = []
         WidgetWrapper.__init__(self, widget)
-        for row in realm_store:
-            realm = row[0]
-            self.add_realm(realm)
+        iter = realm_store.get_iter_first()
+        while iter:
+            realm = realm_store[iter][0]
+            self.add_realm(realm, realm_store.get_path(iter))
+            iter = realm_store.iter_next(iter)
         realm_store.connect("row-changed", self.__on_row_changed)
         realm_store.connect("row-deleted", self.__on_row_deleted)
 
-    def add_realm(self, realm):
+    def add_realm(self, realm, path):
         # FIXME: create a custom widget, so we can override render and keep it's disply
         # bound to the contents of the realm object it contains...
         # FIXME: sort these in alpha order, with any actions at the end
-        self.realms.append(realm)
-        rw = RealmToggleToolButton(realm)
+        rw = RealmToggleToolButton(realm, path)
         self.widget.insert(rw, 0)
         rw.show()
 
     # Implement ListStore signal handlers
+    # rename and new realms handled here
     def __on_row_changed(self, model, path, iter):
-        realm = model[iter][0]
-        # row_inserted sends a None realm, so we have to use this signal
-        if self.realms.count(realm) == 0:
-            self.add_realm(realm)
-        else:
-            # FIXME: update the widget
-            print "FIXME: update the widget", realm.title, "changed"
-            pass
+        for realm_toggle in self.widget.get_children():
+            if realm_toggle.path == path:
+                realm_toggle.update()
+                return
+        self.add_realm(model[iter][0], path)
 
     def __on_row_deleted(self, model, path):
-        print "RealmToggles: on_row_deleted"
-        # FIXME: need to reload the TBs.... recreate them?
+        for realm_toggle in self.widget.get_children():
+            if realm_toggle.path == path:
+                self.widget.remove(realm_toggle)
+                return
 
 
 class TaskFilterListView(WidgetWrapper):
@@ -819,9 +823,9 @@ class GTDRowPopup(WidgetWrapper):
         print "current element is a", obj.__class__
 
     def on_gtd_row_popup_delete(self, widget):
-        print "on_delete"
         obj = self.tree_view.get_current()
-        print "current element is a", obj.__class__
+        print "on_delete", obj.title
+        # FIXME: implement the remove path in the GTD tree
 
 
 class RealmAreaDialog(WidgetWrapper):
