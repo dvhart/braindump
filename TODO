@@ -16,6 +16,8 @@ o currently using pynotify - perhaps we should be using the signals from gobject
 o consider using a treeview for tasks, and break them up into "Today" "Tomorrow"|"This Week" "Later/No Date"
 o Use a gtk_button_box instead of a toolbar for the realm buttons? (shouldn't have to wrap them then)
 o expand newly created realms in the realms and areas dialog boxes
+o fix about dialog name "braindump.py" to "BrainDump", glade shows "BrainDump 1.0", not sure what's going on
+  the about dialog's widget->name seems to be "braindump.py" ???
 
 Default Parent GTD Nodes
 o When creating new items (projects, areas, tasks) we have to select something as
@@ -52,5 +54,10 @@ o consider usin ics files, especially if that would aid integration into things 
 
 Popup Menus
 o example: /usr/share/doc/python-gtk2-tutorial/html/examples/menu.py
-o implement rename and delete handlers
 o prevent popup from working on GTDActionRow's
+
+GCONF Settings
+o window size and position
+o details visibility
+o last file loaded
+o last view state ?

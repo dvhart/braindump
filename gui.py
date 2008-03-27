@@ -61,10 +61,6 @@ class GUI(gtk.glade.XML):
             widget = self.__get_widget(name)
         return widget
 
-    # FIXME: testing this (not clear on dialog lifecycle)
-    def get_dialog_xml(self, name):
-        return gtk.glade.XML(self.file, name)
-
 
 # FIXME: rather than having to reference .widget, is it possible to superimpose
 #        the widget namespace onto ours with metaclasses ??
@@ -77,6 +73,10 @@ class WidgetWrapper(WidgetWrapperBase):
     def __init__(self, widget):
         WidgetWrapperBase.__init__(self, widget)
         GUI().register_widget(self)
+        # Note: this requires globally unique signal names
+        #       move this into the GUI class and use a subtree
+        #       xml object (from widget.name) if we want individual
+        #       widget signal namespace
         GUI().signal_autoconnect(self)
 
 
@@ -89,6 +89,7 @@ class RealmToggleToolButton(gtk.ToggleToolButton):
         self.connect("toggled", self.__on_toggled)
         self.set_active(self.realm.visible)
 
+    # FIXME: this is program control, doesn't belong in a widget class definition
     def __on_toggled(self, userparam):
         self.realm.set_visible(self.get_active())
 
@@ -808,7 +809,22 @@ class MenuBar(WidgetWrapper):
         WidgetWrapper.__init__(self, widget)
 
     def on_realms_and_areas_activate(self, menuitem):
-        GUI().get_widget("realm_area_dialog").show()
+        GUI().get_widget("realm_area_dialog").widget.show()
+
+    # FIXME: the main window should grow/shrink to accomodate this form
+    #        consider moving both forms to the same parent hbox so it can
+    #        be shown/hidden in one shot.
+    def on_details_activate(self, menuitem):
+        if menuitem.active:
+            GUI().get_widget("task_form_vbox").widget.show()
+            GUI().get_widget("project_form_vbox").widget.show()
+        else:
+            GUI().get_widget("task_form_vbox").widget.hide()
+            GUI().get_widget("project_form_vbox").widget.hide()
+
+    def on_about_activate(self, menuitem):
+        GUI().get_widget("about_dialog").widget.show()
+
 
 class GTDRowPopup(WidgetWrapper):
     def __init__(self, widget):
@@ -828,6 +844,23 @@ class GTDRowPopup(WidgetWrapper):
         # FIXME: implement the remove path in the GTD tree
 
 
+class AboutDialog(WidgetWrapper):
+    def __init__(self, widget):
+        WidgetWrapper.__init__(self, widget)
+
+    def on_about_dialog_delete(self, dialog, event):
+        self.widget.hide()
+        return True
+
+    def on_about_dialog_response(self, dialog, response):
+        if response == gtk.RESPONSE_CANCEL:
+            self.widget.hide()
+        elif response == gtk.RESPONSE_DELETE_EVENT:
+            pass
+        else:
+            print "ERROR: unexpected response: ", response
+
+
 class RealmAreaDialog(WidgetWrapper):
     def __init__(self, widget, realm_area_store):
         WidgetWrapper.__init__(self, widget)
@@ -840,22 +873,13 @@ class RealmAreaDialog(WidgetWrapper):
 
     # FIXME: Maybe make these private?  Should this logic be somewhere else? (Controller?)
     def on_realm_area_dialog_delete(self, dialog, event):
-        self.hide()
+        self.widget.hide()
         return True
 
     def on_realm_area_dialog_response(self, dialog, response):
         if response == gtk.RESPONSE_OK:
-            self.hide()
+            self.widget.hide()
         elif response == gtk.RESPONSE_DELETE_EVENT:
             pass
         else:
             print "ERROR: unexpected response: ", response
-
-    def hide(self):
-        self.widget.hide()
-
-    def show(self):
-        self.widget.show()
-
-    def menuitem_response(self, widget, string):
-        print string

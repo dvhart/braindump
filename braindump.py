@@ -185,19 +185,17 @@ class BrainDump:
                                self.area_store_filter_by_realm_no_action)
 
         # add the realm toggle buttons
-        realm_toggles = RealmToggles(GUI().get_widget("realm_toggles").widget,
-                                     self.realm_store_no_action)
+        realm_toggles = RealmToggles(GUI().get_widget("realm_toggles").widget)
+#        realm_toggles = RealmToggles(GUI().get_widget("realm_toggles").widget,
+#                                     self.realm_store_no_action)
 
         # FIXME: get the last selection and filterby from last time we were run
         GUI().get_widget("task_filter_list").widget.get_selection().select_all()
         GUI().get_widget("area_filter_list").widget.get_selection().select_all()
 
-        # Build the menu bar (and connect the signals)
-        MenuBar(GUI().get_widget("menubar").widget)
-
-        # Build the realms and areas dialog (and connect the signals)
+        menu_bar = MenuBar(GUI().get_widget("menubar").widget)
         realm_area_dialog = RealmAreaDialog(GUI().get_widget("realm_area_dialog").widget, self.realm_area_store)
-        # Build the GTD Row popup menu (and connect the signals)
+        about_dialog = AboutDialog(GUI().get_widget("about_dialog").widget)
         gtd_row_popup = GTDRowPopup(GUI().get_widget("gtd_row_popup").widget)
 
 
