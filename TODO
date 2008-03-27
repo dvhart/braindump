@@ -18,6 +18,7 @@ o Use a gtk_button_box instead of a toolbar for the realm buttons? (shouldn't ha
 o expand newly created realms in the realms and areas dialog boxes
 o fix about dialog name "braindump.py" to "BrainDump", glade shows "BrainDump 1.0", not sure what's going on
   the about dialog's widget->name seems to be "braindump.py" ???
+o gut requirements on GNOME, and try to be a pure gtk app by default
 
 Default Parent GTD Nodes
 o When creating new items (projects, areas, tasks) we have to select something as

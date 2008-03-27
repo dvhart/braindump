@@ -159,6 +159,7 @@ David Allen's GTD model.</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <property name="focus_on_map">True</property>
   <property name="urgency_hint">False</property>
+  <signal name="destroy" handler="on_window_destroy" last_modification_time="Thu, 27 Mar 2008 07:06:26 GMT"/>
 
   <child>
     <widget class="GtkVBox" id="vbox9">
