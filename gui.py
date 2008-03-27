@@ -80,59 +80,38 @@ class WidgetWrapper(WidgetWrapperBase):
         GUI().signal_autoconnect(self)
 
 
-class RealmToggleToolButton(gtk.ToggleToolButton):
-    def __init__(self, realm, path):
-        gtk.ToggleToolButton.__init__(self)
-        self.realm = realm
-        self.path = path # path in backing gui datastore, needed for removal
-        self.set_property("label", self.realm.title)
-        self.connect("toggled", self.__on_toggled)
-        self.set_active(self.realm.visible)
-
-    # FIXME: this is program control, doesn't belong in a widget class definition
-    def __on_toggled(self, userparam):
-        self.realm.set_visible(self.get_active())
-
-    # FIXME: is there a less manual way to do this? Override render? or expose?
-    # Perhaps using a label widget?
-    def update(self):
-        self.set_property("label", self.realm.title)
-
-
-# Class aggregating GTKToolbar and RealmToggleToolButtons
 class RealmToggles(WidgetWrapper):
-    def __init__(self, widget, realm_store):
+    def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
-        iter = realm_store.get_iter_first()
-        while iter:
-            realm = realm_store[iter][0]
-            self.add_realm(realm, realm_store.get_path(iter))
-            iter = realm_store.iter_next(iter)
-        realm_store.connect("row-changed", self.__on_row_changed)
-        realm_store.connect("row-deleted", self.__on_row_deleted)
+        self.realm_buttons = {}
+        for realm in GTD().realms:
+            self.on_realm_added(realm)
+        GTD().sig_realm_added.connect(self.on_realm_added)
+        GTD().sig_realm_renamed.connect(self.on_realm_renamed)
+        GTD().sig_realm_removed.connect(self.on_realm_removed)
 
-    def add_realm(self, realm, path):
-        # FIXME: create a custom widget, so we can override render and keep it's disply
-        # bound to the contents of the realm object it contains...
-        # FIXME: sort these in alpha order, with any actions at the end
-        rw = RealmToggleToolButton(realm, path)
-        self.widget.insert(rw, 0)
-        rw.show()
+    # FIXME: alpha order?
+    def on_realm_added(self, realm):
+        print "Adding Realm: ", realm.title
+        tb = gtk.ToggleToolButton()
+        tb.set_property("label", realm.title)
+        tb.set_active(realm.visible)
+        tb.connect("toggled", self.__on_toggled, realm)
+        tb.show()
+        self.widget.insert(tb, 0)
+        self.realm_buttons[realm] = tb
 
-    # Implement ListStore signal handlers
-    # rename and new realms handled here
-    def __on_row_changed(self, model, path, iter):
-        for realm_toggle in self.widget.get_children():
-            if realm_toggle.path == path:
-                realm_toggle.update()
-                return
-        self.add_realm(model[iter][0], path)
+    def __on_toggled(self, widget, realm):
+        realm.set_visible(widget.get_active())
 
-    def __on_row_deleted(self, model, path):
-        for realm_toggle in self.widget.get_children():
-            if realm_toggle.path == path:
-                self.widget.remove(realm_toggle)
-                return
+    # FIXME: alpha reorder?
+    def on_realm_renamed(self, realm):
+        if self.realm_buttons.has_key(realm):
+            self.realm_buttons[realm].set_property("label", realm.title)
+
+    def on_realm_removed(self, realm):
+        if self.realm_buttons.has_key(realm):
+            self.widget.remove(self.realm_buttons[realm])
 
 
 class TaskFilterListView(WidgetWrapper):
