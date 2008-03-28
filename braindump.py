@@ -154,10 +154,10 @@ class BrainDump:
         BrainDumpWindow(GUI().get_widget("braindump_window").widget)
 
         # Task Tab
-        TaskFilterBy(GUI().get_widget("taskfilterby").widget)
         task_filter_list = TaskFilterListView(GUI().get_widget("task_filter_list").widget,
                                               self.context_store_action,
                                               self.project_store_filter_by_realm_no_action)
+        GUI().get_widget("taskfilterby").widget.set_active(0)
 
         self.task_store_filter_by_selection = \
             self.task_store.filter_by_selection(task_filter_list.widget.get_selection(), True)
