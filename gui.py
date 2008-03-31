@@ -210,7 +210,7 @@ class TaskFilterListView(WidgetWrapper):
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
             # FIXME: this is really not type safe, the widget isn't tested to be a GTDPopupMenu
             popup = GUI().get_widget(widget.get_name()) 
-            popup.tree_view = self
+            popup.set_tree_and_col(self, self.widget.get_column(0))
             widget.popup(None, None, None, event.button, event.time)
             return True
         return False
@@ -252,6 +252,7 @@ class TaskListView(WidgetWrapper):
         """
         WidgetWrapper.__init__(self, widget)
         self.widget.set_model(task_store)
+        task_store.connect("row_inserted", self._on_row_inserted)
 
         # create the TreeViewColumns to display the data
         tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -287,8 +288,15 @@ class TaskListView(WidgetWrapper):
 
     def _on_edited(self, cell, path, new_text, model_lambda, column):
         task = model_lambda()[path][0]
-        if task:
+        if isinstance(task, NewTask):
+            # FIXME: grab the first context and area in the selections
+            if not task.title == new_text:
+                Task(new_text)
+        else:
             task.title = new_text
+
+    def _on_row_inserted(self, model, path, iter):
+        self.widget.set_cursor(path, None, True)
 
     def _data_func(self, column, cell, model, iter, data):
         task = model[iter][0]
@@ -320,7 +328,7 @@ class TaskListView(WidgetWrapper):
     def on_task_list_button_press(self, widget, event):
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
             popup = GUI().get_widget(widget.get_name()) 
-            popup.tree_view = self
+            popup.set_tree_and_col(self, self.widget.get_column(1))
             widget.popup(None, None, None, event.button, event.time)
             return True
         return False
@@ -351,13 +359,13 @@ class AreaFilterListView(WidgetWrapper):
         self.widget.set_model(area_store)
 
         # setup the column and cell renderer
-        self.tvcolumn0 = gtk.TreeViewColumn()
-        self.cell0 = gtk.CellRendererText()
-        self.cell0.set_property('editable', True)
-        self.cell0.connect('edited', self.on_filter_edited, lambda: self.widget.get_model(), 0)
-        self.tvcolumn0.pack_start(self.cell0, False)
-        self.tvcolumn0.set_cell_data_func(self.cell0, self.data_func, "data")
-        self.widget.append_column(self.tvcolumn0)
+        tvcolumn0 = gtk.TreeViewColumn()
+        cell0 = gtk.CellRendererText()
+        cell0.set_property('editable', True)
+        cell0.connect('edited', self.on_filter_edited, lambda: self.widget.get_model(), 0)
+        tvcolumn0.pack_start(cell0, False)
+        tvcolumn0.set_cell_data_func(cell0, self.data_func, "data")
+        self.widget.append_column(tvcolumn0)
 
         # setup selection modes and callback
         self.widget.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
@@ -379,7 +387,7 @@ class AreaFilterListView(WidgetWrapper):
     def on_area_filter_list_button_press(self, widget, event):
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
             popup = GUI().get_widget(widget.get_name()) 
-            popup.tree_view = self
+            popup.set_tree_and_col(self, self.widget.get_column(0))
             widget.popup(None, None, None, event.button, event.time)
             return True
         return False
@@ -407,35 +415,36 @@ class ProjectListView(WidgetWrapper):
     def __init__(self, widget, project_store):
         WidgetWrapper.__init__(self, widget)
         self.widget.set_model(project_store)
+        project_store.connect("row_inserted", self._on_row_inserted)
 
         # create the TreeViewColumns to display the data
-        self.tvcolumn0 = gtk.TreeViewColumn("Done")
-        self.tvcolumn1 = gtk.TreeViewColumn("Title")
-        self.tvcolumn2 = gtk.TreeViewColumn("Tasks")
+        tvcolumn0 = gtk.TreeViewColumn("Done")
+        tvcolumn1 = gtk.TreeViewColumn("Title")
+        tvcolumn2 = gtk.TreeViewColumn("Tasks")
 
         # append the columns to the view
-        widget.append_column(self.tvcolumn0)
-        widget.append_column(self.tvcolumn1)
-        widget.append_column(self.tvcolumn2)
+        widget.append_column(tvcolumn0)
+        widget.append_column(tvcolumn1)
+        widget.append_column(tvcolumn2)
 
         # create the CellRenderers
-        self.cell0 = gtk.CellRendererToggle()
-        self.cell0.connect('toggled', self._on_toggled, widget.get_model(), 0)
-        self.cell1 = gtk.CellRendererText()
-        self.cell1.set_property('editable', True)
-        self.cell1.connect('edited', self._on_edited, lambda: self.widget.get_model(), 1)
-        self.cell2 = gtk.CellRendererText()
+        cell0 = gtk.CellRendererToggle()
+        cell0.connect('toggled', self._on_toggled, widget.get_model(), 0)
+        cell1 = gtk.CellRendererText()
+        cell1.set_property('editable', True)
+        cell1.connect('edited', self._on_edited, lambda: self.widget.get_model(), 1)
+        cell2 = gtk.CellRendererText()
 
         # attach the CellRenderers to each column
-        self.tvcolumn0.pack_start(self.cell0, False)
-        self.tvcolumn1.pack_start(self.cell1) # expand True by default
-        self.tvcolumn1.pack_start(self.cell2, False)
+        tvcolumn0.pack_start(cell0, False)
+        tvcolumn1.pack_start(cell1) # expand True by default
+        tvcolumn1.pack_start(cell2, False)
 
         # display data directly from the gtd object, rather than setting attributes
-        self.tvcolumn0.set_cell_data_func(self.cell0, self.project_data_func, "complete")
-        self.tvcolumn1.set_cell_data_func(self.cell1, self.project_data_func, "title")
+        tvcolumn0.set_cell_data_func(cell0, self.project_data_func, "complete")
+        tvcolumn1.set_cell_data_func(cell1, self.project_data_func, "title")
         # FIXME: shouldn't this next one be tvcolumn2?
-        self.tvcolumn1.set_cell_data_func(self.cell2, self.project_data_func, "tasks")
+        tvcolumn1.set_cell_data_func(cell2, self.project_data_func, "tasks")
 
         # make it searchable
         widget.set_search_column(1)
@@ -448,8 +457,16 @@ class ProjectListView(WidgetWrapper):
 
     def _on_edited(self, cell, path, new_text, model_lambda, column):
         project = model_lambda()[path][0]
-        if project:
+        if project.title == new_text:
+            return
+        if isinstance(project, NewProject):
+            # FIXME: grab the first area in the selections
+            Project(new_text)
+        else:
             project.title = new_text
+
+    def _on_row_inserted(self, model, path, iter):
+        self.widget.set_cursor(path, None, False)
 
     # return the selected project
     def get_current(self):
@@ -486,7 +503,7 @@ class ProjectListView(WidgetWrapper):
     def on_project_list_button_press(self, widget, event):
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
             popup = GUI().get_widget(widget.get_name()) 
-            popup.tree_view = self
+            popup.set_tree_and_col(self, self.widget.get_column(1))
             widget.popup(None, None, None, event.button, event.time)
             return True
         return False
@@ -513,13 +530,13 @@ class RealmAreaTreeView(WidgetWrapper):
         self.widget.set_model(realm_area_store)
 
         # create the TreeViewColumn to display the data
-        self.tvcolumn1 = gtk.TreeViewColumn("Title")
-        self.cell1 = gtk.CellRendererText()
-        self.cell1.set_property('editable', True)
-        self.cell1.connect('edited', self._on_edited, lambda: self.widget.get_model(), 1)
-        self.tvcolumn1.pack_start(self.cell1) # expand True by default
-        self.tvcolumn1.set_cell_data_func(self.cell1, self._data_func, "title")
-        widget.append_column(self.tvcolumn1)
+        tvcolumn = gtk.TreeViewColumn("Title")
+        cell = gtk.CellRendererText()
+        cell.set_property('editable', True)
+        cell.connect('edited', self._on_edited, lambda: self.widget.get_model(), 1)
+        tvcolumn.pack_start(cell) # expand True by default
+        tvcolumn.set_cell_data_func(cell, self._data_func, "title")
+        widget.append_column(tvcolumn)
 
         self.widget.expand_all()
 
@@ -556,7 +573,7 @@ class RealmAreaTreeView(WidgetWrapper):
     def on_realms_and_areas_button_press(self, widget, event):
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
             popup = GUI().get_widget(widget.get_name()) 
-            popup.tree_view = self
+            popup.set_tree_and_col(self, self.widget.get_column(0))
             widget.popup(None, None, None, event.button, event.time)
             return True
         return False
@@ -794,21 +811,26 @@ class MenuBar(WidgetWrapper):
 
 
 class GTDRowPopup(WidgetWrapper):
+    __tree_view = None
+    __edit_col = 0
+
     def __init__(self, widget):
         WidgetWrapper.__init__(self, widget)
-        self.tree_view = None
     
     # gtk signal callbacks (defined in and connected via Glade)
     def on_gtd_row_popup_rename(self, widget):
-        print "on_rename"
-        print "tree_view is a", self.tree_view.__class__
-        obj = self.tree_view.get_current()
-        print "current element is a", obj.__class__
+        obj = self.__tree_view.get_current()
+        path,col = self.__tree_view.widget.get_cursor()
+        self.__tree_view.widget.set_cursor(path, self.__edit_col, True)
 
     def on_gtd_row_popup_delete(self, widget):
+        # FIXME: implement the remove path in the GTD tree
         obj = self.tree_view.get_current()
         print "on_delete", obj.title
-        # FIXME: implement the remove path in the GTD tree
+
+    def set_tree_and_col(self, tree_view, column):
+        self.__tree_view = tree_view
+        self.__edit_col = column
 
 
 class AboutDialog(WidgetWrapper):

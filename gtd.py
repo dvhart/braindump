@@ -25,11 +25,6 @@ from singleton import *
 from notify.all import *
 from oproperty import *
 
-realm_none = None
-area_none = None
-project_none = None
-
-
 class Base(object):
     def __init__(self, title):
         self.__title = title
@@ -38,6 +33,10 @@ class Base(object):
         self.__title = title
 
     title = OProperty(lambda s: s.__title, set_title)
+
+class BaseNone(object):
+    '''Abstract Base Class for all GTD None element singletons.'''
+    pass
 
 
 class Context(Base):
@@ -81,7 +80,7 @@ class Realm(Base):
         self.visible = visible
         GTD().sig_realm_visible_changed(self)
 
-class RealmNone(Realm):
+class RealmNone(Realm, BaseNone):
     __metaclass__ =  Singleton
 
     def __init__(self):
@@ -121,7 +120,7 @@ class Area(Base):
     def remove_project(self, project):
         self.projects.remove(project)
 
-class AreaNone(Area):
+class AreaNone(Area, BaseNone):
     __metaclass__ =  Singleton
 
     def __init__(self):
@@ -160,7 +159,7 @@ class Project(Base):
     def remove_task(self, task):
         self.tasks.remove(task)
 
-class ProjectNone(Project):
+class ProjectNone(Project, BaseNone):
     __metaclass__ = Singleton
 
     def __init__(self):

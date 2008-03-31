@@ -254,9 +254,12 @@ class ProjectStore(GTDStoreRealmFilter):
         return filter
 
     # Filter visibility methods
+    # FIXME: model these visibility methods after those in TaskStore
     def filter_by_realm_visible(self, model, iter, data):
         show_actions = data
         project = model[iter][0]
+        if project == None:
+            return False
         if isinstance(project, GTDActionRow):
             return show_actions
         else:
@@ -265,10 +268,12 @@ class ProjectStore(GTDStoreRealmFilter):
     def filter_by_area_visible(self, model, iter, data):
         selection, show_actions = data
         selmodel, paths = selection.get_selected_rows()
-        value = model[iter][0]
-        if not isinstance(value, GTDActionRow):
+        project = model[iter][0]
+        if project == None:
+            return False
+        if not isinstance(project, GTDActionRow):
             for path in paths:
-                if value.area is selmodel[path][0]:
+                if project.area is selmodel[path][0]:
                     return True
             return False
         else:
@@ -297,15 +302,21 @@ class TaskStore(GTDStoreRealmFilter):
 
     def filter_by_selection(self, selection, show_actions):
         filter = self.filter_new()
-        filter.set_visible_func(self.filter_by_selection_visible, [selection, show_actions])
+        filter.set_visible_func(self.__filter_by_selection_visible, [selection, show_actions])
         return filter
 
-    def filter_by_selection_visible(self, model, iter, data):
+    def __filter_by_selection_visible(self, model, iter, data):
         selection, show_actions = data
         selmodel, paths = selection.get_selected_rows()
         task = model[iter][0]
         if isinstance(task, GTDActionRow):
             return show_actions
+        if task is None:
+            print "FIXME: WHY ARE WE COMPARING A NONE TASK?"
+            return False
+        if isinstance(task.project, BaseNone) or isinstance(task.project.area, BaseNone) \
+           or isinstance(task.project.area.realm, BaseNone):
+            return True
         else:
             if task.project.area.realm.visible:
                 for path in paths:
@@ -322,9 +333,10 @@ class TaskStore(GTDStoreRealmFilter):
                         print "ERROR: cannot filter Task on", comp.__class__
             return False
 
-    # FIXME: update the store in response to these signals
     def on_task_renamed(self, task):
-        print "FIXME: task ", task.title, " renamed"
+        # currently nothing need be done.  We may need to refilter if there are more
+        # than one view in the future.
+        pass
 
     def on_task_added(self, task):
         self.model.append([task])
