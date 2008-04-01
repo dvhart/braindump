@@ -44,6 +44,27 @@ class GTDStoreFilter(gobject.GObject):
         for f in self.filters:
             f.refilter()
 
+    def gtd_iter(self, obj):
+        iter = self.model.get_iter_first()
+        while iter:
+            if self.model[iter][0] == obj:
+                return iter
+            iter = self.model.iter_next(iter)
+        return None
+
+    def on_gtd_renamed(self, obj):
+        iter = self.gtd_iter(obj)
+        if iter:
+            self.model.row_changed(self.model.get_path(iter), iter)
+
+    def on_gtd_added(self, obj):
+        self.model.append([obj])
+
+    def on_gtd_removed(self, project):
+        iter = self.gtd_iter(obj)
+        if iter:
+            self.model.remove(iter)
+
 
 class GTDStoreRealmFilter(GTDStoreFilter):
     def __init__(self):
@@ -77,28 +98,6 @@ class RealmStore(GTDStoreFilter):
             return show_actions
         return True
 
-    def on_realm_renamed(self, realm):
-        iter = self.model.get_iter_first()
-        while iter:
-            obj = self.model[iter][0]
-            if obj == realm:
-                self.model.row_changed(self.model.get_path(iter), iter)
-                break
-            iter = self.model.iter_next(iter)
-
-    def on_realm_added(self, realm):
-        self.model.append([realm])
-
-    def on_realm_removed(self, realm):
-        iter = self.model.get_iter_first()
-        while iter:
-            obj = self.model[iter][0]
-            if obj == realm:
-                path = self.model.get_path(iter)
-                self.model.remove(iter)
-                break
-            iter = self.model.iter_next(iter)
-
 
 class ContextStore(GTDStoreFilter):
     def __init__(self):
@@ -117,16 +116,6 @@ class ContextStore(GTDStoreFilter):
         if isinstance(model[iter][0], GTDActionRow):
             return show_actions
         return True
-
-    # FIXME: update the store in response to these signals
-    def on_context_renamed(self, context):
-        print "FIXME: context ", context.title, " renamed"
-
-    def on_context_added(self, context):
-        self.model.append([context])
-
-    def on_context_removed(self, context):
-        print "FIXME: context ", context.title, " removed"
 
 
 # Area gtd datastore
@@ -147,26 +136,6 @@ class AreaStore(GTDStoreRealmFilter):
         else:
             return area.realm.visible
 
-    # GTD signal handlers
-    def on_area_renamed(self, area):
-        iter = self.model.get_iter_first()
-        while iter:
-            if self.model[iter][0] == area:
-                self.model.row_changed(self.model.get_path(iter), iter)
-                return
-            iter = self.model.iter_next(iter)
-        print "ERROR: ", area.title, " not found in AreaStore"
-
-    def on_area_added(self, area):
-        self.model.append([area])
-
-    def on_area_removed(self, area):
-        iter = self.model.get_iter_first()
-        while iter:
-            if self.model[iter][0] == area:
-                self.model.remove(iter)
-                return
-            iter = self.model.iter_next(iter)
 
 # Realm and Area 2 level datastore
 class RealmAreaStore(gobject.GObject):
@@ -279,16 +248,6 @@ class ProjectStore(GTDStoreRealmFilter):
         else:
             return show_actions
 
-    # FIXME: update the store in response to these signals
-    def on_project_renamed(self, project):
-        print "FIXME: project ", project.title, " renamed"
-
-    def on_project_added(self, project):
-        self.model.append([project])
-
-    def on_project_removed(self, project):
-        print "FIXME: project ", project.title, " removed"
-
 
 class TaskStore(GTDStoreRealmFilter):
     def __init__(self):
@@ -332,14 +291,3 @@ class TaskStore(GTDStoreRealmFilter):
                     else:
                         print "ERROR: cannot filter Task on", comp.__class__
             return False
-
-    def on_task_renamed(self, task):
-        # currently nothing need be done.  We may need to refilter if there are more
-        # than one view in the future.
-        pass
-
-    def on_task_added(self, task):
-        self.model.append([task])
-
-    def on_task_removed(self, task):
-        print "FIXME: task ", task.title, " removed"

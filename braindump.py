@@ -83,10 +83,11 @@ class GTDSignalTest:
 
 
 # GUI Classses and callbacks
-class BrainDump:
+class BrainDump(object):
     def __init__(self):
         # aggregate widgets, with member callbacks
         GUI("glade/braindump.glade")
+        GUI().signal_autoconnect(self)
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
@@ -118,9 +119,9 @@ class BrainDump:
         self.context_store_filter_no_action = self.context_store.filter_actions(False)
 
         # Connect Signals
-        GTD().sig_realm_renamed.connect(self.realm_store.on_realm_renamed)
-        GTD().sig_realm_added.connect(self.realm_store.on_realm_added)
-        GTD().sig_realm_removed.connect(self.realm_store.on_realm_removed)
+        GTD().sig_realm_renamed.connect(self.realm_store.on_gtd_renamed)
+        GTD().sig_realm_added.connect(self.realm_store.on_gtd_added)
+        GTD().sig_realm_removed.connect(self.realm_store.on_gtd_removed)
 
         GTD().sig_realm_renamed.connect(self.realm_area_store.on_realm_renamed)
         GTD().sig_realm_added.connect(self.realm_area_store.on_realm_added)
@@ -133,25 +134,25 @@ class BrainDump:
         GTD().sig_realm_visible_changed.connect(self.project_store.refilter)
         GTD().sig_realm_visible_changed.connect(self.task_store.refilter)
 
-        GTD().sig_area_renamed.connect(self.area_store.on_area_renamed)
-        GTD().sig_area_added.connect(self.area_store.on_area_added)
-        GTD().sig_area_removed.connect(self.area_store.on_area_removed)
+        GTD().sig_area_renamed.connect(self.area_store.on_gtd_renamed)
+        GTD().sig_area_added.connect(self.area_store.on_gtd_added)
+        GTD().sig_area_removed.connect(self.area_store.on_gtd_removed)
 
-        GTD().sig_project_renamed.connect(self.project_store.on_project_renamed)
-        GTD().sig_project_added.connect(self.project_store.on_project_added)
-        GTD().sig_project_removed.connect(self.project_store.on_project_removed)
+        GTD().sig_project_renamed.connect(self.project_store.on_gtd_renamed)
+        GTD().sig_project_added.connect(self.project_store.on_gtd_added)
+        GTD().sig_project_removed.connect(self.project_store.on_gtd_removed)
 
-        GTD().sig_task_renamed.connect(self.task_store.on_task_renamed)
-        GTD().sig_task_added.connect(self.task_store.on_task_added)
-        GTD().sig_task_removed.connect(self.task_store.on_task_removed)
+        GTD().sig_task_renamed.connect(self.task_store.on_gtd_renamed)
+        GTD().sig_task_added.connect(self.task_store.on_gtd_added)
+        GTD().sig_task_removed.connect(self.task_store.on_gtd_removed)
 
-        GTD().sig_context_renamed.connect(self.context_store.on_context_renamed)
-        GTD().sig_context_added.connect(self.context_store.on_context_added)
-        GTD().sig_context_removed.connect(self.context_store.on_context_removed)
+        GTD().sig_context_renamed.connect(self.context_store.on_gtd_renamed)
+        GTD().sig_context_added.connect(self.context_store.on_gtd_added)
+        GTD().sig_context_removed.connect(self.context_store.on_gtd_removed)
 
-
-        # Build the GUI and connect the signals
-        BrainDumpWindow(GUI().get_widget("braindump_window").widget)
+        # Menus and Toolbars
+        realm_toggles = RealmToggles(GUI().get_widget("realm_toggles").widget)
+        gtd_row_popup = GTDRowPopup(GUI().get_widget("gtd_row_popup").widget)
 
         # Task Tab
         task_filter_list = TaskFilterListView(GUI().get_widget("task_filter_list").widget,
@@ -161,17 +162,16 @@ class BrainDump:
 
         self.task_store_filter_by_selection = \
             self.task_store.filter_by_selection(task_filter_list.widget.get_selection(), True)
-        TaskListView(GUI().get_widget("task_list").widget, self.task_store_filter_by_selection)
+        TaskListView(GUI().get_widget("task_list").widget, self.task_store_filter_by_selection, self.on_new_task)
         task_filter_list.widget.get_selection().connect("changed", self.task_store.refilter)
 
-        context_table = ContextTable(GUI().get_widget("task_contexts_table").widget)
+        context_table = ContextTable(GUI().get_widget("task_contexts_table").widget, self.on_context_toggled)
         GTD().sig_context_renamed.connect(context_table.on_context_renamed)
         GTD().sig_context_added.connect(context_table.on_context_added)
         GTD().sig_context_removed.connect(context_table.on_context_removed)
 
-        project_combo = ProjectCombo(GUI().get_widget("task_project").widget,
-                                     self.project_store_filter_by_realm_no_action)
-        GTD().sig_project_renamed.connect(project_combo.on_project_renamed)
+        project_combo = GTDCombo(GUI().get_widget("task_project").widget,
+                                 self.project_store_filter_by_realm_no_action, ProjectNone())
 
         # Project Tab
         area_filter_list = AreaFilterListView(GUI().get_widget("area_filter_list").widget,
@@ -181,22 +181,92 @@ class BrainDump:
             self.project_store.filter_by_area(area_filter_list.widget.get_selection(), True)
         ProjectListView(GUI().get_widget("project_list").widget, self.project_store_filter_by_area)
 
-        area_combo = AreaCombo(GUI().get_widget("project_area").widget,
-                               self.area_store_filter_by_realm_no_action)
+        area_combo = GTDCombo(GUI().get_widget("project_area").widget,
+                              self.area_store_filter_by_realm_no_action, AreaNone())
 
-        # add the realm toggle buttons
-        realm_toggles = RealmToggles(GUI().get_widget("realm_toggles").widget)
-#        realm_toggles = RealmToggles(GUI().get_widget("realm_toggles").widget,
-#                                     self.realm_store_no_action)
+
+        # New task default form
+        task_default_project_combo = GTDCombo(GUI().get_widget("default_project_combo").widget,
+                                              self.project_store_filter_by_realm_no_action, ProjectNone())
+        task_defualt_context_combo = GTDCombo(GUI().get_widget("default_context_combo").widget,
+                                              self.context_store_filter_no_action)
+
+        # Dialog boxes
+        realm_area_dialog = RealmAreaDialog(GUI().get_widget("realm_area_dialog").widget,
+                                            self.realm_area_store)
+        about_dialog = AboutDialog(GUI().get_widget("about_dialog").widget)
 
         # FIXME: get the last selection and filterby from last time we were run
         GUI().get_widget("task_filter_list").widget.get_selection().select_all()
         GUI().get_widget("area_filter_list").widget.get_selection().select_all()
 
-        menu_bar = MenuBar(GUI().get_widget("menubar").widget)
-        realm_area_dialog = RealmAreaDialog(GUI().get_widget("realm_area_dialog").widget, self.realm_area_store)
-        about_dialog = AboutDialog(GUI().get_widget("about_dialog").widget)
-        gtd_row_popup = GTDRowPopup(GUI().get_widget("gtd_row_popup").widget)
+    # Application logic follows
+    # Menu-item callbacks
+    def on_realms_and_areas_activate(self, menuitem):
+        GUI().get_widget("realm_area_dialog").widget.show()
+
+    def on_new_task_defaults_activate(self, menuitem):
+        form = GUI().get_widget("new_task_defaults_form").widget
+        if menuitem.active:
+            form.show()
+        else:
+            form.hide()
+            GUI().get_widget("default_project_combo").widget.set_active(-1)
+            GUI().get_widget("default_context_combo").widget.set_active(-1)
+
+    def on_details_activate(self, menuitem):
+        # FIXME: the main window should grow/shrink to accomodate this form
+        #        consider moving both forms to the same parent hbox so it can
+        #        be shown/hidden in one shot.
+        task_form = GUI().get_widget("task_details_form").widget
+        project_form = GUI().get_widget("project_details_form").widget
+        if menuitem.active:
+            task_form.show()
+            project_form.show()
+        else:
+            task_form.hide()
+            project_form.hide()
+
+    def on_about_activate(self, menuitem):
+        GUI().get_widget("about_dialog").widget.show()
+    # End menu-item callbacks
+
+    def on_task_project_changed(self, project_combo):
+        # FIXME: make the widgets private variables? self.__task_list ?
+        task = GUI().get_widget("task_list").get_current()
+        project = GUI().get_widget("task_project").get_active()
+        if isinstance(task, gtd.Task) and not task.project == project :
+            if isinstance(project, gtd.Project):
+                project.add_task(task)
+            task.project.remove_task(task)
+            task.project = project
+
+    def on_project_area_changed(self, area_combo):
+        project = GUI().get_widget("project_list").get_current()
+        area = GUI().get_widget("project_area").get_current()
+        if isinstance(project, gtd.Project) and not project.area == project :
+            if isinstance(area, gtd.Area):
+                area.add_project(project)
+            project.area.remove_project(project)
+            project.area = area
+
+    def on_context_toggled(self, context_checkbox, context):
+        task = GUI().get_widget("task_list").get_current()
+        if isinstance(task, gtd.Task):
+            if context_checkbox.get_active():
+                task.add_context(context)
+            else:
+                task.remove_context(context)
+
+    def on_new_task(self, title):
+        '''Create a new task from the new task defaults, initiated from the task list.'''
+        project = GUI().get_widget("default_project_combo").get_active()
+        context = GUI().get_widget("default_context_combo").get_active()
+        gtd.Task(title, project, [context])
+
+    def on_window_destroy(self, widget):
+        gtk.main_quit()
+
 
 
 # test to see if we were run directly
