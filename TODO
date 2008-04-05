@@ -21,7 +21,6 @@ o fix about dialog name "braindump.py" to "BrainDump", glade shows "BrainDump 1.
 o gut requirements on GNOME, and try to be a pure gtk app by default
 o wrap task_form_vbox and project_form_vbox in order to get the task and project update logic
   out of the task and project list views
-o add sticky mode and form for default task creation
 
 Default Parent GTD Nodes
 o When creating new items (projects, areas, tasks) we have to select something as

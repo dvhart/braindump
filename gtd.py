@@ -263,9 +263,10 @@ class GTD(object):
         self.sig_context_removed(context)
 
     def remove_realm(self, realm):
-        for r in self.realms:
-            for a in r.areas:
-                a.realm = RealmNone()
+        print "remove_realm: ", realm.__class__
+        print realm.title
+        for a in realm.areas:
+            a.realm = RealmNone()
         self.realms.remove(realm)
         self.sig_realm_removed(realm)
 

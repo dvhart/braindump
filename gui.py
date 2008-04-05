@@ -151,10 +151,37 @@ class RealmToggles(WidgetWrapper):
             del self.__realm_buttons[realm]
 
 
+class GTDTreeView(WidgetWrapper):
+    def __init__(self, name):
+        WidgetWrapper.__init__(self, name)
+
+    def get_current(self):
+        """Return the current gtd.Context or gtd.Project."""
+        path = self.widget.get_cursor()[0]
+        obj = self.widget.get_model()[path][0]
+        return obj
+
+    def on_button_press(self, widget, event, col):
+        """Display the popup menu when the right mouse button is pressed.
+
+        Keyword arguments:
+        widget -- the gtk.Menu to display
+        event  -- the gtk event that caused the signal to be emitted
+        """
+
+        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3 \
+           and not isinstance(self.get_current(), GTDActionRow):
+            # FIXME: this is really not type safe, the widget isn't tested to be a GTDPopupMenu
+            popup = GUI().get_widget(widget.get_name()) 
+            popup.set_tree_and_col(self, self.widget.get_column(col))
+            widget.popup(None, None, None, event.button, event.time)
+            return True
+        return False
+
 # FIXME: consider renaming this to not use "Filter" as this class
 # doesn't do the filtering, it's selection is used for that purpose
 # by the application.
-class TaskFilterListView(WidgetWrapper):
+class TaskFilterListView(GTDTreeView):
     """A treeview to display contexts or projects."""
 
     def __init__(self, name, context_store, project_store):
@@ -165,7 +192,7 @@ class TaskFilterListView(WidgetWrapper):
         context_store -- the ContextStore for gtd.Contexts
         project_store -- the ProjectStore fot gtd.Projects
         """
-        WidgetWrapper.__init__(self, name)
+        GTDTreeView.__init__(self, name)
         self.__context_store = context_store
         self.__project_store = project_store
         # FIXME: which model should we do first?
@@ -194,26 +221,8 @@ class TaskFilterListView(WidgetWrapper):
             title = "<i>"+title+"</i>"
         cell.set_property("markup", title)
 
-    def get_current(self):
-        """Return the current gtd.Context or gtd.Project."""
-        path = self.widget.get_cursor()[0]
-        obj = self.widget.get_model()[path][0]
-        return obj
-
     def on_task_filter_list_button_press(self, widget, event):
-        """Display the popup menu when the right mouse button is pressed.
-
-        Keyword arguments:
-        widget -- the gtk.Menu to display
-        event  -- the gtk event that caused the signal to be emitted
-        """
-        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
-            # FIXME: this is really not type safe, the widget isn't tested to be a GTDPopupMenu
-            popup = GUI().get_widget(widget.get_name()) 
-            popup.set_tree_and_col(self, self.widget.get_column(0))
-            widget.popup(None, None, None, event.button, event.time)
-            return True
-        return False
+        return GTDTreeView.on_button_press(self, widget, event, 0)
 
     def on_task_filterby_changed(self, widget):
         """Update the model according to the selected filter.
@@ -240,7 +249,7 @@ class TaskFilterListView(WidgetWrapper):
         # new tasks as they will just vanish from the view)
 
 
-class TaskListView(WidgetWrapper):
+class TaskListView(GTDTreeView):
     """A treeview to display tasks.
     
     Public members variables:
@@ -257,7 +266,7 @@ class TaskListView(WidgetWrapper):
         widget     -- the gtk.TreeView widget to wrap
         task_store -- the TaskStore for gtd.Tasks
         """
-        WidgetWrapper.__init__(self, name)
+        GTDTreeView.__init__(self, name)
         self.__new_task_handler = new_task_handler
         self.widget.set_model(task_store)
         task_store.connect("row_inserted", self._on_row_inserted)
@@ -323,23 +332,9 @@ class TaskListView(WidgetWrapper):
             # FIXME: throw an exception
             print "ERROR: didn't set %s property for "%data, obj.title
 
-    def get_current(self):
-        """Return the current gtd.Task."""
-        task = None
-        # FIXME: is this error checking necessary
-        path = self.widget.get_cursor()[0]
-        if path:
-            task = self.widget.get_model()[path][0]
-        return task
-
     # gtk signal callbacks (defined in and connected via Glade)
     def on_task_list_button_press(self, widget, event):
-        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
-            popup = GUI().get_widget(widget.get_name()) 
-            popup.set_tree_and_col(self, self.widget.get_column(1))
-            widget.popup(None, None, None, event.button, event.time)
-            return True
-        return False
+        return GTDTreeView.on_button_press(self, widget, event, 1)
 
     # FIXME: this should connect to a TaskForm.set_task(task)
     # FIXME: application logic
@@ -362,9 +357,9 @@ class TaskListView(WidgetWrapper):
             GUI().get_widget("task_project").set_active(project)
 
 
-class AreaFilterListView(WidgetWrapper):
+class AreaFilterListView(GTDTreeView):
     def __init__(self, name, area_store):
-        WidgetWrapper.__init__(self, name)
+        GTDTreeView.__init__(self, name)
         self.widget.set_model(area_store)
 
         # setup the column and cell renderer
@@ -390,19 +385,9 @@ class AreaFilterListView(WidgetWrapper):
             title = "<i>"+title+"</i>"
         cell.set_property("markup", title)
 
-    def get_current(self):
-        path = self.widget.get_cursor()[0]
-        obj = self.widget.get_model()[path][0]
-        return obj
-
     # signal callbacks
     def on_area_filter_list_button_press(self, widget, event):
-        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
-            popup = GUI().get_widget(widget.get_name()) 
-            popup.set_tree_and_col(self, self.widget.get_column(0))
-            widget.popup(None, None, None, event.button, event.time)
-            return True
-        return False
+        return GTDTreeView.on_button_press(self, widget, event, 0)
 
     def on_area_filter_all(self, widget):
         self.widget.get_selection().select_all()
@@ -411,9 +396,9 @@ class AreaFilterListView(WidgetWrapper):
         self.widget.get_selection().unselect_all()
 
 
-class ProjectListView(WidgetWrapper):
+class ProjectListView(GTDTreeView):
     def __init__(self, name, project_store):
-        WidgetWrapper.__init__(self, name)
+        GTDTreeView.__init__(self, name)
         self.widget.set_model(project_store)
         project_store.connect("row_inserted", self._on_row_inserted)
 
@@ -488,23 +473,9 @@ class ProjectListView(WidgetWrapper):
     def _on_row_inserted(self, model, path, iter):
         self.widget.set_cursor(path, None, False)
 
-    # return the selected project
-    def get_current(self):
-        project = None
-        # FIXME: is this error checking necessary
-        path = self.widget.get_cursor()[0]
-        if path:
-            project = self.widget.get_model()[path][0]
-        return project
-
     # gtk signal callbacks (defined in and connected via Glade)
     def on_project_list_button_press(self, widget, event):
-        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
-            popup = GUI().get_widget(widget.get_name()) 
-            popup.set_tree_and_col(self, self.widget.get_column(1))
-            widget.popup(None, None, None, event.button, event.time)
-            return True
-        return False
+        return GTDTreeView.on_button_press(self, widget, event, 1)
 
     # FIXME: this should connect to a ProjectForm.set_project(project)
     # FIXME: application logic
@@ -523,9 +494,9 @@ class ProjectListView(WidgetWrapper):
         GUI().get_widget("project_area").set_active(area)
 
 
-class RealmAreaTreeView(WidgetWrapper):
+class RealmAreaTreeView(GTDTreeView):
     def __init__(self, name, realm_area_store):
-        WidgetWrapper.__init__(self, name)
+        GTDTreeView.__init__(self, name)
         self.widget.set_model(realm_area_store)
 
         tvcolumn = gtk.TreeViewColumn("Title")
@@ -554,25 +525,8 @@ class RealmAreaTreeView(WidgetWrapper):
             # FIXME: throw an exception
             print "ERROR: didn't set %s property for "%data, obj.title
 
-    # return the gtd element of the current row
-    # FIXME: all tree views should implement this (others have get_current...)
-    # Perhaps make the have a base class?
-    def get_current(self):
-        path = self.widget.get_cursor()[0]
-        obj = self.widget.get_model()[path][0]
-        return obj
-
-    # gtk signal callbacks (defined in and connected via Glade)
-    # connected to event_after, widget will be the popup menu
-    # see glade signal properties for the realm_area_tree for details
-    # FIXME: take advantage of the connect_object approach elsewhere
     def on_realms_and_areas_button_press(self, widget, event):
-        if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
-            popup = GUI().get_widget(widget.get_name()) 
-            popup.set_tree_and_col(self, self.widget.get_column(0))
-            widget.popup(None, None, None, event.button, event.time)
-            return True
-        return False
+        return GTDTreeView.on_button_press(self, widget, event, 0)
 
 
 # Class aggregrating GtkTable to list contexts for tasks
@@ -717,7 +671,7 @@ class GTDRowPopup(WidgetWrapper):
             GTD().remove_realm(obj)
         elif isinstance(obj, Area):
             pass
-        elif isintance(obj, Project):
+        elif isinstance(obj, Project):
             pass
         elif isinstance(obj, Task):
             pass
