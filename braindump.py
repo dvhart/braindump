@@ -151,50 +151,44 @@ class BrainDump(object):
         GTD().sig_context_removed.connect(self.context_store.on_gtd_removed)
 
         # Menus and Toolbars
-        realm_toggles = RealmToggles(GUI().get_widget("realm_toggles").widget)
-        gtd_row_popup = GTDRowPopup(GUI().get_widget("gtd_row_popup").widget)
+        realm_toggles = RealmToggles("realm_toggles")
+        gtd_row_popup = GTDRowPopup("gtd_row_popup")
 
         # Task Tab
-        task_filter_list = TaskFilterListView(GUI().get_widget("task_filter_list").widget,
-                                              self.context_store_action,
+        task_filter_list = TaskFilterListView("task_filter_list", self.context_store_action,
                                               self.project_store_filter_by_realm_no_action)
         GUI().get_widget("taskfilterby").widget.set_active(0)
 
         self.task_store_filter_by_selection = \
             self.task_store.filter_by_selection(task_filter_list.widget.get_selection(), True)
-        self.task_list_view = TaskListView(GUI().get_widget("task_list").widget, self.task_store_filter_by_selection, self.on_new_task)
+        self.task_list_view = TaskListView("task_list", self.task_store_filter_by_selection, self.on_new_task)
         task_filter_list.widget.get_selection().connect("changed", self.task_store.refilter)
 
-        context_table = ContextTable(GUI().get_widget("task_contexts_table").widget, self.on_context_toggled)
+        context_table = ContextTable("task_contexts_table", self.on_context_toggled)
         GTD().sig_context_renamed.connect(context_table.on_context_renamed)
         GTD().sig_context_added.connect(context_table.on_context_added)
         GTD().sig_context_removed.connect(context_table.on_context_removed)
 
-        project_combo = GTDCombo(GUI().get_widget("task_project").widget,
-                                 self.project_store_filter_by_realm_no_action, ProjectNone())
+        project_combo = GTDCombo("task_project", self.project_store_filter_by_realm_no_action, ProjectNone())
 
         # Project Tab
-        area_filter_list = AreaFilterListView(GUI().get_widget("area_filter_list").widget,
-                                              self.area_store_filter_by_realm_no_action)
+        area_filter_list = AreaFilterListView("area_filter_list", self.area_store_filter_by_realm_no_action)
         area_filter_list.widget.get_selection().connect("changed", self.project_store.refilter)
         self.project_store_filter_by_area = \
             self.project_store.filter_by_area(area_filter_list.widget.get_selection(), True)
-        ProjectListView(GUI().get_widget("project_list").widget, self.project_store_filter_by_area)
+        ProjectListView("project_list", self.project_store_filter_by_area)
 
-        area_combo = GTDCombo(GUI().get_widget("project_area").widget,
-                              self.area_store_filter_by_realm_no_action, AreaNone())
+        area_combo = GTDCombo("project_area", self.area_store_filter_by_realm_no_action, AreaNone())
 
 
         # New task default form
-        task_default_project_combo = GTDCombo(GUI().get_widget("default_project_combo").widget,
+        task_default_project_combo = GTDCombo("default_project_combo",
                                               self.project_store_filter_by_realm_no_action, ProjectNone())
-        task_defualt_context_combo = GTDCombo(GUI().get_widget("default_context_combo").widget,
-                                              self.context_store_filter_no_action)
+        task_defualt_context_combo = GTDCombo("default_context_combo", self.context_store_filter_no_action)
 
         # Dialog boxes
-        realm_area_dialog = RealmAreaDialog(GUI().get_widget("realm_area_dialog").widget,
-                                            self.realm_area_store)
-        about_dialog = AboutDialog(GUI().get_widget("about_dialog").widget)
+        realm_area_dialog = RealmAreaDialog("realm_area_dialog", self.realm_area_store)
+        about_dialog = AboutDialog("about_dialog")
 
         # FIXME: get the last selection and filterby from last time we were run
         GUI().get_widget("task_filter_list").widget.get_selection().select_all()

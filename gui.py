@@ -43,10 +43,10 @@ class GUI(gtk.glade.XML):
         gtk.glade.XML.__init__(self, self.file, widget)
 
     def __get_widget(self, name):
-        gtk_widget = gtk.glade.XML.get_widget(self, name)
-        if not gtk_widget:
-            print "ERROR: failed to find widget: ", name
-        return _WidgetWrapperBase(gtk_widget)
+        return _WidgetWrapperBase(name)
+
+    def _get_gtk_widget(self, name):
+        return gtk.glade.XML.get_widget(self, name)
 
     def register_widget(self, wrapped_widget):
         """Register a wrapped widget.
@@ -81,20 +81,20 @@ class _WidgetWrapperBase(object):
     This is only used by the GUI class to return unregistered gtk widgets.
     """
 
-    def __init__(self, widget):
-        self.widget = widget
+    def __init__(self, name):
+        self.widget = GUI()._get_gtk_widget(name)
 
 
 class WidgetWrapper(_WidgetWrapperBase):
     """Wrapper for gtk widgets, automates signal connections."""
 
-    def __init__(self, widget):
+    def __init__(self, name):
         """Construct a wrapped widget and autoconnect signal handlers.
 
         Keyword arguments:
         widget -- a gtk.Widget
         """
-        _WidgetWrapperBase.__init__(self, widget)
+        _WidgetWrapperBase.__init__(self, name)
         GUI().register_widget(self)
         # Note: this requires globally unique signal names
         #       move this into the GUI class and use a subtree
@@ -108,14 +108,14 @@ class RealmToggles(WidgetWrapper):
 
     __realm_buttons = {}
 
-    def __init__(self, widget):
+    def __init__(self, name):
         """Construct a toolbar for toggling realm visibility.
 
         Keyword arguments:
         widget -- an empty gtk.Toolbar
         """
         # FIXME: check for widget type: gtk.Toolbar and 0 children
-        WidgetWrapper.__init__(self, widget)
+        WidgetWrapper.__init__(self, name)
         for realm in GTD().realms:
             self.on_realm_added(realm)
         GTD().sig_realm_added.connect(self.on_realm_added)
@@ -157,7 +157,7 @@ class RealmToggles(WidgetWrapper):
 class TaskFilterListView(WidgetWrapper):
     """A treeview to display contexts or projects."""
 
-    def __init__(self, widget, context_store, project_store):
+    def __init__(self, name, context_store, project_store):
         """Construct a treeview for contexts and projects.
 
         Keyword arguments:
@@ -165,7 +165,7 @@ class TaskFilterListView(WidgetWrapper):
         context_store -- the ContextStore for gtd.Contexts
         project_store -- the ProjectStore fot gtd.Projects
         """
-        WidgetWrapper.__init__(self, widget)
+        WidgetWrapper.__init__(self, name)
         self.__context_store = context_store
         self.__project_store = project_store
         # FIXME: which model should we do first?
@@ -250,14 +250,14 @@ class TaskListView(WidgetWrapper):
     __new_task_handler = None
     follow_new = True
 
-    def __init__(self, widget, task_store, new_task_handler):
+    def __init__(self, name, task_store, new_task_handler):
         """Construct a treeview for tasks.
 
         Keyword arguments:
         widget     -- the gtk.TreeView widget to wrap
         task_store -- the TaskStore for gtd.Tasks
         """
-        WidgetWrapper.__init__(self, widget)
+        WidgetWrapper.__init__(self, name)
         self.__new_task_handler = new_task_handler
         self.widget.set_model(task_store)
         task_store.connect("row_inserted", self._on_row_inserted)
@@ -267,12 +267,12 @@ class TaskListView(WidgetWrapper):
         tvcolumn1 = gtk.TreeViewColumn("Title")
 
         # append the columns to the view
-        widget.append_column(tvcolumn0)
-        widget.append_column(tvcolumn1)
+        self.widget.append_column(tvcolumn0)
+        self.widget.append_column(tvcolumn1)
 
         # create the CellRenderers
         cell0 = gtk.CellRendererToggle()
-        cell0.connect('toggled', self._on_toggled, widget.get_model(), 0)
+        cell0.connect('toggled', self._on_toggled, self.widget.get_model(), 0)
         cell1 = gtk.CellRendererText()
         cell1.set_property('editable', True)
         cell1.connect('edited', self._on_edited, lambda: self.widget.get_model(), 1)
@@ -286,7 +286,7 @@ class TaskListView(WidgetWrapper):
         tvcolumn1.set_cell_data_func(cell1, self._data_func, "title")
 
         # make it searchable
-        widget.set_search_column(1)
+        self.widget.set_search_column(1)
 
     def _on_toggled(self, cell, path, model, column):
         complete = model[path][column]
@@ -363,8 +363,8 @@ class TaskListView(WidgetWrapper):
 
 
 class AreaFilterListView(WidgetWrapper):
-    def __init__(self, widget, area_store):
-        WidgetWrapper.__init__(self, widget)
+    def __init__(self, name, area_store):
+        WidgetWrapper.__init__(self, name)
         self.widget.set_model(area_store)
 
         # setup the column and cell renderer
@@ -412,8 +412,8 @@ class AreaFilterListView(WidgetWrapper):
 
 
 class ProjectListView(WidgetWrapper):
-    def __init__(self, widget, project_store):
-        WidgetWrapper.__init__(self, widget)
+    def __init__(self, name, project_store):
+        WidgetWrapper.__init__(self, name)
         self.widget.set_model(project_store)
         project_store.connect("row_inserted", self._on_row_inserted)
 
@@ -423,13 +423,13 @@ class ProjectListView(WidgetWrapper):
         tvcolumn2 = gtk.TreeViewColumn("Tasks")
 
         # append the columns to the view
-        widget.append_column(tvcolumn0)
-        widget.append_column(tvcolumn1)
-        widget.append_column(tvcolumn2)
+        self.widget.append_column(tvcolumn0)
+        self.widget.append_column(tvcolumn1)
+        self.widget.append_column(tvcolumn2)
 
         # create the CellRenderers
         cell0 = gtk.CellRendererToggle()
-        cell0.connect('toggled', self._on_toggled, widget.get_model(), 0)
+        cell0.connect('toggled', self._on_toggled, self.widget.get_model(), 0)
         cell1 = gtk.CellRendererText()
         cell1.set_property('editable', True)
         cell1.connect('edited', self._on_edited, lambda: self.widget.get_model(), 1)
@@ -446,7 +446,7 @@ class ProjectListView(WidgetWrapper):
         tvcolumn2.set_cell_data_func(cell2, self._data_func, "tasks")
 
         # make it searchable
-        widget.set_search_column(1)
+        self.widget.set_search_column(1)
 
     def _on_toggled(self, cell, path, model, column):
         complete = model[path][column]
@@ -524,8 +524,8 @@ class ProjectListView(WidgetWrapper):
 
 
 class RealmAreaTreeView(WidgetWrapper):
-    def __init__(self, widget, realm_area_store):
-        WidgetWrapper.__init__(self, widget)
+    def __init__(self, name, realm_area_store):
+        WidgetWrapper.__init__(self, name)
         self.widget.set_model(realm_area_store)
 
         tvcolumn = gtk.TreeViewColumn("Title")
@@ -534,7 +534,7 @@ class RealmAreaTreeView(WidgetWrapper):
         cell.connect('edited', self._on_edited, lambda: self.widget.get_model(), 1)
         tvcolumn.pack_start(cell)
         tvcolumn.set_cell_data_func(cell, self._data_func, "title")
-        widget.append_column(tvcolumn)
+        self.widget.append_column(tvcolumn)
 
         self.widget.expand_all()
 
@@ -586,11 +586,11 @@ class ContextTable(WidgetWrapper):
     __last_allocation = None
     __on_toggled = None
 
-    def __init__(self, widget, toggle_handler):
-        WidgetWrapper.__init__(self, widget)
+    def __init__(self, name, toggle_handler):
+        WidgetWrapper.__init__(self, name)
         self.__on_toggled = toggle_handler
         self.__table = gtk.Table()
-        widget.add(self.__table)
+        self.widget.add(self.__table)
         self.__table.show()
         for context in GTD().contexts:
             self.on_context_added(context)
@@ -653,8 +653,8 @@ class ContextTable(WidgetWrapper):
 class GTDCombo(WidgetWrapper):
     __none = None
 
-    def __init__(self, widget, model, none=None):
-        WidgetWrapper.__init__(self, widget)
+    def __init__(self, name, model, none=None):
+        WidgetWrapper.__init__(self, name)
         self.__none = none
         self.widget.set_model(model)
         model.connect("row_changed", lambda m,p,i: self.widget.queue_draw)
@@ -699,8 +699,8 @@ class GTDRowPopup(WidgetWrapper):
     __tree_view = None
     __edit_col = 0
 
-    def __init__(self, widget):
-        WidgetWrapper.__init__(self, widget)
+    def __init__(self, name):
+        WidgetWrapper.__init__(self, name)
     
     # gtk signal callbacks (defined in and connected via Glade)
     def on_gtd_row_popup_rename(self, widget):
@@ -730,8 +730,8 @@ class GTDRowPopup(WidgetWrapper):
 
 
 class AboutDialog(WidgetWrapper):
-    def __init__(self, widget):
-        WidgetWrapper.__init__(self, widget)
+    def __init__(self, name):
+        WidgetWrapper.__init__(self, name)
 
     def on_about_dialog_delete(self, dialog, event):
         self.widget.hide()
@@ -743,13 +743,12 @@ class AboutDialog(WidgetWrapper):
 
 
 class RealmAreaDialog(WidgetWrapper):
-    def __init__(self, widget, realm_area_store):
-        WidgetWrapper.__init__(self, widget)
+    def __init__(self, name, realm_area_store):
+        WidgetWrapper.__init__(self, name)
         self.realm_area_store = realm_area_store
         # FIXME: too much knowledge of other widgets... sort of.  Without glade we would be creating these
         #        but this implementation ties this new widget to a specific glade file.... hmmmm
-        self.realm_area_tree = RealmAreaTreeView(GUI().get_widget("realm_area_tree").widget,
-                                                 self.realm_area_store.model)
+        self.realm_area_tree = RealmAreaTreeView("realm_area_tree", self.realm_area_store.model)
 
     def on_realm_area_dialog_delete(self, dialog, event):
         self.widget.hide()
