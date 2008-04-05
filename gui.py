@@ -148,7 +148,7 @@ class RealmToggles(WidgetWrapper):
         """Remove the button corresponding to realm."""
         if self.__realm_buttons.has_key(realm):
             self.widget.remove(self.__realm_buttons[realm])
-        # FIXME: throw exception if not?
+            del self.__realm_buttons[realm]
 
 
 # FIXME: consider renaming this to not use "Filter" as this class
@@ -241,8 +241,14 @@ class TaskFilterListView(WidgetWrapper):
 
 
 class TaskListView(WidgetWrapper):
-    """A treeview to display tasks."""
+    """A treeview to display tasks.
+    
+    Public members variables:
+    follow_new -- whether or not to jump to a newly created task
+    """
+    
     __new_task_handler = None
+    follow_new = True
 
     def __init__(self, widget, task_store, new_task_handler):
         """Construct a treeview for tasks.
@@ -297,7 +303,8 @@ class TaskListView(WidgetWrapper):
             task.title = new_text
 
     def _on_row_inserted(self, model, path, iter):
-        self.widget.set_cursor(path, None, True)
+        if (self.follow_new):
+            self.widget.set_cursor(path, None, True)
 
     def _data_func(self, column, cell, model, iter, data):
         task = model[iter][0]
@@ -639,7 +646,7 @@ class ContextTable(WidgetWrapper):
 
     def on_context_removed(self, context):
         if self.__context_cbs.has_key(context):
-            self.__context_cbs.remove(context)
+            del self.__context_cbs[context]
         self.__rebuild(self.widget.allocation, True)
  
 
@@ -703,8 +710,19 @@ class GTDRowPopup(WidgetWrapper):
 
     def on_gtd_row_popup_delete(self, widget):
         # FIXME: implement the remove path in the GTD tree
-        obj = self.tree_view.get_current()
-        print "on_delete", obj.title
+        obj = self.__tree_view.get_current()
+        if isinstance(obj, Context):
+            GTD().remove_context(obj)
+        elif isinstance(obj, Realm):
+            GTD().remove_realm(obj)
+        elif isinstance(obj, Area):
+            pass
+        elif isintance(obj, Project):
+            pass
+        elif isinstance(obj, Task):
+            pass
+        else:
+            print "ERROR: unknown object:", obj.__class__
 
     def set_tree_and_col(self, tree_view, column):
         self.__tree_view = tree_view

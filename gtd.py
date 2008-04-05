@@ -46,9 +46,6 @@ class Context(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        # FIXME: alternatively we could just have a renamed_signal that we assign and call from the base class,
-        # rather than using the special OProperty derived set_title calls... Need to give this some thought, both
-        # have pros/cons, but OProprety seems generally useful...
         GTD().sig_context_renamed(self)
 
 
@@ -79,6 +76,7 @@ class Realm(Base):
     def set_visible(self, visible):
         self.visible = visible
         GTD().sig_realm_visible_changed(self)
+
 
 class RealmNone(Realm, BaseNone):
     __metaclass__ =  Singleton
@@ -120,6 +118,7 @@ class Area(Base):
     def remove_project(self, project):
         self.projects.remove(project)
 
+
 class AreaNone(Area, BaseNone):
     __metaclass__ =  Singleton
 
@@ -159,6 +158,7 @@ class Project(Base):
     def remove_task(self, task):
         self.tasks.remove(task)
 
+
 class ProjectNone(Project, BaseNone):
     __metaclass__ = Singleton
 
@@ -172,7 +172,6 @@ class ProjectNone(Project, BaseNone):
 
     def set_title(self, title):
         print "Oops, tried to set title on", self.__class__
-
 
 
 class Task(Base):
@@ -254,6 +253,22 @@ class GTD(object):
                     if t.contexts.count(context):
                         tasks.append(t)
         return tasks
+
+    def remove_context(self, context):
+        for r in self.realms:
+            for t in r.get_tasks():
+                if t.contexts.count(context):
+                    t.contexts.remove(context)
+        self.contexts.remove(context)
+        self.sig_context_removed(context)
+
+    def remove_realm(self, realm):
+        for r in self.realms:
+            for a in r.areas:
+                a.realm = RealmNone()
+        self.realms.remove(realm)
+        self.sig_realm_removed(realm)
+
 
 # Named constructor to avoid recursive calls to __init__ due to tree elements calling GTD() for signal emission
 # FIXME: freakishly ugly hack, was supposed to be a named constructor of GTD class... not sur ehow python would do that

@@ -162,7 +162,7 @@ class BrainDump(object):
 
         self.task_store_filter_by_selection = \
             self.task_store.filter_by_selection(task_filter_list.widget.get_selection(), True)
-        TaskListView(GUI().get_widget("task_list").widget, self.task_store_filter_by_selection, self.on_new_task)
+        self.task_list_view = TaskListView(GUI().get_widget("task_list").widget, self.task_store_filter_by_selection, self.on_new_task)
         task_filter_list.widget.get_selection().connect("changed", self.task_store.refilter)
 
         context_table = ContextTable(GUI().get_widget("task_contexts_table").widget, self.on_context_toggled)
@@ -209,10 +209,12 @@ class BrainDump(object):
         form = GUI().get_widget("new_task_defaults_form").widget
         if menuitem.active:
             form.show()
+            self.task_list_view.follow_new = False
         else:
             form.hide()
             GUI().get_widget("default_project_combo").widget.set_active(-1)
             GUI().get_widget("default_context_combo").widget.set_active(-1)
+            self.task_list_view.follow_new = True
 
     def on_details_activate(self, menuitem):
         # FIXME: the main window should grow/shrink to accomodate this form
@@ -243,7 +245,7 @@ class BrainDump(object):
 
     def on_project_area_changed(self, area_combo):
         project = GUI().get_widget("project_list").get_current()
-        area = GUI().get_widget("project_area").get_current()
+        area = GUI().get_widget("project_area").get_active()
         if isinstance(project, gtd.Project) and not project.area == project :
             if isinstance(area, gtd.Area):
                 area.add_project(project)

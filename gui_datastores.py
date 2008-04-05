@@ -60,7 +60,7 @@ class GTDStoreFilter(gobject.GObject):
     def on_gtd_added(self, obj):
         self.model.append([obj])
 
-    def on_gtd_removed(self, project):
+    def on_gtd_removed(self, obj):
         iter = self.gtd_iter(obj)
         if iter:
             self.model.remove(iter)
