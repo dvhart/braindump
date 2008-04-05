@@ -42,7 +42,7 @@ class BaseNone(object):
 class Context(Base):
     def __init__(self, title):
         Base.__init__(self, title)
-        GTD().sig_context_added(self)
+        GTD()._add_context(self)
 
     def set_title(self, title):
         Base.set_title(self, title)
@@ -54,8 +54,7 @@ class Realm(Base):
         self.areas = []
         self.visible = visible
         Base.__init__(self, title)
-
-        GTD().sig_realm_added(self)
+        GTD()._add_realm(self)
 
     def set_title(self, title):
         Base.set_title(self, title)
@@ -227,16 +226,24 @@ class GTD(object):
         self.sig_context_added = Signal()
         self.sig_context_removed = Signal()
 
+    def _add_context(self, context):
+        self.contexts.append(context)
+        GTD().sig_context_added(context)
+
+    def _add_realm(self, realm):
+        self.realms.append(realm)
+        GTD().sig_realm_added(realm)
+
     def load_test_data(self):
         # load test data
-        self.contexts = [
-            Context("Evening"),
-            Context("Weekend"),
-            Context("Errands"),
-            Context("Online"),
-            Context("Computer"),
-            Context("Calls")]
-        self.realms = [Realm("Personal"), Realm("Professional")]
+        Context("Evening")
+        Context("Weekend")
+        Context("Errands")
+        Context("Online")
+        Context("Computer")
+        Context("Calls")
+        Realm("Personal")
+        Realm("Professional")
         remodel = Area("Remodel", self.realms[0])
         staffdev = Area("Staff Development", self.realms[1])
         braindump = Project("BrainDump", "", staffdev, False)
@@ -263,8 +270,6 @@ class GTD(object):
         self.sig_context_removed(context)
 
     def remove_realm(self, realm):
-        print "remove_realm: ", realm.__class__
-        print realm.title
         for a in realm.areas:
             a.realm = RealmNone()
         self.realms.remove(realm)
