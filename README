@@ -38,6 +38,13 @@ dialog boxes, excessive mouse clicks, etc.  I intend to make the app save state
 automatically - so there will be no "Save" or "Save As" symmantics, just an
 "Open" to work with a different data file.
 
+
+The GTD Workflow
+----------------
+o Use Areas to create the Someday/Maybe Lists
+o Waiting/Delegated? (context, separate flag?,
+o Next Action (vs. a known task you can't quite do yet)
+
 Dependencies
 ------------
 python      2.5.1       I developed on 2.5.1, not sure what is actually required

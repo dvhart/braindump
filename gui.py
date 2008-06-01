@@ -156,9 +156,12 @@ class GTDTreeView(WidgetWrapper):
         WidgetWrapper.__init__(self, name)
 
     def get_current(self):
-        """Return the current gtd.Context or gtd.Project."""
+        """Return the current gtd object"""
         path = self.widget.get_cursor()[0]
-        obj = self.widget.get_model()[path][0]
+        if path:
+            obj = self.widget.get_model()[path][0]
+        else:
+            return None
         return obj
 
     def on_button_press(self, widget, event, col):

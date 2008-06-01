@@ -3,24 +3,52 @@ even completely functional yet.  Right now I just start the app, pick some
 unimplemented bit, and hack away...  I'll update this file to remind me
 of things I can't just as easily do via inline '# FIXME's
 
+Basic Functionality
+o Add tree sorter functions
+o task complete doesn't get immediately updated for the same task
+  listed in other categories (but the title does, oddly enough)
+o expand newly created realms in the realms and areas dialog boxes
+o backing store
+  - consider usin ics files, especially if that would aid integration into things like the
+    gnome clock/calendar panel applet (today's tasks in the applet, etc.)
+  - something that can be network synced - and viewed from multiple clients? --mbligh
+o due dates for Tasks
+o when deleting a task or project, update the details to blank, or select another task/project, but don't leave the details of the deleted project in the details form.
+o Recursive delete option
+  - recurse =false is used by default now and delete is disabled for the objects with paren't in the None Path
+  - need a dialog to confirm recursive delete (may be a new menu item so "delete" never needs a dialog)
+o Show "No Context", "No Project", and "No Area"  in the filter lists so the objects in the None Path can be found
+  - consider showing all of them and drawing a separator line and putting the NonePath objects below it in the list?
+o Project and Area Selections need to identify themselves
+o Distinguish Next Actions, Actions (that aren't ready now), and Waiting (Delegated)
+
+Debugging
+o need some logging levels / infrastructure
+
+Improvements
+o have the filter row animate (swell, glow, whatever) when something is added/removed
+o consider using a treeview for tasks, and break them up into "Today" "Tomorrow"|"This Week" "Later/No Date"
+o task and project resource attachments (with twisty to hide)
+o recurring tasks
+o consider view toggles for "actionable" and "completed"
+  - actionable = "start date passed, or no start date" (opposite of tickler)
+o create plugin mechanism
+o consider making contexts two one or more realms (So when you turn off the work realm, all the work only contexts go away, some contexts will belong to multiple realms)
+
+Other
 o look at adding braindump to http://pypi.python.org/pypi ?? timrc's suggestion
 o decide on consistent coding style
   o widget naming: update, update_btn, etc.
-o task complete doesn't get immediately updated for the same task
-  listed in other categories (but the title does, oddly enough)
-o connect task_project combo box to TaskListView
-o Add tree sorter functions
-o have the filter row animate (swell, glow, whatever) when something is added/removed
-o need some logging levels / infrastructure
 o currently using pynotify - perhaps we should be using the signals from gobject?
-o consider using a treeview for tasks, and break them up into "Today" "Tomorrow"|"This Week" "Later/No Date"
 o Use a gtk_button_box instead of a toolbar for the realm buttons? (shouldn't have to wrap them then)
-o expand newly created realms in the realms and areas dialog boxes
 o fix about dialog name "braindump.py" to "BrainDump", glade shows "BrainDump 1.0", not sure what's going on
   the about dialog's widget->name seems to be "braindump.py" ???
 o gut requirements on GNOME, and try to be a pure gtk app by default
+  - plugins can have GNOME dependencies
 o wrap task_form_vbox and project_form_vbox in order to get the task and project update logic
   out of the task and project list views
+o consider making rename less easy - can be done on accident
+o tickler integration to calendars plus internal notification
 
 Default Parent GTD Nodes
 o When creating new items (projects, areas, tasks) we have to select something as
@@ -32,17 +60,11 @@ no default of any is selected, then the NonePath (or no contexts) should be used
 o The Task and Proect Views should always display items from the NonePath, and perhaps
 render them in such as way as to indicate to the user that they need to update them.
 
-GTD Data Model
-o task and project resource attachments (with twisty to hide)
-o due date
-o recurring tasks
-
 Signals and Slots
 o right now the scope is at the GTD tree level, rather than at the individual items.
   There are situations where it might make sense to have the individual widgets listen
   to the individual tree elements (like the context check boxes listening for a context
   rename event, while the context_table needs to listen for Added and Removed contexts)
-o need to connect all the *removed signals
 o work to base all gui updates from updates to the data models.  ie. we shouldn't have to 
   explicitly connect the conext_rename to the context_table.... right?
 o look into gobject signals, we may be able to axe the py-notify dependency
@@ -51,16 +73,11 @@ o consider removing all the signals from glade since they require globally uniqu
     and into a "control.py" file... I just hate the whole "all callbacks in a single file"
     idea.... sigh...
 
-Backing Store
-o consider usin ics files, especially if that would aid integration into things like the
-  gnome clock/calendar panel applet (today's tasks in the applet, etc.)
-
-Popup Menus
-o example: /usr/share/doc/python-gtk2-tutorial/html/examples/menu.py
-o prevent popup from working on GTDActionRow's
-
-GCONF Settings
+GCONF Settings (GNOME dep?)
 o window size and position
 o details visibility
 o last file loaded
 o last view state ?
+
+Someday / Maybe
+o GWT (Java) for offline web app interface (google gears)
