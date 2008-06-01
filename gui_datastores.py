@@ -39,11 +39,15 @@ class GTDStoreFilter(gobject.GObject):
     def __gtd_sort(self, model, iter1, iter2, user_data=None):
         obj1 = self.model[iter1][0]
         obj2 = self.model[iter2][0]
-        # FIXME: what about the None Path?
         # Display action rows before non ActionRows
         if isinstance(obj1, GTDActionRow) and not isinstance(obj2, GTDActionRow):
             return -1
         if isinstance(obj2, GTDActionRow) and not isinstance(obj1, GTDActionRow):
+            return 1
+        # Display the none path before non other items
+        if isinstance(obj1, gtd.BaseNone) and not isinstance(obj2, gtd.BaseNone):
+            return -1
+        if isinstance(obj2, gtd.BaseNone) and not isinstance(obj1, gtd.BaseNone):
             return 1
         if obj1.title.lower() < obj2.title.lower():
             return -1
@@ -120,6 +124,7 @@ class ContextStore(GTDStoreFilter):
     def __init__(self):
         GTDStoreFilter.__init__(self)
         self.model.append([NewContext("Create new context...")])
+        self.model.append([ContextNone()])
         for c in GTD().contexts:
             self.model.append([c])
     
@@ -140,6 +145,7 @@ class AreaStore(GTDStoreRealmFilter):
     def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
         GTDStoreRealmFilter.__init__(self)
         self.model.append([NewArea("Create new area...")])
+        self.model.append([AreaNone()])
         for r in GTD().realms:
             for a in r.areas:
                 self.model.append([a])
@@ -234,7 +240,8 @@ class RealmAreaStore(gobject.GObject):
 class ProjectStore(GTDStoreRealmFilter):
     def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
         GTDStoreRealmFilter.__init__(self)
-        self.model.append([NewProject("Create new project...")]) # FIXME: ActionRow classes maybe?
+        self.model.append([NewProject("Create new project...")])
+        self.model.append([ProjectNone()])
         for r in GTD().realms:
             for a in r.areas:
                 for p in a.projects:
@@ -262,6 +269,11 @@ class ProjectStore(GTDStoreRealmFilter):
         selmodel, paths = selection.get_selected_rows()
         project = model[iter][0]
         if project == None:
+            return False
+        # FIXME: consider making the omission of basenone types configurable,
+        # but right now there is only on user of this filter, and we don't want to see
+        # them there (the actual project listing on the project tab)
+        if isinstance(project, gtd.BaseNone):
             return False
         if not isinstance(project, GTDActionRow):
             for path in paths:
@@ -296,15 +308,17 @@ class TaskStore(GTDStoreRealmFilter):
         if task is None:
             print "FIXME: WHY ARE WE COMPARING A NONE TASK?"
             return False
-        if isinstance(task.project, BaseNone) or isinstance(task.project.area, BaseNone) \
-           or isinstance(task.project.area.realm, BaseNone):
-            return True
+        #if isinstance(task.project, BaseNone) or isinstance(task.project.area, BaseNone) \
+        #   or isinstance(task.project.area.realm, BaseNone):
+        #    return True
         else:
             if task.project.area.realm.visible:
                 for path in paths:
                     comp = selmodel[path][0] # either a project or a context
                     if isinstance(comp, gtd.Context):
                         if task.contexts.count(comp):
+                            return True
+                        if len(task.contexts) is 0 and isinstance(comp, gtd.ContextNone):
                             return True
                     elif isinstance(comp, gtd.Project):
                         if task.project is comp:

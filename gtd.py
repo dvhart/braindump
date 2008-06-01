@@ -49,6 +49,16 @@ class Context(Base):
         GTD().sig_context_renamed(self)
 
 
+class ContextNone(Context, BaseNone):
+    __metaclass__ = Singleton
+
+    def __init__(self):
+        Base.__init__(self, "No Context")
+
+    def set_title(self, title):
+        print "Oops, tried to set title on", self.__class__
+
+
 class Realm(Base):
     def __init__(self, title, visible=True):
         self.areas = []
@@ -83,7 +93,7 @@ class RealmNone(Realm, BaseNone):
     __metaclass__ =  Singleton
 
     def __init__(self):
-        Base.__init__(self, "None")
+        Base.__init__(self, "No Realm")
         self.visible = True
         self.areas = []
 
@@ -126,7 +136,7 @@ class AreaNone(Area, BaseNone):
     __metaclass__ =  Singleton
 
     def __init__(self):
-        Base.__init__(self, "None")
+        Base.__init__(self, "No Area")
         self.projects = []
         self.realm = RealmNone()
         self.realm.add_area(self)
@@ -168,7 +178,7 @@ class ProjectNone(Project, BaseNone):
     __metaclass__ = Singleton
 
     def __init__(self):
-        Base.__init__(self, "None")
+        Base.__init__(self, "No Project")
         self.tasks = []
         self.area = AreaNone()
         self.area.add_project(self)

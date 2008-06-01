@@ -219,9 +219,9 @@ class TaskFilterListView(GTDTreeView):
         model_lambda()[path][column].title = new_text
 
     def _data_func(self, column, cell, model, iter):
-        task = model[iter][0]
-        title = task.title
-        if isinstance(task, GTDActionRow):
+        obj = model[iter][0]
+        title = obj.title
+        if isinstance(obj, GTDActionRow) or isinstance(obj, gtd.BaseNone):
             title = "<i>"+title+"</i>"
         cell.set_property("markup", title)
 
@@ -385,7 +385,7 @@ class AreaFilterListView(GTDTreeView):
     def _data_func(self, column, cell, model, iter, data):
         area = model[iter][0]
         title = area.title
-        if isinstance(area, GTDActionRow):
+        if isinstance(area, GTDActionRow) or isinstance(area, gtd.BaseNone):
             title = "<i>"+title+"</i>"
         cell.set_property("markup", title)
 
@@ -522,10 +522,8 @@ class RealmAreaTreeView(GTDTreeView):
         obj = model[iter][0]
         if data is "title":
             title = obj.title
-            if isinstance(obj, GTDActionRow):
+            if isinstance(obj, GTDActionRow) or isinstance(obj, gtd.BaseNone):
                 title = "<i>"+title+"</i>"
-            if obj == RealmNone():
-                title = "Orphaned Areas"
             cell.set_property("markup", title)
         else:
             # FIXME: throw an exception
