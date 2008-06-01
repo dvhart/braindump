@@ -131,6 +131,9 @@ class AreaStore(GTDStoreRealmFilter):
     def filter_by_realm_visible(self, model, iter, data):
         show_actions = data
         area = model[iter][0]
+        if area is None:
+            print "FIXME: WHY ARE WE COMPARING A NONE AREA?"
+            return False
         if isinstance(area, GTDActionRow):
             return show_actions
         else:

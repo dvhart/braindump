@@ -672,22 +672,28 @@ class GTDRowPopup(WidgetWrapper):
     def on_gtd_row_popup_delete(self, widget):
         # FIXME: implement the remove path in the GTD tree
         obj = self.__tree_view.get_current()
+        recurse = False # FIXME: need a dialog?
         if isinstance(obj, Context):
             GTD().remove_context(obj)
         elif isinstance(obj, Realm):
-            GTD().remove_realm(obj)
+            GTD().remove_realm(obj, recurse)
         elif isinstance(obj, Area):
-            pass
+            GTD().remove_area(obj, recurse)
         elif isinstance(obj, Project):
-            pass
+            GTD().remove_project(obj, recurse)
         elif isinstance(obj, Task):
-            pass
+            GTD().remove_task(obj)
         else:
             print "ERROR: unknown object:", obj.__class__
 
     def set_tree_and_col(self, tree_view, column):
         self.__tree_view = tree_view
         self.__edit_col = column
+        obj = self.__tree_view.get_current()
+        show_delete = not ((isinstance(obj, Area) and obj.realm == RealmNone()) or \
+           (isinstance(obj, Project) and obj.area == AreaNone()) or \
+           (isinstance(obj, Task) and obj.project == ProjectNone()))
+        GUI().get_widget("gtd_row_popup_delete").widget.set_sensitive(show_delete)
 
 
 class AboutDialog(WidgetWrapper):

@@ -68,9 +68,11 @@ class Realm(Base):
 
     def add_area(self, area):
         self.areas.append(area)
+        area.realm = self
 
     def remove_area(self, area):
         self.areas.remove(area)
+        area.realm = None
 
     def set_visible(self, visible):
         self.visible = visible
@@ -113,9 +115,11 @@ class Area(Base):
 
     def add_project(self, project):
         self.projects.append(project)
+        project.area = self
 
     def remove_project(self, project):
         self.projects.remove(project)
+        project.area = None
 
 
 class AreaNone(Area, BaseNone):
@@ -132,7 +136,7 @@ class AreaNone(Area, BaseNone):
 
     def remove_project(self, project):
         if project is not ProjectNone():
-            Area.remove_project(project)
+            Area.remove_project(self, project)
 
 
 class Project(Base):
@@ -153,9 +157,11 @@ class Project(Base):
 
     def add_task(self, task):
         self.tasks.append(task)
+        task.project = self
 
     def remove_task(self, task):
         self.tasks.remove(task)
+        task.project = None
 
 
 class ProjectNone(Project, BaseNone):
@@ -271,13 +277,52 @@ class GTD(object):
         self.contexts.remove(context)
         self.sig_context_removed(context)
 
-    def remove_realm(self, realm):
-        for a in realm.areas:
-            self.sig_area_removed(a)
-            a.realm = RealmNone()
-            self.sig_area_added(a)
-        self.realms.remove(realm)
-        self.sig_realm_removed(realm)
+    def remove_realm(self, realm, recurse=False):
+        # FIXME: throw exception for input errors?
+        if not realm == RealmNone():
+            for a in realm.areas:
+                if recurse:
+                    self.remove_area(a, recurse)
+                else:
+                    a.realm.remove_area(a)
+                    self.sig_area_removed(a)
+                    RealmNone().add_area(a)
+                    self.sig_area_added(a)
+            self.realms.remove(realm)
+            self.sig_realm_removed(realm)
+
+    def remove_area(self, area, recurse=False):
+        # FIXME: throw exception for input errors?
+        if area.realm and not area == AreaNone():
+            for p in area.projects:
+                if recurse:
+                    self.remove_project(p, recurse)
+                else:
+                    p.area.remove_project(p)
+                    self.sig_project_removed(p)
+                    AreaNone().add_project(p)
+                    self.sig_project_added(p)
+            area.realm.remove_area(area)
+            self.sig_area_removed(area)
+
+    def remove_project(self, project, recurse=False):
+        # FIXME: throw exception for input errors?
+        if project.area and not project == ProjectNone():
+            for t in project.tasks:
+                if recurse:
+                    self.remove_task(t, recurse)
+                else:
+                    t.project.remove_task(t)
+                    self.sig_task_removed(t)
+                    ProjectNone().add_task(t)
+                    self.sig_task_added(t)
+            project.area.remove_project(project)
+            self.sig_project_removed(p)
+
+    def remove_task(self, task):
+        if task.project:
+            task.project.remove_task(task)
+            self.sig_task_removed(task)
 
 
 # Named constructor to avoid recursive calls to __init__ due to tree elements calling GTD() for signal emission
