@@ -198,6 +198,9 @@ class BrainDump(object):
 
     # Application logic follows
     # Menu-item callbacks
+    def on_quit_activate(self, menuitem):
+        gtk.main_quit()
+
     def on_realms_and_areas_activate(self, menuitem):
         self.realm_area_dialog.widget.show()
 

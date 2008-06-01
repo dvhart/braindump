@@ -106,7 +106,7 @@
 <widget class="GtkMenu" id="gtd_row_popup">
 
   <child>
-    <widget class="GtkMenuItem" id="rename">
+    <widget class="GtkMenuItem" id="gtd_row_popup_rename">
       <property name="visible">True</property>
       <property name="label" translatable="yes">_Rename...</property>
       <property name="use_underline">True</property>
@@ -115,7 +115,7 @@
   </child>
 
   <child>
-    <widget class="GtkMenuItem" id="delete">
+    <widget class="GtkMenuItem" id="gtd_row_popup_delete">
       <property name="visible">True</property>
       <property name="label" translatable="yes">_Delete</property>
       <property name="use_underline">True</property>
@@ -222,10 +222,10 @@ David Allen's GTD model.</property>
 		  </child>
 
 		  <child>
-		    <widget class="GtkImageMenuItem" id="quit1">
+		    <widget class="GtkImageMenuItem" id="quit">
 		      <property name="visible">True</property>
 		      <property name="stock_item">GNOMEUIINFO_MENU_EXIT_ITEM</property>
-		      <signal name="activate" handler="on_quit1_activate" last_modification_time="Thu, 21 Jun 2007 22:14:27 GMT"/>
+		      <signal name="activate" handler="on_quit_activate" last_modification_time="Sun, 18 May 2008 15:37:31 GMT"/>
 		    </widget>
 		  </child>
 		</widget>
