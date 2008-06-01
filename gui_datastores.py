@@ -33,6 +33,23 @@ class GTDStoreFilter(gobject.GObject):
         # FIXME: why am I using GObject?  Should I call GObject.__init__(self) here?
         self.model = gtk.ListStore(gobject.TYPE_PYOBJECT)
         self.filters = []
+        self.model.set_sort_func(1, self.__gtd_sort)
+        self.model.set_sort_column_id(1, gtk.SORT_ASCENDING)
+
+    def __gtd_sort(self, model, iter1, iter2, user_data=None):
+        obj1 = self.model[iter1][0]
+        obj2 = self.model[iter2][0]
+        # FIXME: what about the None Path?
+        # Display action rows before non ActionRows
+        if isinstance(obj1, GTDActionRow) and not isinstance(obj2, GTDActionRow):
+            return -1
+        if isinstance(obj2, GTDActionRow) and not isinstance(obj1, GTDActionRow):
+            return 1
+        if obj1.title.lower() < obj2.title.lower():
+            return -1
+        if obj2.title.lower() < obj1.title.lower():
+            return 1
+        return 0
 
     def filter_new(self):
         filter = self.model.filter_new()
