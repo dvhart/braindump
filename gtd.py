@@ -206,7 +206,8 @@ class GTD(object):
 
     def __init__(self, filename):
         self.contexts = []
-        self.realms = [RealmNone()]
+        self.realms = []
+        RealmNone()
 
         # PyNotify Signals
         self.sig_realm_visible_changed = Signal()
@@ -231,6 +232,7 @@ class GTD(object):
         GTD().sig_context_added(context)
 
     def _add_realm(self, realm):
+        print "adding realm:", realm.title
         self.realms.append(realm)
         GTD().sig_realm_added(realm)
 
@@ -271,7 +273,9 @@ class GTD(object):
 
     def remove_realm(self, realm):
         for a in realm.areas:
+            self.sig_area_removed(a)
             a.realm = RealmNone()
+            self.sig_area_added(a)
         self.realms.remove(realm)
         self.sig_realm_removed(realm)
 

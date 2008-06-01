@@ -173,7 +173,8 @@ class GTDTreeView(WidgetWrapper):
         """
 
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3 \
-           and not isinstance(self.get_current(), GTDActionRow):
+           and not isinstance(self.get_current(), GTDActionRow) \
+           and not isinstance(self.get_current(), BaseNone):
             # FIXME: this is really not type safe, the widget isn't tested to be a GTDPopupMenu
             popup = GUI().get_widget(widget.get_name()) 
             popup.set_tree_and_col(self, self.widget.get_column(col))
@@ -518,11 +519,13 @@ class RealmAreaTreeView(GTDTreeView):
             obj.title = new_text
 
     def _data_func(self, column, cell, model, iter, data):
-        project = model[iter][0]
+        obj = model[iter][0]
         if data is "title":
-            title = project.title
-            if isinstance(project, GTDActionRow):
+            title = obj.title
+            if isinstance(obj, GTDActionRow):
                 title = "<i>"+title+"</i>"
+            if obj == RealmNone():
+                title = "Orphaned Areas"
             cell.set_property("markup", title)
         else:
             # FIXME: throw an exception
@@ -613,6 +616,7 @@ class GTDCombo(WidgetWrapper):
     def __init__(self, name, model, none=None):
         WidgetWrapper.__init__(self, name)
         self.__none = none
+        print "model is ", model.__class__
         self.widget.set_model(model)
         model.connect("row_changed", lambda m,p,i: self.widget.queue_draw)
         renderer = gtk.CellRendererText()
