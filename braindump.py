@@ -211,8 +211,8 @@ class BrainDump(object):
             self.task_list.follow_new = False
         else:
             form.hide()
-            self.default_project_combo.widget.set_active(-1)
-            self.default_context_combo.widget.set_active(-1)
+            self.default_project_combo.widget.set_active(0)
+            self.default_context_combo.widget.set_active(0)
             self.task_list.follow_new = True
 
     def on_details_activate(self, menuitem):

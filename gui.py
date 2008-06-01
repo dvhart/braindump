@@ -620,7 +620,7 @@ class GTDCombo(WidgetWrapper):
         renderer = gtk.CellRendererText()
         self.widget.pack_start(renderer)
         self.widget.set_cell_data_func(renderer, self._data_func)
-        self.widget.set_active(-1)
+        self.widget.set_active(0)
 
     def _data_func(self, column, cell, model, iter):
         obj = model[iter][0]
@@ -642,7 +642,7 @@ class GTDCombo(WidgetWrapper):
         if iter:
             return self.widget.set_active_iter(iter)
         else:
-            return self.widget.set_active(-1)
+            return self.widget.set_active(0)
 
     def gtd_iter(self, obj):
         model = self.widget.get_model()
