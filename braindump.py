@@ -183,7 +183,9 @@ class BrainDump(object):
         # New task default form
         self.default_project_combo = GTDCombo("default_project_combo",
                                               self.project_store_filter_by_realm_no_action, ProjectNone())
+        self.default_project_combo.set_active(None)
         self.default_context_combo = GTDCombo("default_context_combo", self.context_store_filter_no_action)
+        self.default_context_combo.set_active(None)
 
         # Dialog boxes
         self.realm_area_dialog = RealmAreaDialog("realm_area_dialog", self.realm_area_store)
