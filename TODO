@@ -12,6 +12,7 @@ o Recursive delete option
   - recurse =false is used by default now and delete is disabled for the objects with paren't in the None Path
   - need a dialog to confirm recursive delete (may be a new menu item so "delete" never needs a dialog)
 o Distinguish Next Actions, Actions (that aren't ready now), and Waiting (Delegated)
+o Deleting new items doesn't work (even after assigning their new project)
 
 Debugging
 o need some logging levels / infrastructure

@@ -734,6 +734,8 @@ class TaskDetailsForm(WidgetWrapper):
         self.__task_project = GTDCombo("task_project", project_store, ProjectNone())
         self.__task_contexts = ContextTable("task_contexts_table", self.on_context_toggled)
 
+        self.__task_notes.widget.get_buffer().connect("changed", self._on_task_notes_changed)
+
     def set_task(self, task):
         self.__task = task
         notes = ""
@@ -755,12 +757,16 @@ class TaskDetailsForm(WidgetWrapper):
     def get_project(self):
         return self.__task_project.get_active()
 
+    def _on_task_notes_changed(self, buffer):
+        if isinstance(self.__task, gtd.Task):
+            self.__task.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
+
     def on_task_project_changed(self, project_combo):
         project = self.get_project()
         if isinstance(self.__task, gtd.Task) and not self.__task.project == project :
             if isinstance(project, gtd.Project):
-                project.add_task(task)
-            self.__task.project.remove_task(task)
+                project.add_task(self.__task)
+            self.__task.project.remove_task(self.__task)
             self.__task.project = project
 
     def on_context_toggled(self, context_checkbox, context):
@@ -780,6 +786,8 @@ class ProjectDetailsForm(WidgetWrapper):
         self.__project_notes = GUI().get_widget("project_notes")
         self.__project_area = GTDCombo("project_area", area_store, AreaNone())
 
+        self.__project_notes.widget.get_buffer().connect("changed", self._on_project_notes_changed)
+
     def set_project(self, project): # FIXME: consider just using an attribute?
         self.__project = project
         notes = ""
@@ -798,11 +806,15 @@ class ProjectDetailsForm(WidgetWrapper):
     def get_area(self):
         return self.__project_area.get_active()
 
+    def _on_project_notes_changed(self, buffer):
+        if isinstance(self.__project, gtd.Project):
+            self.__project.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
+
     def on_project_area_changed(self, area_combo):
         area = self.get_area()
         if isinstance(self.__project, gtd.Project) and not self.__project.area == area:
             if isinstance(area, gtd.Area):
-                area.add_project(project)
-            self.__project.area.remove_project(project)
+                area.add_project(self.__project)
+            self.__project.area.remove_project(self.__project)
             self.__project.area = area
 
