@@ -24,7 +24,9 @@ import gtk, gtk.glade
 from singleton import *
 import gtd
 from gui_datastores import *
+import logging
 
+log = logging.getLogger(__name__)
 
 class GUI(gtk.glade.XML):
     """Singleton wrapper to gtk.glade.XML"""
@@ -57,8 +59,8 @@ class GUI(gtk.glade.XML):
         name = wrapped_widget.widget.get_name()
         if self.__widgets.has_key(name):
             # FIXME: throw a proper exception
-            print 'ERROR: widgets{' + name + '} already registered - OVERWRITING!'
-        print 'Registering widgets{' + name + '} as ' + str(wrapped_widget)
+            log.error('widgets{%s} already registered - OVERWRITING!' % (name))
+        log.debug('Registering widgets{%s} as %s' % (name, wrapped_widget.__class__.__name__))
         self.__widgets[wrapped_widget.widget.get_name()] = wrapped_widget
 
     # Return the wrapped widget if it exists, create one for consistent usage if not
@@ -339,7 +341,7 @@ class TaskListView(GTDTreeView):
             cell.set_property("markup", title)
         else:
             # FIXME: throw an exception
-            print "ERROR: didn't set %s property for "%data, obj.title
+            log.error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
 
     # gtk signal callbacks (defined in and connected via Glade)
     def on_task_list_button_press(self, widget, event):
@@ -473,7 +475,7 @@ class ProjectListView(GTDTreeView):
                 cell.set_property("markup", "")
         else:
             # FIXME: throw an exception
-            print "ERROR: didn't set %s property for "%data, obj.title
+            log.error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
 
     # gtk signal callbacks (defined in and connected via Glade)
     def on_project_list_button_press(self, widget, event):
@@ -526,7 +528,7 @@ class RealmAreaTreeView(GTDTreeView):
             cell.set_property("markup", title)
         else:
             # FIXME: throw an exception
-            print "ERROR: didn't set %s property for "%data, obj.title
+            log.error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
 
     def on_realms_and_areas_button_press(self, widget, event):
         return GTDTreeView.on_button_press(self, widget, event, 0)
@@ -614,7 +616,7 @@ class GTDCombo(WidgetWrapper):
     def __init__(self, name, model, none=None):
         WidgetWrapper.__init__(self, name)
         self.__none = none
-        print "model is ", model.__class__
+        log.debug('%s model is %s' % (name, model.__class__.__name__))
         self.widget.set_model(model)
         model.connect("row_changed", lambda m,p,i: self.widget.queue_draw)
         renderer = gtk.CellRendererText()
@@ -627,7 +629,7 @@ class GTDCombo(WidgetWrapper):
             cell.set_property("text", obj.title)
         else:
             # FIXME: throw an exception
-            print "ERROR: obj is not a gtd.Base: ", obj.__class__
+            log.error('obj is not a gtd.Base: %s' % (obj.__class__.__name__))
             
     def get_active(self):
         iter = self.widget.get_active_iter()
@@ -681,7 +683,7 @@ class GTDRowPopup(WidgetWrapper):
         elif isinstance(obj, Task):
             GTD().remove_task(obj)
         else:
-            print "ERROR: unknown object:", obj.__class__
+            log.error('unknown object for gtd_row_popup: %s' % (obj.__class__.__name___))
 
     def set_tree_and_col(self, tree_view, column):
         self.__tree_view = tree_view

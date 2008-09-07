@@ -5,6 +5,10 @@
 #              the methods used by this function.
 # 2005-Nov-02: Revision 0.1
 
+import logging
+
+log = logging.getLogger(__name__)
+
 class OProperty(object):
     """Based on the emulation of PyProperty_Type() in Objects/descrobject.c"""
 

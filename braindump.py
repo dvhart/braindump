@@ -27,10 +27,11 @@ from gui_datastores import *
 import gnome
 import gtd
 from gtd import GTD
+import logging
 
 class GTDSignalTest:
     def __init__(self):
-        self.title = "GTDSignalTest" # FIXME: I'm sure Python can print the class of an instance...
+        self.log = logging.getLogger(self.__class__.__name__)
         GTD().sig_realm_visible_changed.connect(self.on_realm_visible_changed)
         GTD().sig_realm_renamed.connect(self.on_realm_renamed)
         GTD().sig_realm_added.connect(self.on_realm_added)
@@ -49,42 +50,44 @@ class GTDSignalTest:
         GTD().sig_context_removed.connect(self.on_context_removed)
 
     def on_realm_visible_changed(self, realm):
-        print self.title, "on_realm_visible_changed:", realm.title, ".visible =", realm.visible
+        self.log.debug('on_realm_visible_changed: %s.visible = %s' % (realm.title, realm.visible))
     def on_realm_renamed(self, realm):
-        print self.title, "realm_renamed:", realm.title
+        self.log.debug('realm_renamed: %s' % (realm.title))
     def on_realm_added(self, realm):
-        print self.title, "realm_added:", realm.title
+        self.log.debug('realm_added: %s' % (realm.title))
     def on_realm_removed(self, realm):
-        print self.title, "realm_removed:", realm.title
+        self.log.debug('realm_removed: %s' % (realm.title))
     def on_area_renamed(self, area):
-        print self.title, "area_renamed:", area.title
+        self.log.debug('area_renamed: %s' % (area.title))
     def on_area_added(self, area):
-        print self.title, "area_added:", area.title
+        self.log.debug('area_added: %s' % (area.title))
     def on_area_removed(self, area):
-        print self.title, "area_removed:", area.title
+        self.log.debug('area_removed: %s' % (area.title))
     def on_project_renamed(self, project):
-        print self.title, "project_renamed:", project.title
+        self.log.debug('project_renamed: %s' % (project.title))
     def on_project_added(self, project):
-        print self.title, "project_added:", project.title
+        self.log.debug('project_added: %s' % (project.title))
     def on_project_removed(self, project):
-        print self.title, "project_removed:", project.title
+        self.log.debug('project_removed: %s' % (project.title))
     def on_task_renamed(self, task):
-        print self.title, "task_renamed:", task.title
+        self.log.debug('task_renamed: %s' % (task.title))
     def on_task_added(self, task):
-        print self.title, "task_added:", task.title
+        self.log.debug('task_added: %s' % (task.title))
     def on_task_removed(self, task):
-        print self.title, "task_removed:", task.title
+        self.log.debug('task_removed: %s' % (task.title))
     def on_context_renamed(self, context):
-        print self.title, "context_renamed:", context.title
+        self.log.debug('context_renamed: %s' % (context.title))
     def on_context_added(self, context):
-        print self.title, "context_added:", context.title
+        self.log.debug('context_added: %s' % (context.title))
     def on_context_removed(self, context):
-        print self.title, "context_removed:", context.title
+        self.log.debug('context_removed: %s' % (context.title))
 
 
 # GUI Classses and callbacks
 class BrainDump(object):
     def __init__(self):
+        self.log = logging.getLogger(self.__class__.__name__)
+
         # aggregate widgets, with member callbacks
         GUI("glade/braindump.glade")
 
@@ -254,6 +257,7 @@ if __name__ == "__main__":
     #except:
     #    prog = gnome.program_init('braindump', '0.01')
     #    prog.set_property('app-datadir', '/usr/share')
+    logging.basicConfig(level=logging.DEBUG) # DEBUG INFO WARNING ERROR CRITICAL
     gnome.init("braindump", "0.01") # simpler alternative to the props/prog bits above
     app = BrainDump()
     gtk.main()
