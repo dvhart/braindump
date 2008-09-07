@@ -155,7 +155,7 @@ class BrainDump(object):
 
         # Task Tab
         self.task_filter_list = TaskFilterListView("task_filter_list", self.context_store_action,
-                                              self.project_store_filter_by_realm_no_action)
+                                                   self.project_store_filter_by_realm_no_action)
         GUI().get_widget("taskfilterby").widget.set_active(0)
 
         self.task_store_filter_by_selection = \
@@ -163,12 +163,11 @@ class BrainDump(object):
         self.task_list = TaskListView("task_list", self.task_store_filter_by_selection, self.on_new_task)
         self.task_filter_list.widget.get_selection().connect("changed", self.task_store.refilter)
 
-        self.context_table = ContextTable("task_contexts_table", self.on_context_toggled)
-        GTD().sig_context_renamed.connect(self.context_table.on_context_renamed)
-        GTD().sig_context_added.connect(self.context_table.on_context_added)
-        GTD().sig_context_removed.connect(self.context_table.on_context_removed)
+        # FIXME: we pass this callback down two levels from here... seems kinda bad...
+        # perhaps we should just set up the callbacks from here?
+        self.task_details_form = TaskDetailsForm("task_details_form",
+                                                 self.project_store_filter_by_realm_no_action)
 
-        self.task_project = GTDCombo("task_project", self.project_store_filter_by_realm_no_action, ProjectNone())
 
         # Project Tab
         self.area_filter_list = AreaFilterListView("area_filter_list", self.area_store_filter_by_realm_no_action)
@@ -177,7 +176,8 @@ class BrainDump(object):
             self.project_store.filter_by_area(self.area_filter_list.widget.get_selection(), True)
         self.project_list = ProjectListView("project_list", self.project_store_filter_by_area)
 
-        self.project_area = GTDCombo("project_area", self.area_store_filter_by_realm_no_action, AreaNone())
+        self.project_details_form = ProjectDetailsForm("project_details_form",
+                                                       self.area_store_filter_by_realm_no_action)
 
 
         # New task default form
@@ -231,33 +231,6 @@ class BrainDump(object):
     def on_about_activate(self, menuitem):
         self.about_dialog.widget.show()
     # End menu-item callbacks
-
-    def on_task_project_changed(self, project_combo):
-        # FIXME: make the widgets private variables? self.__task_list ?
-        task = self.task_list.get_current()
-        project = self.task_project.get_active()
-        if isinstance(task, gtd.Task) and not task.project == project :
-            if isinstance(project, gtd.Project):
-                project.add_task(task)
-            task.project.remove_task(task)
-            task.project = project
-
-    def on_project_area_changed(self, area_combo):
-        project = self.project_list.get_current()
-        area = self.project_area.get_active()
-        if isinstance(project, gtd.Project) and not project.area == project :
-            if isinstance(area, gtd.Area):
-                area.add_project(project)
-            project.area.remove_project(project)
-            project.area = area
-
-    def on_context_toggled(self, context_checkbox, context):
-        task = self.task_list.get_current()
-        if isinstance(task, gtd.Task):
-            if context_checkbox.get_active():
-                task.add_context(context)
-            else:
-                task.remove_context(context)
 
     def on_new_task(self, title):
         '''Create a new task from the new task defaults, initiated from the task list.'''

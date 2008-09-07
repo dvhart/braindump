@@ -345,29 +345,13 @@ class TaskListView(GTDTreeView):
     def on_task_list_button_press(self, widget, event):
         return GTDTreeView.on_button_press(self, widget, event, 1)
 
-    # FIXME: this should connect to a TaskForm.set_task(task)
-    # FIXME: application logic
     def on_task_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
-        notes = ""
-        contexts = []
-        project = None
         task = None
 
         if path:
             task = tree.get_model()[path][0]
-
-        if isinstance(task, gtd.Task):
-            GUI().get_widget("task_details_form").widget.set_sensitive(True)
-            notes = task.notes
-            contexts = task.contexts
-            project = task.project
-        else:
-            GUI().get_widget("task_details_form").widget.set_sensitive(False)
-
-        GUI().get_widget("task_notes").widget.get_buffer().set_text(notes)
-        GUI().get_widget("task_contexts_table").set_active_contexts(contexts)
-        GUI().get_widget("task_project").set_active(project)
+        GUI().get_widget("task_details_form").set_task(task)
 
 
 class AreaFilterListView(GTDTreeView):
@@ -495,26 +479,14 @@ class ProjectListView(GTDTreeView):
     def on_project_list_button_press(self, widget, event):
         return GTDTreeView.on_button_press(self, widget, event, 1)
 
-    # FIXME: this should connect to a ProjectForm.set_project(project)
-    # FIXME: application logic
     def on_project_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
-        notes = ""
         project = None
-        area = None
 
         if path:
             project = tree.get_model()[path][0]
 
-        if isinstance(project, gtd.Project):
-            GUI().get_widget("project_details_form").widget.set_sensitive(True)
-            notes = project.notes
-            area = project.area
-        else:
-            GUI().get_widget("project_details_form").widget.set_sensitive(False)
-
-        GUI().get_widget("project_notes").widget.get_buffer().set_text(notes)
-        GUI().get_widget("project_area").set_active(area)
+        GUI().get_widget("project_details_form").set_project(project)
 
 
 class RealmAreaTreeView(GTDTreeView):
@@ -579,6 +551,7 @@ class ContextTable(WidgetWrapper):
         self.__table.show()
         for context in GTD().contexts:
             self.on_context_added(context)
+        # FIXME: decide if this should be connected outside of the widget...
         GTD().sig_context_added.connect(self.on_context_added)
         GTD().sig_context_renamed.connect(self.on_context_renamed)
         GTD().sig_context_removed.connect(self.on_context_removed)
@@ -749,3 +722,87 @@ class RealmAreaDialog(WidgetWrapper):
     def on_realm_area_dialog_response(self, dialog, response):
         if response == gtk.RESPONSE_OK:
             self.widget.hide()
+
+
+# FIXME: too much application knowledge embedded here (GTD signals and other widgets) ?
+class TaskDetailsForm(WidgetWrapper):
+    __task = None
+
+    def __init__(self, name, project_store):
+        WidgetWrapper.__init__(self, name)
+        self.__task_notes = GUI().get_widget("task_notes")
+        self.__task_project = GTDCombo("task_project", project_store, ProjectNone())
+        self.__task_contexts = ContextTable("task_contexts_table", self.on_context_toggled)
+
+    def set_task(self, task):
+        self.__task = task
+        notes = ""
+        contexts = []
+        project = None
+
+        if isinstance(task, gtd.Task):
+            self.widget.set_sensitive(True)
+            notes = self.__task.notes
+            contexts = self.__task.contexts
+            project = self.__task.project
+        else:
+            self.widget.set_sensitive(False)
+
+        self.__task_notes.widget.get_buffer().set_text(notes)
+        self.__task_contexts.set_active_contexts(contexts)
+        self.__task_project.set_active(project)
+
+    def get_project(self):
+        return self.__task_project.get_active()
+
+    def on_task_project_changed(self, project_combo):
+        project = self.get_project()
+        if isinstance(self.__task, gtd.Task) and not self.__task.project == project :
+            if isinstance(project, gtd.Project):
+                project.add_task(task)
+            self.__task.project.remove_task(task)
+            self.__task.project = project
+
+    def on_context_toggled(self, context_checkbox, context):
+        if isinstance(self.__task, gtd.Task):
+            if context_checkbox.get_active():
+                self.__task.add_context(context)
+            else:
+                self.__task.remove_context(context)
+
+
+# FIXME: too much application knowledge embedded here (GTD signals and other widgets) ?
+class ProjectDetailsForm(WidgetWrapper):
+    __project = None
+
+    def __init__(self, name, area_store):
+        WidgetWrapper.__init__(self, name)
+        self.__project_notes = GUI().get_widget("project_notes")
+        self.__project_area = GTDCombo("project_area", area_store, AreaNone())
+
+    def set_project(self, project): # FIXME: consider just using an attribute?
+        self.__project = project
+        notes = ""
+        area = None
+
+        if isinstance(self.__project, gtd.Project):
+            self.widget.set_sensitive(True)
+            notes = self.__project.notes
+            area = self.__project.area
+        else:
+            self.widget.set_sensitive(False)
+
+        self.__project_notes.widget.get_buffer().set_text(notes)
+        self.__project_area.set_active(area)
+
+    def get_area(self):
+        return self.__project_area.get_active()
+
+    def on_project_area_changed(self, area_combo):
+        area = self.get_area()
+        if isinstance(self.__project, gtd.Project) and not self.__project.area == area:
+            if isinstance(area, gtd.Area):
+                area.add_project(project)
+            self.__project.area.remove_project(project)
+            self.__project.area = area
+
