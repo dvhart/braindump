@@ -319,6 +319,8 @@ class TaskListView(GTDTreeView):
         if (self.follow_new):
             self.widget.set_cursor(path, None, True)
 
+    def _on_row_removed(self, model, path, iter)
+
     def _data_func(self, column, cell, model, iter, data):
         task = model[iter][0]
         if data is "complete":
@@ -343,6 +345,7 @@ class TaskListView(GTDTreeView):
     # FIXME: this should connect to a TaskForm.set_task(task)
     # FIXME: application logic
     def on_task_list_cursor_changed(self, tree):
+        print "cursor changed"
         path = tree.get_cursor()[0]
         task = tree.get_model()[path][0]
         if task:
@@ -512,11 +515,19 @@ class RealmAreaTreeView(GTDTreeView):
         self.widget.append_column(tvcolumn)
 
         self.widget.expand_all()
+        self.widget.get_model().connect('row_inserted', self._on_row_inserted)
 
     def _on_edited(self, cell, path, new_text, model_lambda, column):
         obj = model_lambda()[path][0]
         if obj:
             obj.title = new_text
+
+    def _on_row_inserted(self, model, path, iter):
+        # We have to wait for a child to be added, otherwise there
+        # is nothing to expand, so here we are expanding the path
+        # of the Area (or the CreateArea) under the new Realm
+        if (len(path) >= 2):
+            ret = self.widget.expand_to_path(path)
 
     def _data_func(self, column, cell, model, iter, data):
         obj = model[iter][0]

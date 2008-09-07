@@ -4,14 +4,10 @@ unimplemented bit, and hack away...  I'll update this file to remind me
 of things I can't just as easily do via inline '# FIXME's
 
 Basic Functionality
-o task complete doesn't get immediately updated for the same task
-  listed in other categories (but the title does, oddly enough)
-o expand newly created realms in the realms and areas dialog boxes
 o backing store
   - consider usin ics files, especially if that would aid integration into things like the
     gnome clock/calendar panel applet (today's tasks in the applet, etc.)
   - something that can be network synced - and viewed from multiple clients? --mbligh
-o when deleting a task or project, update the details to blank, or select another task/project, but don't leave the details of the deleted project in the details form.
 o Recursive delete option
   - recurse =false is used by default now and delete is disabled for the objects with paren't in the None Path
   - need a dialog to confirm recursive delete (may be a new menu item so "delete" never needs a dialog)
@@ -30,6 +26,7 @@ o consider view toggles for "actionable" and "completed"
 o create plugin mechanism
 o consider making contexts two one or more realms (So when you turn off the work realm, all the work only contexts go away, some contexts will belong to multiple realms)
 o due dates for Tasks
+o MetaFilters - allow the creation of project and task filters by the user using boolean logic: "Calls and Morning", "Evening or Weekend"
 
 Other
 o look at adding braindump to http://pypi.python.org/pypi ?? timrc's suggestion
@@ -41,10 +38,10 @@ o fix about dialog name "braindump.py" to "BrainDump", glade shows "BrainDump 1.
   the about dialog's widget->name seems to be "braindump.py" ???
 o gut requirements on GNOME, and try to be a pure gtk app by default
   - plugins can have GNOME dependencies
-o wrap task_form_vbox and project_form_vbox in order to get the task and project update logic
-  out of the task and project list views
 o consider making rename less easy - can be done on accident
 o tickler integration to calendars plus internal notification
+o resource tab (basically embedding zim-like functionality)
+o add an attachments box to the details pane for tasks and projects
 
 Default Parent GTD Nodes
 o When creating new items (projects, areas, tasks) we have to select something as

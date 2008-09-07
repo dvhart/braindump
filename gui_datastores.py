@@ -168,7 +168,7 @@ class RealmAreaStore(gobject.GObject):
     def __init__(self):
         gobject.GObject.__init__(self)
         self.model = gtk.TreeStore(gobject.TYPE_PYOBJECT)
-        # A bit irregular to add RealmNone() her directly, but the simplest solution
+        # A bit irregular to add RealmNone() here directly, but the simplest solution
         # as we don't create filters and have only one view of this model.
         self.model.append(None, [NewRealm("Create new realm...")])
         self.model.append(None, [RealmNone()])
