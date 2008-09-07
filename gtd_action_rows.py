@@ -23,7 +23,7 @@
 from gtd import *
 import logging
 
-log = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 # Abstract base class for simple type comparison in Tree|List View code
 class GTDActionRow(object):

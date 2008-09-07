@@ -32,6 +32,8 @@ import logging
 import getopt
 from inspect import currentframe
 
+_log = logging.getLogger("braindump") # we are executed as __main__, so get a better name
+
 class GTDSignalTest:
     def __init__(self):
         self.log = logging.getLogger(self.__class__.__name__)
@@ -258,8 +260,7 @@ def usage():
     print '  -l, --loglevel=LEVEL     set the logging level: DEBUG (default), WARNING,'
     print '                           INFO, ERROR, CRITICAL'
 
-# test to see if we were run directly
-if __name__ == "__main__":
+def main():
     # FIXME: why the try block here? What are the props for?
     #try:
     #    props = { gnome.PARAM_APP_DATADIR : '/usr/share'}
@@ -275,7 +276,7 @@ if __name__ == "__main__":
         opts, args = getopt.getopt(sys.argv[1:], "hl:", ["help", "loglevel="])
     except getopt.GetoptError, err:
         # print help information and exit:
-        log.error(str(err))
+        _log.error(str(err))
         usage()
         sys.exit(2)
 
@@ -287,7 +288,7 @@ if __name__ == "__main__":
             elif a == "ERROR": logging.basicConfig(level=logging.ERROR)
             elif a == "CRITICAL": logging.basicConfig(level=logging.CRITICAL)
             else:
-                log.error('unrecognized log level: %s' % (a))
+                _log.error('unrecognized log level: %s' % (a))
                 usage()
                 sys.exit(2)
         elif o in ("-h", "--help"):
@@ -299,3 +300,7 @@ if __name__ == "__main__":
     gnome.init("braindump", "0.01") # simpler alternative to the props/prog bits above
     app = BrainDump()
     gtk.main()
+
+# test to see if we were run directly
+if __name__ == "__main__":
+    main()

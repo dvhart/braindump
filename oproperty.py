@@ -7,7 +7,7 @@
 
 import logging
 
-log = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 class OProperty(object):
     """Based on the emulation of PyProperty_Type() in Objects/descrobject.c"""

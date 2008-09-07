@@ -23,7 +23,7 @@
 import gobject
 import logging
 
-log = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 # FIXME: is this base class correct?  I totally just guessed!
 # FIXME: try and understand what the hell is actually going on in this mess
@@ -36,7 +36,7 @@ class Singleton(type):
 
     def __call__(self, *args, **kw):
         if self.instance is None:
-            log.debug('corner case: allow for access to bound variables in __init__')
+            _log.debug('corner case: allow for access to bound variables in __init__')
             self.instance = super(Singleton, self).__call__(*args, **kw)
         return self.instance
 
@@ -47,7 +47,7 @@ class GSingleton(gobject.GObjectMeta):
 
     def __call__(self, *args, **kw):
         if self.instance is None:
-            log.debug('corner case: allow for access to bound variables in __init__')
+            _log.debug('corner case: allow for access to bound variables in __init__')
             self.instance = super(GSingleton, self).__call__(*args, **kw)
         return self.instance
 
