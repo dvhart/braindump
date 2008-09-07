@@ -5,9 +5,7 @@
 #              the methods used by this function.
 # 2005-Nov-02: Revision 0.1
 
-import logging
-
-_log = logging.getLogger(__name__)
+from logging import debug, info, warning, error, critical
 
 class OProperty(object):
     """Based on the emulation of PyProperty_Type() in Objects/descrobject.c"""

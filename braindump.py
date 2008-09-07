@@ -22,21 +22,23 @@
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
 import sys
+from inspect import currentframe
+import getopt
+
+import logging
+from logging import debug, info, warning, error, critical
+
 import gtk, gtk.glade
-from gui import *
-from gui_datastores import *
 import gnome
+
 import gtd
 from gtd import GTD
-import logging
-import getopt
-from inspect import currentframe
+from gui import *
+from gui_datastores import *
 
-_log = logging.getLogger("braindump") # we are executed as __main__, so get a better name
 
 class GTDSignalTest:
     def __init__(self):
-        self.log = logging.getLogger(self.__class__.__name__)
         GTD().sig_realm_visible_changed.connect(self.on_realm_visible_changed)
         GTD().sig_realm_renamed.connect(self.on_realm_renamed)
         GTD().sig_realm_added.connect(self.on_realm_added)
@@ -55,44 +57,42 @@ class GTDSignalTest:
         GTD().sig_context_removed.connect(self.on_context_removed)
 
     def on_realm_visible_changed(self, realm):
-        self.log.debug('on_realm_visible_changed: %s.visible = %s' % (realm.title, realm.visible))
+        debug('on_realm_visible_changed: %s.visible = %s' % (realm.title, realm.visible))
     def on_realm_renamed(self, realm):
-        self.log.debug('realm_renamed: %s' % (realm.title))
+        debug('realm_renamed: %s' % (realm.title))
     def on_realm_added(self, realm):
-        self.log.debug('realm_added: %s' % (realm.title))
+        debug('realm_added: %s' % (realm.title))
     def on_realm_removed(self, realm):
-        self.log.debug('realm_removed: %s' % (realm.title))
+        debug('realm_removed: %s' % (realm.title))
     def on_area_renamed(self, area):
-        self.log.debug('area_renamed: %s' % (area.title))
+        debug('area_renamed: %s' % (area.title))
     def on_area_added(self, area):
-        self.log.debug('area_added: %s' % (area.title))
+        debug('area_added: %s' % (area.title))
     def on_area_removed(self, area):
-        self.log.debug('area_removed: %s' % (area.title))
+        debug('area_removed: %s' % (area.title))
     def on_project_renamed(self, project):
-        self.log.debug('project_renamed: %s' % (project.title))
+        debug('project_renamed: %s' % (project.title))
     def on_project_added(self, project):
-        self.log.debug('project_added: %s' % (project.title))
+        debug('project_added: %s' % (project.title))
     def on_project_removed(self, project):
-        self.log.debug('project_removed: %s' % (project.title))
+        debug('project_removed: %s' % (project.title))
     def on_task_renamed(self, task):
-        self.log.debug('task_renamed: %s' % (task.title))
+        debug('task_renamed: %s' % (task.title))
     def on_task_added(self, task):
-        self.log.debug('task_added: %s' % (task.title))
+        debug('task_added: %s' % (task.title))
     def on_task_removed(self, task):
-        self.log.debug('task_removed: %s' % (task.title))
+        debug('task_removed: %s' % (task.title))
     def on_context_renamed(self, context):
-        self.log.debug('context_renamed: %s' % (context.title))
+        debug('context_renamed: %s' % (context.title))
     def on_context_added(self, context):
-        self.log.debug('context_added: %s' % (context.title))
+        debug('context_added: %s' % (context.title))
     def on_context_removed(self, context):
-        self.log.debug('context_removed: %s' % (context.title))
+        debug('context_removed: %s' % (context.title))
 
 
 # GUI Classses and callbacks
 class BrainDump(object):
     def __init__(self):
-        self.log = logging.getLogger(self.__class__.__name__)
-
         # aggregate widgets, with member callbacks
         GUI("glade/braindump.glade")
 
@@ -268,27 +268,26 @@ def main():
     #except:
     #    prog = gnome.program_init('braindump', '0.01')
     #    prog.set_property('app-datadir', '/usr/share')
-
-    # initial log everything
-    logging.basicConfig(level=logging.DEBUG) # DEBUG INFO WARNING ERROR CRITICAL
+    logging.basicConfig(level=logging.ERROR,
+                        format='%(levelname)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s')
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hl:", ["help", "loglevel="])
     except getopt.GetoptError, err:
         # print help information and exit:
-        _log.error(str(err))
+        error(str(err))
         usage()
         sys.exit(2)
 
     for o, a in opts:
         if o in ("-l", "--loglevel"):
-            if a == "DEBUG": logging.basicConfig(level=logging.DEBUG)
-            elif a == "WARNING": logging.basicConfig(level=logging.WARNING)
-            elif a == "INFO": logging.basicConfig(level=logging.INFO)
-            elif a == "ERROR": logging.basicConfig(level=logging.ERROR)
-            elif a == "CRITICAL": logging.basicConfig(level=logging.CRITICAL)
+            if a == "DEBUG": logging.getLogger().setLevel(level=logging.DEBUG)
+            elif a == "WARNING": logging.getLogger().setLevel(level=logging.WARNING)
+            elif a == "INFO": logging.getLogger().setLevel(level=logging.INFO)
+            elif a == "ERROR": logging.getLogger().setLevel(level=logging.ERROR)
+            elif a == "CRITICAL": logging.getLogger().setLevel(level=logging.CRITICAL)
             else:
-                _log.error('unrecognized log level: %s' % (a))
+                error('unrecognized log level: %s' % (a))
                 usage()
                 sys.exit(2)
         elif o in ("-h", "--help"):

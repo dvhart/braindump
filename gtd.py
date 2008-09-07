@@ -24,9 +24,7 @@ import pickle
 from singleton import *
 from notify.all import *
 from oproperty import *
-import logging
-
-_log = logging.getLogger(__name__)
+from logging import debug, info, warning, error, critical
 
 class Base(object):
     def __init__(self, title):
@@ -59,7 +57,7 @@ class ContextNone(Context, BaseNone):
         Base.__init__(self, "No Context")
 
     def set_title(self, title):
-        _log.debug('Oops, tried to set title on %s' % (self.__class__.__name__))
+        debug('Oops, tried to set title on %s' % (self.__class__.__name__))
 
 
 class Realm(Base):
@@ -101,7 +99,7 @@ class RealmNone(Realm, BaseNone):
         self.areas = []
 
     def set_title(self, title):
-        _log.debug('Oops, tried to set title on %s' % (self.__class__.__name__))
+        debug('Oops, tried to set title on %s' % (self.__class__.__name__))
 
     def remove_area(self, area):
         if area is not AreaNone():
@@ -145,7 +143,7 @@ class AreaNone(Area, BaseNone):
         self.realm.add_area(self)
     
     def set_title(self, title):
-        _log.debug('Oops, tried to set title on %s' % (self.__class__.__name__))
+        debug('Oops, tried to set title on %s' % (self.__class__.__name__))
 
     def remove_project(self, project):
         if project is not ProjectNone():
@@ -159,7 +157,7 @@ class Project(Base):
         self.area = area
         self.notes = notes
         if self.area:
-            _log.debug('project area is %s' % (self.area))
+            debug('project area is %s' % (self.area))
             self.area.add_project(self)
         self.complete = complete
         GTD().sig_project_added(self)
@@ -189,7 +187,7 @@ class ProjectNone(Project, BaseNone):
         self.complete = False
 
     def set_title(self, title):
-        _log.debug('Oops, tried to set title on %s' % (self.__class__.__name__))
+        debug('Oops, tried to set title on %s' % (self.__class__.__name__))
 
 
 class Task(Base):
@@ -202,7 +200,7 @@ class Task(Base):
         self.complete = complete
         # FIXME: how do we connect this to the "NoneProject"
         if self.project:
-            _log.debug('task project is: %s' % (self.project))
+            debug('task project is: %s' % (self.project))
             self.project.add_task(self)
         GTD().sig_task_added(self)
 
@@ -340,14 +338,14 @@ class GTD(object):
 # Named constructor to avoid recursive calls to __init__ due to tree elements calling GTD() for signal emission
 # FIXME: freakishly ugly hack, was supposed to be a named constructor of GTD class... not sur ehow python would do that
 def save(tree, filename):
-    _log.info('saving tree to %s' % (filename))
+    info('saving tree to %s' % (filename))
     f = open(filename, 'w')
     pickle.dump(tree, f)
     f.close()
 
 
 def load(filename):
-    _log.info('opening tree from %s' % (filename))
+    info('opening tree from %s' % (filename))
     f = open(filename, 'r')
     tree = pickle.load(f)
     f.close()

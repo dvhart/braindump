@@ -28,7 +28,7 @@ import gui
 from gtd_action_rows import *
 import logging
 
-_log = logging.getLogger(__name__)
+from logging import debug, info, warning, error, critical
 
 class GTDStoreFilter(gobject.GObject):
     def __init__(self):
@@ -99,7 +99,7 @@ class GTDStoreRealmFilter(GTDStoreFilter):
         return filter
 
     def filter_by_realm_visible(self, realm):
-        _log.error('%s is an abstract base class' % (self.__class__.__name__)) # FIXME: how do I really make it an ABC ?
+        error('%s is an abstract base class' % (self.__class__.__name__)) # FIXME: how do I really make it an ABC ?
         return False
         
 
@@ -157,7 +157,7 @@ class AreaStore(GTDStoreRealmFilter):
         show_actions = data
         area = model[iter][0]
         if area is None:
-            _log.debug('FIXME: why are we comparing a none area?')
+            debug('FIXME: why are we comparing a none area?')
             return False
         if isinstance(area, GTDActionRow):
             return show_actions
@@ -206,7 +206,7 @@ class RealmAreaStore(gobject.GObject):
         if iter:
             self.model.row_changed(self.model.get_path(iter), iter)
         else:
-            _log.error('%s not found in RealmAreaStore' % (area.title))
+            error('%s not found in RealmAreaStore' % (area.title))
 
     def on_realm_added(self, realm):
         iter = self.model.append(None, [realm])
@@ -218,14 +218,14 @@ class RealmAreaStore(gobject.GObject):
         if iter:
                 self.model.remove(iter)
         else:
-            _log.error('%s not found in RealmAreaStore' % (realm.title))
+            error('%s not found in RealmAreaStore' % (realm.title))
 
     def on_area_renamed(self, area):
         iter = self.__area_iter(area)
         if iter:
             self.model.row_changed(self.model.get_path(iter), iter)
         else:
-            _log.error('%s not found in RealmAreaStore' % (area.title))
+            error('%s not found in RealmAreaStore' % (area.title))
 
     def on_area_added(self, area):
         realm_iter = self.__realm_iter(area.realm)
@@ -236,7 +236,7 @@ class RealmAreaStore(gobject.GObject):
         if iter:
             self.model.remove(iter)
         else:
-            _log.error('%s not found in RealmAreaStore' % (area.title))
+            error('%s not found in RealmAreaStore' % (area.title))
 
 # Project gtd datastore
 class ProjectStore(GTDStoreRealmFilter):
@@ -308,7 +308,7 @@ class TaskStore(GTDStoreRealmFilter):
         if isinstance(task, GTDActionRow):
             return show_actions
         if task is None:
-            _log.debug('FIXME: why are we comparing a none task?')
+            debug('FIXME: why are we comparing a none task?')
             return False
         #if isinstance(task.project, BaseNone) or isinstance(task.project.area, BaseNone) \
         #   or isinstance(task.project.area.realm, BaseNone):
@@ -328,5 +328,5 @@ class TaskStore(GTDStoreRealmFilter):
                     elif isinstance(comp, GTDActionRow):
                         continue
                     else:
-                        _log.error('cannot filter Task on %s' % (comp.__class__.__name__))
+                        error('cannot filter Task on %s' % (comp.__class__.__name__))
             return False

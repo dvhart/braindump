@@ -21,9 +21,7 @@
 # 2008-Mar-30:	Initial version by Darren Hart <darren@dvhart.com>
 
 from gtd import *
-import logging
-
-_log = logging.getLogger(__name__)
+from logging import debug, info, warning, error, critical
 
 # Abstract base class for simple type comparison in Tree|List View code
 class GTDActionRow(object):
