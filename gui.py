@@ -764,9 +764,9 @@ class TaskDetailsForm(WidgetWrapper):
     def on_task_project_changed(self, project_combo):
         project = self.get_project()
         if isinstance(self.__task, gtd.Task) and not self.__task.project == project :
+            self.__task.project.remove_task(self.__task)
             if isinstance(project, gtd.Project):
                 project.add_task(self.__task)
-            self.__task.project.remove_task(self.__task)
             self.__task.project = project
 
     def on_context_toggled(self, context_checkbox, context):
@@ -813,8 +813,8 @@ class ProjectDetailsForm(WidgetWrapper):
     def on_project_area_changed(self, area_combo):
         area = self.get_area()
         if isinstance(self.__project, gtd.Project) and not self.__project.area == area:
+            self.__project.area.remove_project(self.__project)
             if isinstance(area, gtd.Area):
                 area.add_project(self.__project)
-            self.__project.area.remove_project(self.__project)
             self.__project.area = area
 
