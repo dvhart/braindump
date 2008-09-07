@@ -248,7 +248,6 @@ class GTD(object):
         GTD().sig_context_added(context)
 
     def _add_realm(self, realm):
-        print "adding realm:", realm.title
         self.realms.append(realm)
         GTD().sig_realm_added(realm)
 
