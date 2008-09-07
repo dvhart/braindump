@@ -21,6 +21,7 @@
 #
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
+import sys
 import gtk, gtk.glade
 from gui import *
 from gui_datastores import *
@@ -28,6 +29,8 @@ import gnome
 import gtd
 from gtd import GTD
 import logging
+import getopt
+from inspect import currentframe
 
 class GTDSignalTest:
     def __init__(self):
@@ -247,6 +250,13 @@ class BrainDump(object):
         gtk.main_quit()
 
 
+def usage():
+    basename = currentframe().f_code.co_filename
+    print 'Usage: %s [OPTION]...' % (basename) # FIXME: what is the right way to get the filename...
+                                               # do I really have to use currentframe().f_code.co_filename ??
+    print '  -h, --help               display this help and exit'
+    print '  -l, --loglevel=LEVEL     set the logging level: DEBUG (default), WARNING,'
+    print '                           INFO, ERROR, CRITICAL'
 
 # test to see if we were run directly
 if __name__ == "__main__":
@@ -257,7 +267,35 @@ if __name__ == "__main__":
     #except:
     #    prog = gnome.program_init('braindump', '0.01')
     #    prog.set_property('app-datadir', '/usr/share')
+
+    # initial log everything
     logging.basicConfig(level=logging.DEBUG) # DEBUG INFO WARNING ERROR CRITICAL
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hl:", ["help", "loglevel="])
+    except getopt.GetoptError, err:
+        # print help information and exit:
+        log.error(str(err))
+        usage()
+        sys.exit(2)
+
+    for o, a in opts:
+        if o in ("-l", "--loglevel"):
+            if a == "DEBUG": logging.basicConfig(level=logging.DEBUG)
+            elif a == "WARNING": logging.basicConfig(level=logging.WARNING)
+            elif a == "INFO": logging.basicConfig(level=logging.INFO)
+            elif a == "ERROR": logging.basicConfig(level=logging.ERROR)
+            elif a == "CRITICAL": logging.basicConfig(level=logging.CRITICAL)
+            else:
+                log.error('unrecognized log level: %s' % (a))
+                usage()
+                sys.exit(2)
+        elif o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        else:
+            assert False, "unhandled option"
+
     gnome.init("braindump", "0.01") # simpler alternative to the props/prog bits above
     app = BrainDump()
     gtk.main()
