@@ -274,6 +274,7 @@ class TaskListView(GTDTreeView):
         self.__new_task_handler = new_task_handler
         self.widget.set_model(task_store)
         task_store.connect("row_inserted", self._on_row_inserted)
+        task_store.connect("row_deleted", self._on_row_deleted)
 
         # create the TreeViewColumns to display the data
         tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -319,7 +320,9 @@ class TaskListView(GTDTreeView):
         if (self.follow_new):
             self.widget.set_cursor(path, None, True)
 
-    def _on_row_removed(self, model, path, iter)
+    def _on_row_deleted(self, model, path):
+        if self.widget.get_cursor()[0] is None:
+            self.on_task_list_cursor_changed(self.widget)
 
     def _data_func(self, column, cell, model, iter, data):
         task = model[iter][0]
@@ -345,23 +348,26 @@ class TaskListView(GTDTreeView):
     # FIXME: this should connect to a TaskForm.set_task(task)
     # FIXME: application logic
     def on_task_list_cursor_changed(self, tree):
-        print "cursor changed"
         path = tree.get_cursor()[0]
-        task = tree.get_model()[path][0]
-        if task:
-            notes = ""
-            contexts = []
-            project = None
-            if isinstance(task, GTDActionRow):
-                GUI().get_widget("task_details_form").widget.set_sensitive(False)
-            else:
-                GUI().get_widget("task_details_form").widget.set_sensitive(True)
-                notes = task.notes
-                contexts = task.contexts
-                project = task.project
-            GUI().get_widget("task_notes").widget.get_buffer().set_text(notes)
-            GUI().get_widget("task_contexts_table").set_active_contexts(contexts)
-            GUI().get_widget("task_project").set_active(project)
+        notes = ""
+        contexts = []
+        project = None
+        task = None
+
+        if path:
+            task = tree.get_model()[path][0]
+
+        if isinstance(task, gtd.Task):
+            GUI().get_widget("task_details_form").widget.set_sensitive(True)
+            notes = task.notes
+            contexts = task.contexts
+            project = task.project
+        else:
+            GUI().get_widget("task_details_form").widget.set_sensitive(False)
+
+        GUI().get_widget("task_notes").widget.get_buffer().set_text(notes)
+        GUI().get_widget("task_contexts_table").set_active_contexts(contexts)
+        GUI().get_widget("task_project").set_active(project)
 
 
 class AreaFilterListView(GTDTreeView):
@@ -408,6 +414,7 @@ class ProjectListView(GTDTreeView):
         GTDTreeView.__init__(self, name)
         self.widget.set_model(project_store)
         project_store.connect("row_inserted", self._on_row_inserted)
+        project_store.connect("row_deleted", self._on_row_deleted)
 
         # create the TreeViewColumns to display the data
         tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -455,6 +462,13 @@ class ProjectListView(GTDTreeView):
         else:
             project.title = new_text
 
+    def _on_row_inserted(self, model, path, iter):
+        self.widget.set_cursor(path, None, False)
+
+    def _on_row_deleted(self, model, path):
+        if self.widget.get_cursor()[0] is None:
+            self.on_project_list_cursor_changed(self.widget)
+
     def _data_func(self, column, cell, model, iter, data):
         project = model[iter][0]
         if data is "complete":
@@ -477,9 +491,6 @@ class ProjectListView(GTDTreeView):
             # FIXME: throw an exception
             print "ERROR: didn't set %s property for "%data, obj.title
 
-    def _on_row_inserted(self, model, path, iter):
-        self.widget.set_cursor(path, None, False)
-
     # gtk signal callbacks (defined in and connected via Glade)
     def on_project_list_button_press(self, widget, event):
         return GTDTreeView.on_button_press(self, widget, event, 1)
@@ -488,15 +499,20 @@ class ProjectListView(GTDTreeView):
     # FIXME: application logic
     def on_project_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
-        project = tree.get_model()[path][0]
         notes = ""
+        project = None
         area = None
+
+        if path:
+            project = tree.get_model()[path][0]
+
         if isinstance(project, gtd.Project):
             GUI().get_widget("project_details_form").widget.set_sensitive(True)
             notes = project.notes
             area = project.area
         else:
             GUI().get_widget("project_details_form").widget.set_sensitive(False)
+
         GUI().get_widget("project_notes").widget.get_buffer().set_text(notes)
         GUI().get_widget("project_area").set_active(area)
 

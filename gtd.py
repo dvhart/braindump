@@ -327,7 +327,7 @@ class GTD(object):
                     ProjectNone().add_task(t)
                     self.sig_task_added(t)
             project.area.remove_project(project)
-            self.sig_project_removed(p)
+            self.sig_project_removed(project)
 
     def remove_task(self, task):
         if task.project:
