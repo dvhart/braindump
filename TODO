@@ -18,6 +18,7 @@ o due dates for Tasks
 o fix about dialog name "braindump.py" to "BrainDump", glade shows "BrainDump
   1.0", not sure what's going on the about dialog's widget->name seems to be
   "braindump.py" ???
+o recalculate sizing for context table after context renaming
 
 Packaging
 o Debian/Ubuntu
@@ -25,9 +26,6 @@ o RedHat/Suse
 
 Artwork
 o Need a profesisonal icon
-
-Debugging
-o need some logging levels / infrastructure
 
 Improvements
 o have the filter row animate (swell, glow, whatever) when something is added/removed
