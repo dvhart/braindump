@@ -249,9 +249,9 @@ class ProjectStore(GTDStoreRealmFilter):
                 for p in a.projects:
                     self.model.append([p])
 
-    def filter_by_area(self, selection, show_actions):
+    def filter_by_area(self, selection, show_actions, datefilterby):
         filter = self.filter_new()
-        filter.set_visible_func(self.filter_by_area_visible, [selection, show_actions])
+        filter.set_visible_func(self.filter_by_area_visible, [selection, show_actions, datefilterby])
         return filter
 
     # Filter visibility methods
@@ -267,7 +267,7 @@ class ProjectStore(GTDStoreRealmFilter):
             return project.area.realm.visible
 
     def filter_by_area_visible(self, model, iter, data):
-        selection, show_actions = data
+        selection, show_actions, datefilterby = data
         selmodel, paths = selection.get_selected_rows()
         project = model[iter][0]
         if project == None:
@@ -278,6 +278,9 @@ class ProjectStore(GTDStoreRealmFilter):
         if isinstance(project, gtd.BaseNone):
             return False
         if not isinstance(project, GTDActionRow):
+	    #FIXME - gross!!
+            if datefilterby and not datefilterby.get_active().filter(project):
+                return False
             for path in paths:
                 if project.area is selmodel[path][0]:
                     return True
@@ -296,13 +299,13 @@ class TaskStore(GTDStoreRealmFilter):
                     for t in p.tasks:
                         self.model.append([t])
 
-    def filter_by_selection(self, selection, show_actions):
+    def filter_by_selection(self, selection, show_actions, datefilterby):
         filter = self.filter_new()
-        filter.set_visible_func(self.__filter_by_selection_visible, [selection, show_actions])
+        filter.set_visible_func(self.__filter_by_selection_visible, [selection, show_actions, datefilterby])
         return filter
 
     def __filter_by_selection_visible(self, model, iter, data):
-        selection, show_actions = data
+        selection, show_actions, datefilterby = data
         selmodel, paths = selection.get_selected_rows()
         task = model[iter][0]
         if isinstance(task, GTDActionRow):
@@ -315,6 +318,9 @@ class TaskStore(GTDStoreRealmFilter):
         #    return True
         else:
             if task.project.area.realm.visible:
+                #FIXME - gross!!
+            	if datefilterby and not datefilterby.get_active().filter(task):
+                    return False
                 for path in paths:
                     comp = selmodel[path][0] # either a project or a context
                     if isinstance(comp, gtd.Context):

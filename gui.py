@@ -20,7 +20,10 @@
 #
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
+import time
+import datetime
 import gtk, gtk.glade
+import gnome, gnome.ui
 from singleton import *
 import gtd
 from gui_datastores import *
@@ -101,6 +104,13 @@ class WidgetWrapper(_WidgetWrapperBase):
         #       xml object (from widget.name) if we want individual
         #       widget signal namespace
         GUI().signal_autoconnect(self)
+
+
+# Function Object of sorts for the gtk combo box filters
+class Filter(object):
+    def __init__(self, name, filter):
+        self.name = name;
+        self.filter = filter;
 
 
 class RealmToggles(WidgetWrapper):
@@ -228,13 +238,15 @@ class TaskFilterListView(GTDTreeView):
     def on_task_filter_list_button_press(self, widget, event):
         return GTDTreeView.on_button_press(self, widget, event, 0)
 
-    def on_task_filterby_changed(self, widget):
+    def on_task_filter_by_changed(self, widget):
         """Update the model according to the selected filter.
 
-        Keywork arguments:
+        Keyword arguments:
         widget -- A gtk.ComboBox with active text of either
                   "By Context" or "By Project"
         """
+	# FIXME: this function should be called set_model() and the glade callback should be
+	#        defined in the application (braindump.py) not here in the widget!
         filter_by = widget.get_active_text()
         if filter_by == "By Context":
             self.widget.set_model(self.__context_store)
@@ -608,6 +620,28 @@ class ContextTable(WidgetWrapper):
         self.__rebuild(self.widget.allocation, True)
  
 
+class GTDFilterCombo(WidgetWrapper):
+    def __init__(self, name, model, none=None):
+        WidgetWrapper.__init__(self, name)
+        self.__none = none
+        debug('%s model is %s' % (name, model.__class__.__name__))
+        self.widget.set_model(model)
+        renderer = gtk.CellRendererText()
+        self.widget.pack_start(renderer)
+        self.widget.set_cell_data_func(renderer, self._data_func)
+
+    def _data_func(self, column, cell, model, iter):
+        filter = model[iter][0]
+        cell.set_property("text", filter.name)
+
+    def get_active(self):
+        iter = self.widget.get_active_iter()
+        if iter:
+            return self.widget.get_model()[iter][0]
+        else:
+            return Filter("", lambda x: True)
+
+
 class GTDCombo(WidgetWrapper):
     __none = None
 
@@ -730,6 +764,8 @@ class TaskDetailsForm(WidgetWrapper):
     def __init__(self, name, project_store):
         WidgetWrapper.__init__(self, name)
         self.__task_notes = GUI().get_widget("task_notes")
+        self.__start = GUI().get_widget("task_start")
+        self.__due = GUI().get_widget("task_due")
         self.__task_project = GTDCombo("task_project", project_store, ProjectNone())
         self.__task_contexts = ContextTable("task_contexts_table", self.on_context_toggled)
 
@@ -738,20 +774,29 @@ class TaskDetailsForm(WidgetWrapper):
     def set_task(self, task):
         self.__task = task
         notes = ""
-        contexts = []
+        startdate = 0 # FIXME: this sets it to today()... we really want blank... (3 others like this)
+        duedate = 0
         project = None
+        contexts = []
 
         if isinstance(task, gtd.Task):
             self.widget.set_sensitive(True)
             notes = self.__task.notes
-            contexts = self.__task.contexts
+            # FIXME: might be better to wrap the widget so we can simply use datetime objects here
+            if self.__task.startdate:
+                startdate = int(time.mktime(self.__task.startdate.timetuple()))
+            if self.__task.duedate:
+                duedate = int(time.mktime(self.__task.duedate.timetuple()))
             project = self.__task.project
+            contexts = self.__task.contexts
         else:
             self.widget.set_sensitive(False)
 
         self.__task_notes.widget.get_buffer().set_text(notes)
-        self.__task_contexts.set_active_contexts(contexts)
+        self.__start.widget.set_time(startdate)
+        self.__due.widget.set_time(duedate)
         self.__task_project.set_active(project)
+        self.__task_contexts.set_active_contexts(contexts)
 
     def get_project(self):
         return self.__task_project.get_active()
@@ -759,6 +804,16 @@ class TaskDetailsForm(WidgetWrapper):
     def _on_task_notes_changed(self, buffer):
         if isinstance(self.__task, gtd.Task):
             self.__task.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
+
+    def on_task_start_date_changed(self, dateedit):
+        d = datetime.datetime.fromtimestamp(dateedit.get_time())
+        self.__task.startdate = d
+        debug(d)
+
+    def on_task_due_date_changed(self, dateedit):
+        d = datetime.datetime.fromtimestamp(dateedit.get_time())
+        self.__task.duedate = d
+        debug(d)
 
     def on_task_project_changed(self, project_combo):
         project = self.get_project()
@@ -783,6 +838,8 @@ class ProjectDetailsForm(WidgetWrapper):
     def __init__(self, name, area_store):
         WidgetWrapper.__init__(self, name)
         self.__project_notes = GUI().get_widget("project_notes")
+        self.__start = GUI().get_widget("project_start")
+        self.__due = GUI().get_widget("project_due")
         self.__project_area = GTDCombo("project_area", area_store, AreaNone())
 
         self.__project_notes.widget.get_buffer().connect("changed", self._on_project_notes_changed)
@@ -790,16 +847,25 @@ class ProjectDetailsForm(WidgetWrapper):
     def set_project(self, project): # FIXME: consider just using an attribute?
         self.__project = project
         notes = ""
+        startdate = 0
+        duedate = 0
         area = None
 
         if isinstance(self.__project, gtd.Project):
             self.widget.set_sensitive(True)
             notes = self.__project.notes
+            # FIXME: might be better to wrap the widget so we can simply use datetime objects here
+            if self.__project.startdate:
+                startdate = int(time.mktime(self.__project.startdate.timetuple()))
+            if self.__project.duedate:
+                duedate = int(time.mktime(self.__project.duedate.timetuple()))
             area = self.__project.area
         else:
             self.widget.set_sensitive(False)
 
         self.__project_notes.widget.get_buffer().set_text(notes)
+        self.__start.widget.set_time(startdate)
+        self.__due.widget.set_time(duedate)
         self.__project_area.set_active(area)
 
     def get_area(self):
@@ -808,6 +874,16 @@ class ProjectDetailsForm(WidgetWrapper):
     def _on_project_notes_changed(self, buffer):
         if isinstance(self.__project, gtd.Project):
             self.__project.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
+
+    def on_project_start_date_changed(self, dateedit):
+        d = datetime.datetime.fromtimestamp(dateedit.get_time())
+        self.__project.startdate = d
+        debug(d)
+
+    def on_project_due_date_changed(self, dateedit):
+        d = datetime.datetime.fromtimestamp(dateedit.get_time())
+        self.__project.duedate = d
+        debug(d)
 
     def on_project_area_changed(self, area_combo):
         area = self.get_area()

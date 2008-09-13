@@ -20,6 +20,7 @@
 #
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
+import datetime
 import pickle
 from singleton import *
 from notify.all import *
@@ -156,6 +157,8 @@ class Project(Base):
         Base.__init__(self, title)
         self.area = area
         self.notes = notes
+        self.startdate = None # these will be datetime objects
+        self.duedate = None
         if self.area:
             debug('project area is %s' % (self.area))
             self.area.add_project(self)
@@ -196,6 +199,8 @@ class Task(Base):
         self.project = project
         self.contexts = contexts
         self.notes = notes
+        self.startdate = None # these will be datetime objects
+        self.duedate = None
         self.waiting = waiting
         self.complete = complete
         # FIXME: how do we connect this to the "NoneProject"
@@ -264,11 +269,24 @@ class GTD(object):
         Realm("Professional")
         remodel = Area("Remodel", self.realms[0])
         staffdev = Area("Staff Development", self.realms[1])
+
         braindump = Project("BrainDump", "", staffdev, False)
+        braindump.startdate = datetime.datetime.today()
+        braindump.duedate = datetime.datetime.today() + datetime.timedelta(days=7)
         deck = Project("front deck", "", remodel, False)
-        Task("research gnome list_item", braindump, [self.contexts[3]], "notes A", False, False),
-        Task("extend gnome list_item", braindump, [self.contexts[3]], "notes B", False, False),
-        Task("lay deck boards", deck, [self.contexts[1]], "use stained boards first", False, False)
+        deck.startdate = datetime.datetime.today() + datetime.timedelta(days=7)
+        deck.duedate = datetime.datetime.today() + datetime.timedelta(days=14)
+        landscape = Project("landscape", "", remodel, False)
+        # no dates for landscape - it's a someday project
+
+        taska = Task("research gnome list_item", braindump, [self.contexts[3]], "notes A", False, False)
+	taska.startdate = datetime.datetime.today()
+	taska.duedate = datetime.datetime.today() + datetime.timedelta(days=1)
+        taskb = Task("extend gnome list_item", braindump, [self.contexts[3]], "notes B", False, False)
+	taskb.startdate = datetime.datetime.today() + datetime.timedelta(days=7)
+	taskb.startdate = datetime.datetime.today() + datetime.timedelta(days=14)
+        taskc = Task("lay deck boards", deck, [self.contexts[1]], "use stained boards first", False, False)
+	# no dates for taskc - it's a someday task
     
     def context_tasks(self, context):
         tasks = []

@@ -19,6 +19,10 @@ o fix about dialog name "braindump.py" to "BrainDump", glade shows "BrainDump
   1.0", not sure what's going on the about dialog's widget->name seems to be
   "braindump.py" ???
 o recalculate sizing for context table after context renaming
+o update spacing etc according to Gnome HIG
+o consider implementing a date/time widget like: http://www.mail-archive.com/pygtk@daa.com.au/msg12160.html
+o replace the task filter strings with task filter by store objects, one for contexts and one for projects,
+  each one telling the filter_by_selection box which model to use
 
 Packaging
 o Debian/Ubuntu
@@ -42,6 +46,7 @@ o consider making contexts two one or more realms (So when you turn off the
 o MetaFilters - allow the creation of project and task filters by the user
   using boolean logic: "Calls and Morning", "Evening or Weekend"
 o consider making rename less easy - can be done on accident
+o nag mail for delegated tasks
 
 Other
 o look at adding braindump to http://pypi.python.org/pypi ?? timrc's suggestion

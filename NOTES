@@ -17,3 +17,7 @@ o perhaps the *FilterListView objects can have a common base class and just impl
   a custom reload() method
 o consider building area and realm tabs
   - view/interact similar to task and project tabs for a common, consistent interface
+
+Reference:
+o Simple well documented TODO application HOWTO
+    http://www.learningpython.com/2007/02/17/pylan-a-gtd-todo-application-written-in-python-and-pygtk-part-one/
