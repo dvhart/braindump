@@ -106,11 +106,16 @@ class WidgetWrapper(_WidgetWrapperBase):
         GUI().signal_autoconnect(self)
 
 
-# Function Object of sorts for the gtk combo box filters
-class Filter(object):
+# Elements for list stores (used in combo boxes)
+class FilterItem(object):
     def __init__(self, name, filter):
-        self.name = name;
-        self.filter = filter;
+        self.name = name
+        self.filter = filter
+
+class ModelItem(object):
+    def __init__(self, name, model):
+        self.name = name
+        self.model = model
 
 
 class RealmToggles(WidgetWrapper):
@@ -127,16 +132,16 @@ class RealmToggles(WidgetWrapper):
         # FIXME: check for widget type: gtk.Toolbar and 0 children
         WidgetWrapper.__init__(self, name)
         for realm in GTD().realms:
-            self.on_realm_added(realm)
-        GTD().sig_realm_added.connect(self.on_realm_added)
-        GTD().sig_realm_renamed.connect(self.on_realm_renamed)
-        GTD().sig_realm_removed.connect(self.on_realm_removed)
+            self.add_realm(realm)
+        GTD().sig_realm_added.connect(self.add_realm)
+        GTD().sig_realm_renamed.connect(self.update_realm)
+        GTD().sig_realm_removed.connect(self.remove_realm)
 
     def _on_toggled(self, widget, realm):
         realm.set_visible(widget.get_active())
 
     # FIXME: alpha order?
-    def on_realm_added(self, realm):
+    def add_realm(self, realm):
         """Add a gtk.ToggleToolButton for realm."""
         # FIXME: check it doesn't already exist
         tb = gtk.ToggleToolButton()
@@ -148,13 +153,13 @@ class RealmToggles(WidgetWrapper):
         self.__realm_buttons[realm] = tb
 
     # FIXME: alpha reorder?
-    def on_realm_renamed(self, realm):
+    def update_realm(self, realm):
         """Update the label of the button corresponding to realm."""
         if self.__realm_buttons.has_key(realm):
             self.__realm_buttons[realm].set_property("label", realm.title)
         # FIXME: throw exception if not?
 
-    def on_realm_removed(self, realm):
+    def remove_realm(self, realm):
         """Remove the button corresponding to realm."""
         if self.__realm_buttons.has_key(realm):
             self.widget.remove(self.__realm_buttons[realm])
@@ -192,30 +197,26 @@ class GTDTreeView(WidgetWrapper):
             return True
         return False
 
+
 # FIXME: consider renaming this to not use "Filter" as this class
 # doesn't do the filtering, it's selection is used for that purpose
 # by the application.
 class TaskFilterListView(GTDTreeView):
     """A treeview to display contexts or projects."""
 
-    def __init__(self, name, context_store, project_store):
+    def __init__(self, name):
         """Construct a treeview for contexts and projects.
 
         Keyword arguments:
         widget        -- the gtk.TreeView widget to wrap
-        context_store -- the ContextStore for gtd.Contexts
-        project_store -- the ProjectStore fot gtd.Projects
         """
         GTDTreeView.__init__(self, name)
-        self.__context_store = context_store
-        self.__project_store = project_store
-        # FIXME: which model should we do first?
-        self.widget.set_model(self.__context_store)
 
         # setup the column and cell renderer
         tvcolumn0 = gtk.TreeViewColumn()
         cell0 = gtk.CellRendererText()
         cell0.set_property('editable', True)
+        # FIXME: consdider passing None as model, we don't need to pass it to ourselves...
         cell0.connect('edited', self._on_edited, lambda: self.widget.get_model(), 0)
         tvcolumn0.pack_start(cell0, False)
         tvcolumn0.set_cell_data_func(cell0, self._data_func)
@@ -235,34 +236,10 @@ class TaskFilterListView(GTDTreeView):
             title = "<i>"+title+"</i>"
         cell.set_property("markup", title)
 
+    # FIXME: we could connect this ourselves in __init__, but we don't have
+    # access to the menu here... glade does this via the xml...... ew.....
     def on_task_filter_list_button_press(self, widget, event):
         return GTDTreeView.on_button_press(self, widget, event, 0)
-
-    def on_task_filter_by_changed(self, widget):
-        """Update the model according to the selected filter.
-
-        Keyword arguments:
-        widget -- A gtk.ComboBox with active text of either
-                  "By Context" or "By Project"
-        """
-	# FIXME: this function should be called set_model() and the glade callback should be
-	#        defined in the application (braindump.py) not here in the widget!
-        filter_by = widget.get_active_text()
-        if filter_by == "By Context":
-            self.widget.set_model(self.__context_store)
-        elif filter_by == "By Project":
-            self.widget.set_model(self.__project_store)
-
-    def on_task_filter_all(self, widget):
-        """Select all the rows in the view."""
-        self.widget.get_selection().select_all()
-
-    def on_task_filter_none(self, widget):
-        """Select none of the rows in the view."""
-        self.widget.get_selection().unselect_all()
-        # FIXME: should select (No Context) or (No Project)
-        # never allow viewing no tasks at all (will cause problems creating 
-        # new tasks as they will just vanish from the view)
 
 
 class TaskListView(GTDTreeView):
@@ -334,7 +311,9 @@ class TaskListView(GTDTreeView):
 
     def _on_row_deleted(self, model, path):
         if self.widget.get_cursor()[0] is None:
-            self.on_task_list_cursor_changed(self.widget)
+            self.widget.set_cursor((0)) # FIXME: ideally we would just emit the cursor-changed
+                                        # signal when the current row was deleted... but for some
+                                        # reason this doesn't happen...
 
     def _data_func(self, column, cell, model, iter, data):
         task = model[iter][0]
@@ -354,16 +333,10 @@ class TaskListView(GTDTreeView):
             error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
 
     # gtk signal callbacks (defined in and connected via Glade)
+    # FIXME: can't do this in _init_ since glade is passing in the menu
+    # to  display (widget)
     def on_task_list_button_press(self, widget, event):
         return GTDTreeView.on_button_press(self, widget, event, 1)
-
-    def on_task_list_cursor_changed(self, tree):
-        path = tree.get_cursor()[0]
-        task = None
-
-        if path:
-            task = tree.get_model()[path][0]
-        GUI().get_widget("task_details_form").set_task(task)
 
 
 class AreaFilterListView(GTDTreeView):
@@ -397,12 +370,6 @@ class AreaFilterListView(GTDTreeView):
     # signal callbacks
     def on_area_filter_list_button_press(self, widget, event):
         return GTDTreeView.on_button_press(self, widget, event, 0)
-
-    def on_area_filter_all(self, widget):
-        self.widget.get_selection().select_all()
-
-    def on_area_filter_none(self, widget):
-        self.widget.get_selection().unselect_all()
 
 
 class ProjectListView(GTDTreeView):
@@ -463,7 +430,9 @@ class ProjectListView(GTDTreeView):
 
     def _on_row_deleted(self, model, path):
         if self.widget.get_cursor()[0] is None:
-            self.on_project_list_cursor_changed(self.widget)
+            self.widget.set_cursor((0)) # FIXME: ideally we would just emit the cursor-changed
+                                        # signal when the current row was deleted... but for some
+                                        # reason this doesn't happen...
 
     def _data_func(self, column, cell, model, iter, data):
         project = model[iter][0]
@@ -490,15 +459,6 @@ class ProjectListView(GTDTreeView):
     # gtk signal callbacks (defined in and connected via Glade)
     def on_project_list_button_press(self, widget, event):
         return GTDTreeView.on_button_press(self, widget, event, 1)
-
-    def on_project_list_cursor_changed(self, tree):
-        path = tree.get_cursor()[0]
-        project = None
-
-        if path:
-            project = tree.get_model()[path][0]
-
-        GUI().get_widget("project_details_form").set_project(project)
 
 
 class RealmAreaTreeView(GTDTreeView):
@@ -620,6 +580,29 @@ class ContextTable(WidgetWrapper):
         self.__rebuild(self.widget.allocation, True)
  
 
+class ModelCombo(WidgetWrapper):
+    def __init__(self, name, model, none=None):
+        WidgetWrapper.__init__(self, name)
+        self.__none = none
+        debug('%s model is %s' % (name, model.__class__.__name__))
+        self.widget.set_model(model)
+        renderer = gtk.CellRendererText()
+        self.widget.pack_start(renderer)
+        self.widget.set_cell_data_func(renderer, self._data_func)
+
+    def _data_func(self, column, cell, model, iter):
+        mi = model[iter][0]
+        cell.set_property("text", mi.name)
+
+    def get_active(self):
+        iter = self.widget.get_active_iter()
+        if iter:
+            return self.widget.get_model()[iter][0]
+        else:
+            return None
+
+
+# FIXME: bad name... I think...
 class GTDFilterCombo(WidgetWrapper):
     def __init__(self, name, model, none=None):
         WidgetWrapper.__init__(self, name)
@@ -639,7 +622,7 @@ class GTDFilterCombo(WidgetWrapper):
         if iter:
             return self.widget.get_model()[iter][0]
         else:
-            return Filter("", lambda x: True)
+            return FilterItem("", lambda x: True)
 
 
 class GTDCombo(WidgetWrapper):

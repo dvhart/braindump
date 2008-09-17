@@ -23,6 +23,9 @@ o update spacing etc according to Gnome HIG
 o consider implementing a date/time widget like: http://www.mail-archive.com/pygtk@daa.com.au/msg12160.html
 o replace the task filter strings with task filter by store objects, one for contexts and one for projects,
   each one telling the filter_by_selection box which model to use
+o redesign the broken-ass gtd-popup-menu for right-button-press on all the tree views...
+o when changing the filtered list of tasks or projects, if the previously selected gtd object is
+  still visible, it should be selected.
 
 Packaging
 o Debian/Ubuntu
@@ -52,7 +55,6 @@ Other
 o look at adding braindump to http://pypi.python.org/pypi ?? timrc's suggestion
 o decide on consistent coding style
   o widget naming: update, update_btn, etc.
-o currently using pynotify - perhaps we should be using the signals from gobject?
 o Use a gtk_button_box instead of a toolbar for the realm buttons? (shouldn't
   have to wrap them then)
 o gut requirements on GNOME, and try to be a pure gtk app by default
@@ -80,10 +82,6 @@ o right now the scope is at the GTD tree level, rather than at the individual it
 o work to base all gui updates from updates to the data models.  ie. we shouldn't have to 
   explicitly connect the conext_rename to the context_table.... right?
 o look into gobject signals, we may be able to axe the py-notify dependency
-o consider removing all the signals from glade since they require globally unique names
-  - alternatively leave the long-4$$ names, but move them out of the wrapped widgets
-    and into a "control.py" file... I just hate the whole "all callbacks in a single file"
-    idea.... sigh...
 
 GCONF Settings (GNOME dep?)
 o window size and position

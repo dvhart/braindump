@@ -128,19 +128,24 @@ class BrainDump(object):
         self.context_store_action = self.context_store.filter_actions(True)
         self.context_store_filter_no_action = self.context_store.filter_actions(False)
 
+        # Task selection filter store
+        self.task_selection_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        self.task_selection_filter_store.append([gui.ModelItem("By Context", self.context_store_action)])
+        self.task_selection_filter_store.append([gui.ModelItem("By Project", self.project_store_filter_by_realm_no_action)])
+
 	# Task date filter store
 	self.task_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
-        self.task_filter_store.append([gui.Filter("All Tasks", self.all_filter_callback)])
-        self.task_filter_store.append([gui.Filter("Active Tasks", self.active_filter_callback)])
-        self.task_filter_store.append([gui.Filter("Future Tasks", self.future_filter_callback)])
-        self.task_filter_store.append([gui.Filter("Someday Tasks", self.someday_filter_callback)])
+        self.task_filter_store.append([gui.FilterItem("All Tasks", self.all_filter_callback)])
+        self.task_filter_store.append([gui.FilterItem("Active Tasks", self.active_filter_callback)])
+        self.task_filter_store.append([gui.FilterItem("Future Tasks", self.future_filter_callback)])
+        self.task_filter_store.append([gui.FilterItem("Someday Tasks", self.someday_filter_callback)])
 
 	# Project date filter store
         self.project_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
-        self.project_filter_store.append([gui.Filter("All Projects", self.all_filter_callback)])
-        self.project_filter_store.append([gui.Filter("Active Projects", self.active_filter_callback)])
-        self.project_filter_store.append([gui.Filter("Future Projects", self.future_filter_callback)])
-        self.project_filter_store.append([gui.Filter("Someday Projects", self.someday_filter_callback)])
+        self.project_filter_store.append([gui.FilterItem("All Projects", self.all_filter_callback)])
+        self.project_filter_store.append([gui.FilterItem("Active Projects", self.active_filter_callback)])
+        self.project_filter_store.append([gui.FilterItem("Future Projects", self.future_filter_callback)])
+        self.project_filter_store.append([gui.FilterItem("Someday Projects", self.someday_filter_callback)])
 
 
         ##### Connect GTD Signals #####
@@ -183,9 +188,23 @@ class BrainDump(object):
 
 
 	# Task Tab
-        self.task_filter_list = TaskFilterListView("task_filter_list", self.context_store_action,
-                                                   self.project_store_filter_by_realm_no_action)
-        GUI().get_widget("task_filter_by").widget.set_active(0)
+        self.task_filter_list = TaskFilterListView("task_filter_list")
+
+        # Select all the rows in the view
+        # FIXME: Error checking, may need a member callback here
+        self.task_filter_all = GUI().get_widget("task_filter_all")
+        self.task_filter_all.widget.connect("clicked", lambda w: self.task_filter_list.widget.get_selection().select_all())
+
+        # Select none of the rows in the view
+        # FIXME: Error checking, may need a member callback here
+        # FIXME: should select (No Context) or (No Project)
+        # never allow viewing no tasks at all (will cause problems creating
+        # new tasks as they will just vanish from the view)
+        self.task_filter_none = GUI().get_widget("task_filter_none")
+        self.task_filter_none.widget.connect("clicked", lambda w: self.task_filter_list.widget.get_selection().unselect_all())
+
+        self.task_filter_by = ModelCombo("task_filter_by", self.task_selection_filter_store)
+        self.task_filter_by.widget.connect("changed", lambda w: self.task_filter_list.widget.set_model(self.task_filter_by.get_active().model))
 
 	self.task_date_filter_by = GTDFilterCombo("taskdatefilterby", self.task_filter_store)
 
@@ -197,7 +216,6 @@ class BrainDump(object):
         self.task_details_form = TaskDetailsForm("task_details_form",
                                                  self.project_store_filter_by_realm_no_action)
 
-
         # New task default form
         self.default_project_combo = GTDCombo("default_project_combo",
                                               self.project_store_filter_by_realm_no_action, ProjectNone())
@@ -208,6 +226,16 @@ class BrainDump(object):
 
         # Project Tab
         self.area_filter_list = AreaFilterListView("area_filter_list", self.area_store_filter_by_realm_no_action)
+
+        # Select all the rows in the view
+        # FIXME: Error checking, may need a member callback here
+        self.area_filter_all = GUI().get_widget("area_filter_all")
+        self.area_filter_all.widget.connect("clicked", lambda w: self.area_filter_list.widget.get_selection().select_all())
+
+        # Select none of the rows in the view
+        # FIXME: Error checking, may need a member callback here
+        self.area_filter_none = GUI().get_widget("area_filter_none")
+        self.area_filter_none.widget.connect("clicked", lambda w: self.area_filter_list.widget.get_selection().unselect_all())
 
 	self.project_date_filter_by = GTDFilterCombo("projectdatefilterby", self.project_filter_store)
 
@@ -229,6 +257,7 @@ class BrainDump(object):
 
 	# Setup initial state
 	# FIXME: store this in gconf?
+        self.task_filter_by.widget.set_active(0)
         self.task_filter_list.widget.get_selection().select_all()
         self.task_date_filter_by.widget.set_active(0)
 
@@ -271,13 +300,30 @@ class BrainDump(object):
     def on_about_activate(self, menuitem):
         self.about_dialog.widget.show()
 
-
     # Widget callbacks
     def on_new_task(self, title):
         '''Create a new task from the new task defaults, initiated from the task list.'''
         project = self.default_project_combo.get_active()
         context = self.default_context_combo.get_active()
         gtd.Task(title, project, [context])
+
+    def on_task_list_cursor_changed(self, tree):
+        path = tree.get_cursor()[0]
+        task = None
+
+        if path:
+            task = tree.get_model()[path][0]
+        self.task_details_form.set_task(task)
+
+    def on_project_list_cursor_changed(self, tree):
+        path = tree.get_cursor()[0]
+        debug("path: %s" % path)
+        project = None
+
+        if path:
+            project = tree.get_model()[path][0]
+
+        self.project_details_form.set_project(project)
 
     # Task and project date filter callbacks
     # FIXME: gotta be a better place for these!
