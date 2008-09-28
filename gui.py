@@ -22,12 +22,14 @@
 
 import time
 import datetime
+import re
 import gtk, gtk.glade
 import gnome, gnome.ui
 import sexy
 from singleton import *
 import gtd
 from gui_datastores import *
+from gtd_action_rows import *
 from logging import debug, info, warning, error, critical
 
 class GUI(gtk.glade.XML):
@@ -113,6 +115,7 @@ class FilterItem(object):
         self.name = name
         self.filter = filter
 
+
 class ModelItem(object):
     def __init__(self, name, model):
         self.name = name
@@ -132,8 +135,8 @@ class RealmToggles(WidgetWrapper):
         """
         # FIXME: check for widget type: gtk.Toolbar and 0 children
         WidgetWrapper.__init__(self, name)
-        for realm in GTD().realms:
-            self.add_realm(realm)
+        for r in GTD().realms:
+            self.add_realm(r)
         GTD().sig_realm_added.connect(self.add_realm)
         GTD().sig_realm_renamed.connect(self.update_realm)
         GTD().sig_realm_removed.connect(self.remove_realm)
@@ -145,6 +148,9 @@ class RealmToggles(WidgetWrapper):
     def add_realm(self, realm):
         """Add a gtk.ToggleToolButton for realm."""
         # FIXME: check it doesn't already exist
+        # don't display the RealmNone, it is always visible
+        if isinstance(realm, gtd.RealmNone):
+            return
         tb = gtk.ToggleToolButton()
         tb.set_property("label", realm.title)
         tb.set_active(realm.visible)
@@ -237,6 +243,35 @@ class TaskFilterListView(GTDTreeView):
             title = "<i>"+title+"</i>"
         cell.set_property("markup", title)
 
+    def selection_match(self, task):
+        if isinstance(task, GTDActionRow):
+            return True
+
+        selection = self.widget.get_selection()
+        selmodel, paths = selection.get_selected_rows()
+
+        # FIXME: is this still relevant
+        if task is None:
+            debug('FIXME: why are we comparing a none task?')
+            return False
+
+        if task.project.area.realm.visible:
+            for path in paths:
+                comp = selmodel[path][0] # either a project or a context
+                if isinstance(comp, gtd.Context):
+                    if task.contexts.count(comp):
+                        return True
+                    if len(task.contexts) is 0 and isinstance(comp, gtd.ContextNone):
+                        return True
+                elif isinstance(comp, gtd.Project):
+                    if task.project is comp:
+                        return True
+                elif isinstance(comp, GTDActionRow):
+                    continue
+                else:
+                    error('cannot filter Task on %s' % (comp.__class__.__name__))
+            return False
+
     # FIXME: we could connect this ourselves in __init__, but we don't have
     # access to the menu here... glade does this via the xml...... ew.....
     def on_task_filter_list_button_press(self, widget, event):
@@ -262,9 +297,9 @@ class TaskListView(GTDTreeView):
         """
         GTDTreeView.__init__(self, name)
         self.__new_task_handler = new_task_handler
-        self.widget.set_model(task_store)
-        task_store.connect("row_inserted", self._on_row_inserted)
-        task_store.connect("row_deleted", self._on_row_deleted)
+        self.widget.set_model(task_store.model_filter)
+        task_store.model_filter.connect("row_inserted", self._on_row_inserted)
+        task_store.model_filter.connect("row_deleted", self._on_row_deleted)
 
         # create the TreeViewColumns to display the data
         tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -343,7 +378,7 @@ class TaskListView(GTDTreeView):
 class AreaFilterListView(GTDTreeView):
     def __init__(self, name, area_store):
         GTDTreeView.__init__(self, name)
-        self.widget.set_model(area_store)
+        self.widget.set_model(area_store.model_filter)
 
         # setup the column and cell renderer
         tvcolumn0 = gtk.TreeViewColumn()
@@ -372,13 +407,28 @@ class AreaFilterListView(GTDTreeView):
     def on_area_filter_list_button_press(self, widget, event):
         return GTDTreeView.on_button_press(self, widget, event, 0)
 
+    def selection_match(self, project):
+        selection = self.widget.get_selection()
+        selmodel, paths = selection.get_selected_rows()
+        if project == None:
+            return True
+
+        if isinstance(project, GTDActionRow):
+            return True
+
+        for path in paths:
+            if project.area is selmodel[path][0]:
+                return True
+
+        return False
+
 
 class ProjectListView(GTDTreeView):
     def __init__(self, name, project_store):
         GTDTreeView.__init__(self, name)
-        self.widget.set_model(project_store)
-        project_store.connect("row_inserted", self._on_row_inserted)
-        project_store.connect("row_deleted", self._on_row_deleted)
+        self.widget.set_model(project_store.model_filter)
+        project_store.model_filter.connect("row_inserted", self._on_row_inserted)
+        project_store.model_filter.connect("row_deleted", self._on_row_deleted)
 
         # create the TreeViewColumns to display the data
         tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -615,8 +665,8 @@ class GTDFilterCombo(WidgetWrapper):
         self.widget.set_cell_data_func(renderer, self._data_func)
 
     def _data_func(self, column, cell, model, iter):
-        filter = model[iter][0]
-        cell.set_property("text", filter.name)
+        filter_item = model[iter][0]
+        cell.set_property("text", filter_item.name)
 
     def get_active(self):
         iter = self.widget.get_active_iter()
@@ -624,6 +674,11 @@ class GTDFilterCombo(WidgetWrapper):
             return self.widget.get_model()[iter][0]
         else:
             return FilterItem("", lambda x: True)
+
+    # FIXME: oh come on, isn't there a better name?!?! filter is WAY overloaded!
+    def filter(self, obj):
+        filter_item = self.get_active()
+        return filter_item.filter(obj)
 
 
 class GTDCombo(WidgetWrapper):
@@ -633,15 +688,15 @@ class GTDCombo(WidgetWrapper):
         WidgetWrapper.__init__(self, name)
         self.__none = none
         debug('%s model is %s' % (name, model.__class__.__name__))
-        self.widget.set_model(model)
-        model.connect("row_changed", lambda m,p,i: self.widget.queue_draw)
+        self.widget.set_model(model.model_filter)
+        model.model_filter.connect("row_changed", lambda m,p,i: self.widget.queue_draw)
         renderer = gtk.CellRendererText()
         self.widget.pack_start(renderer)
         self.widget.set_cell_data_func(renderer, self._data_func)
 
     def _data_func(self, column, cell, model, iter):
         obj = model[iter][0]
-        if isinstance(obj, gtd.Base):
+        if isinstance(obj, gtd.Base) or isinstance(obj, GTDActionRow):
             cell.set_property("text", obj.title)
         else:
             # FIXME: throw an exception
@@ -656,6 +711,12 @@ class GTDCombo(WidgetWrapper):
 
     def set_active(self, obj):
         iter = self.gtd_iter(obj)
+         # FIXME: this feels like a hack... but not sure how to deal with the combo not having
+         # been updated yet...
+        if not iter:
+            debug("***obj.title not found, refiltering model in case it hasn't been updated yet...")
+            self.widget.get_model().refilter()
+            iter = self.gtd_iter(obj)
         if iter:
             return self.widget.set_active_iter(iter)
         else:
@@ -758,8 +819,8 @@ class TaskDetailsForm(WidgetWrapper):
     def set_task(self, task):
         self.__task = task
         notes = ""
-        startdate = 0 # FIXME: this sets it to today()... we really want blank... (3 others like this)
-        duedate = 0
+        start_date = 0 # FIXME: this sets it to today()... we really want blank... (3 others like this)
+        due_date = 0
         project = None
         contexts = []
 
@@ -767,20 +828,23 @@ class TaskDetailsForm(WidgetWrapper):
             self.widget.set_sensitive(True)
             notes = self.__task.notes
             # FIXME: might be better to wrap the widget so we can simply use datetime objects here
-            if self.__task.startdate:
-                startdate = int(time.mktime(self.__task.startdate.timetuple()))
-            if self.__task.duedate:
-                duedate = int(time.mktime(self.__task.duedate.timetuple()))
+            if self.__task.start_date:
+                start_date = int(time.mktime(self.__task.start_date.timetuple()))
+            if self.__task.due_date:
+                due_date = int(time.mktime(self.__task.due_date.timetuple()))
             project = self.__task.project
             contexts = self.__task.contexts
         else:
             self.widget.set_sensitive(False)
 
         self.__task_notes.widget.get_buffer().set_text(notes)
-        self.__start.widget.set_time(startdate)
-        self.__due.widget.set_time(duedate)
+        self.__start.widget.set_time(start_date)
+        self.__due.widget.set_time(due_date)
         self.__task_project.set_active(project)
         self.__task_contexts.set_active_contexts(contexts)
+
+    def refresh(self):
+        self.set_task(self.__task)
 
     def get_project(self):
         return self.__task_project.get_active()
@@ -791,12 +855,12 @@ class TaskDetailsForm(WidgetWrapper):
 
     def on_task_start_date_changed(self, dateedit):
         d = datetime.datetime.fromtimestamp(dateedit.get_time())
-        self.__task.startdate = d
+        self.__task.start_date = d
         debug(d)
 
     def on_task_due_date_changed(self, dateedit):
         d = datetime.datetime.fromtimestamp(dateedit.get_time())
-        self.__task.duedate = d
+        self.__task.due_date = d
         debug(d)
 
     def on_task_project_changed(self, project_combo):
@@ -831,26 +895,29 @@ class ProjectDetailsForm(WidgetWrapper):
     def set_project(self, project): # FIXME: consider just using an attribute?
         self.__project = project
         notes = ""
-        startdate = 0
-        duedate = 0
+        start_date = 0
+        due_date = 0
         area = None
 
         if isinstance(self.__project, gtd.Project):
             self.widget.set_sensitive(True)
             notes = self.__project.notes
             # FIXME: might be better to wrap the widget so we can simply use datetime objects here
-            if self.__project.startdate:
-                startdate = int(time.mktime(self.__project.startdate.timetuple()))
-            if self.__project.duedate:
-                duedate = int(time.mktime(self.__project.duedate.timetuple()))
+            if self.__project.start_date:
+                start_date = int(time.mktime(self.__project.start_date.timetuple()))
+            if self.__project.due_date:
+                due_date = int(time.mktime(self.__project.due_date.timetuple()))
             area = self.__project.area
         else:
             self.widget.set_sensitive(False)
 
         self.__project_notes.widget.get_buffer().set_text(notes)
-        self.__start.widget.set_time(startdate)
-        self.__due.widget.set_time(duedate)
+        self.__start.widget.set_time(start_date)
+        self.__due.widget.set_time(due_date)
         self.__project_area.set_active(area)
+
+    def refresh(self):
+        self.set_project(self.__project)
 
     def get_area(self):
         return self.__project_area.get_active()
@@ -861,12 +928,12 @@ class ProjectDetailsForm(WidgetWrapper):
 
     def on_project_start_date_changed(self, dateedit):
         d = datetime.datetime.fromtimestamp(dateedit.get_time())
-        self.__project.startdate = d
+        self.__project.start_date = d
         debug(d)
 
     def on_project_due_date_changed(self, dateedit):
         d = datetime.datetime.fromtimestamp(dateedit.get_time())
-        self.__project.duedate = d
+        self.__project.due_date = d
         debug(d)
 
     def on_project_area_changed(self, area_combo):
@@ -880,45 +947,62 @@ class ProjectDetailsForm(WidgetWrapper):
 class SearchEntry(WidgetWrapper):
     __alignment = None
     __entry = None
-    __active = False
+    __active = False # FIXME: we could just have search_string... either a string or none... same detail, more useful...
     __focused = False # we should be able to check this right?
     __hint = "Search..."
 
     def __init__(self, name):
         WidgetWrapper.__init__(self, name)
-        __alignment = GUI().get_widget(name)
-        __entry = sexy.IconEntry()
-        __entry.add_clear_button()
-        __entry.connect("icon-released", self.clear)
-        __entry.connect("focus-in-event", self._focus_in)
-        __entry.connect("focus-out-event", self._focus_out)
-        __entry.connect("changed", self.changed)
-        __entry.show()
-        __alignment.widget.add(__entry)
-        self._focus_out(__entry, None)
+        self.__alignment = GUI().get_widget(name)
+        self.__entry = sexy.IconEntry()
+        self.__entry.add_clear_button()
+        self.__entry.connect("icon-released", self.clear)
+        self.__entry.connect("focus-in-event", self._focus_in)
+        self.__entry.connect("focus-out-event", self._focus_out)
+        self.__entry.connect("changed", self._changed)
+        self.__entry.show()
+        self.__alignment.widget.add(self.__entry)
+        self._focus_out(self.__entry, None)
 
     def _focus_in(self, widget, event):
         debug("focused")
         self.__focused = True
         if not self.__active:
-            widget.set_text("")
-            widget.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
+            self.__entry.set_text("")
+            self.__entry.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
 
     def _focus_out(self, widget, event):
         debug("unfocused")
         self.__focused = False
-        if widget.get_text() is "":
+        if self.__entry.get_text() is "":
             self.clear(widget)
+
+    def _changed(self, widget):
+        search_string = self.__entry.get_text()
+        debug("changed '%s'" % (search_string))
+        if search_string == "" or search_string == self.__hint:
+            self.__active = False
+        else:
+            self.__active = True
+
+    def connect(self, signal, handler):
+        self.__entry.connect(signal, handler)
 
     def clear(self, widget, x=1, y=1):
         debug("cleared")
         if self.__focused is False:
-            widget.set_text(self.__hint)
-            widget.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse("gray"))
-            self.__active = False
+            self.__entry.set_text(self.__hint)
+            self.__entry.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse("gray"))
 
-    def changed(self, widget):
-        search_string = widget.get_text()
-        debug("changed %s" % (search_string))
-        if not search_string == "" and not search_string == self.__hint:
-            self.__active = True
+    def search(self, obj):
+        if isinstance(obj, GTDActionRow):
+            return True
+
+        if not isinstance(obj, gtd.Base):
+            return False
+
+        if self.__active:
+            return re.compile(self.__entry.get_text(), re.I).search(obj.title)
+
+        return True
+

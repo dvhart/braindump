@@ -27,10 +27,71 @@ import gtk, gtk.glade
 import gui
 from gtd_action_rows import *
 import logging
+from filters import *
 
 from logging import debug, info, warning, error, critical
 
-class GTDStoreFilter(gobject.GObject):
+class GTDStoreFilter(AndFilter):
+    def __init__(self, model_filter):
+        AndFilter.__init__(self)
+        self.model_filter = model_filter
+        self.model_filter.set_visible_func(self.visible)
+
+    def visible(self, model, iter, data=None):
+        debug("checking filter for %s" % (model[iter][0].title))
+        ret = self.filter(model[iter][0])
+        debug("returning %s" % (ret))
+        return ret
+
+    def refilter(self):
+        debug("refiltering: %s" % (self))
+        self.model_filter.refilter()
+
+
+# Filter objects
+class TaskByRealmFilter(Filter):
+    def __init__(self):
+        Filter.__init__(self, self.filter_by_realm_visible)
+
+    def filter_by_realm_visible(self, task):
+        if isinstance(task, gtd.Task):
+            return task.project.area.realm.visible
+        return True
+
+
+class ProjectByRealmFilter(Filter):
+    def __init__(self):
+        Filter.__init__(self, self.filter_by_realm_visible)
+
+    def filter_by_realm_visible(self, project):
+        if isinstance(project, gtd.Project):
+            return project.area.realm.visible
+        return True
+
+
+class AreaByRealmFilter(Filter):
+    def __init__(self):
+        Filter.__init__(self, self.filter_by_realm_visible)
+
+    def filter_by_realm_visible(self, area):
+        if isinstance(area, gtd.Area):
+            return area.realm.visible
+        return True
+
+
+class ActionRowFilter(Filter):
+    def __init__(self, show_actions):
+        Filter.__init__(self, self.filter_by_actions)
+        self._show_actions = show_actions
+
+    def filter_by_actions(self, obj):
+        if isinstance(obj, GTDActionRow):
+            return self._show_actions
+        return True
+
+
+# Datastores (GTD model constructors basically)
+class GTDStore(gobject.GObject):
     def __init__(self):
         # FIXME: why am I using GObject?  Should I call GObject.__init__(self) here?
         self.model = gtk.ListStore(gobject.TYPE_PYOBJECT)
@@ -58,12 +119,13 @@ class GTDStoreFilter(gobject.GObject):
         return 0
 
     def filter_new(self):
-        filter = self.model.filter_new()
+        filter = GTDStoreFilter(self.model.filter_new())
         self.filters.append(filter)
         return filter
 
     # force all derivative filters to refresh
     def refilter(self, data):
+        debug("%d filters to refilter in %s" % (len(self.filters), self))
         for f in self.filters:
             f.refilter()
 
@@ -89,9 +151,9 @@ class GTDStoreFilter(gobject.GObject):
             self.model.remove(iter)
 
 
-class GTDStoreRealmFilter(GTDStoreFilter):
+class GTDStoreRealmFilter(GTDStore):
     def __init__(self):
-        GTDStoreFilter.__init__(self)
+        GTDStore.__init__(self)
 
     def filter_by_realm(self, show_actions):
         filter = self.filter_new()
@@ -103,43 +165,21 @@ class GTDStoreRealmFilter(GTDStoreFilter):
         return False
         
 
-class RealmStore(GTDStoreFilter):
+class RealmStore(GTDStore):
     def __init__(self):
-        GTDStoreFilter.__init__(self)
+        GTDStore.__init__(self)
         self.model.append([NewRealm("Create new realm...")])
         for r in GTD().realms:
             self.model.append([r])
 
-    def filter_actions(self, show_actions):
-        filter = self.filter_new()
-        filter.set_visible_func(self.filter_actions_visible, show_actions)
-        return filter
 
-    def filter_actions_visible(self, model, iter, data):
-        show_actions = data
-        if isinstance(model[iter][0], GTDActionRow):
-            return show_actions
-        return True
-
-
-class ContextStore(GTDStoreFilter):
+class ContextStore(GTDStore):
     def __init__(self):
-        GTDStoreFilter.__init__(self)
+        GTDStore.__init__(self)
         self.model.append([NewContext("Create new context...")])
         self.model.append([ContextNone()])
         for c in GTD().contexts:
             self.model.append([c])
-    
-    def filter_actions(self, show_actions):
-        filter = self.filter_new()
-        filter.set_visible_func(self.filter_actions_visible, show_actions)
-        return filter
-        
-    def filter_actions_visible(self, model, iter, data):
-        show_actions = data
-        if isinstance(model[iter][0], GTDActionRow):
-            return show_actions
-        return True
 
 
 # Area gtd datastore
@@ -151,18 +191,6 @@ class AreaStore(GTDStoreRealmFilter):
         for r in GTD().realms:
             for a in r.areas:
                 self.model.append([a])
-
-    # Filter visibility methods
-    def filter_by_realm_visible(self, model, iter, data):
-        show_actions = data
-        area = model[iter][0]
-        if area is None:
-            debug('FIXME: why are we comparing a none area?')
-            return False
-        if isinstance(area, GTDActionRow):
-            return show_actions
-        else:
-            return area.realm.visible
 
 
 # Realm and Area 2 level datastore
@@ -249,90 +277,13 @@ class ProjectStore(GTDStoreRealmFilter):
                 for p in a.projects:
                     self.model.append([p])
 
-    def filter_by_area(self, selection, show_actions, datefilterby):
-        filter = self.filter_new()
-        filter.set_visible_func(self.filter_by_area_visible, [selection, show_actions, datefilterby])
-        return filter
 
-    # Filter visibility methods
-    # FIXME: model these visibility methods after those in TaskStore
-    def filter_by_realm_visible(self, model, iter, data):
-        show_actions = data
-        project = model[iter][0]
-        if project == None:
-            return False
-        if isinstance(project, GTDActionRow):
-            return show_actions
-        else:
-            return project.area.realm.visible
-
-    def filter_by_area_visible(self, model, iter, data):
-        selection, show_actions, datefilterby = data
-        selmodel, paths = selection.get_selected_rows()
-        project = model[iter][0]
-        if project == None:
-            return False
-        # FIXME: consider making the omission of basenone types configurable,
-        # but right now there is only on user of this filter, and we don't want to see
-        # them there (the actual project listing on the project tab)
-        if isinstance(project, gtd.BaseNone):
-            return False
-        if not isinstance(project, GTDActionRow):
-	    #FIXME - gross!!
-            if datefilterby and not datefilterby.get_active().filter(project):
-                return False
-            for path in paths:
-                if project.area is selmodel[path][0]:
-                    return True
-            return False
-        else:
-            return show_actions
-
-
-class TaskStore(GTDStoreRealmFilter):
+class TaskStore(GTDStore):
     def __init__(self):
-        GTDStoreRealmFilter.__init__(self)
+        GTDStore.__init__(self)
         self.model.append([NewTask("Create new task...")])
         for r in GTD().realms:
             for a in r.areas:
                 for p in a.projects:
                     for t in p.tasks:
                         self.model.append([t])
-
-    def filter_by_selection(self, selection, show_actions, datefilterby):
-        filter = self.filter_new()
-        filter.set_visible_func(self.__filter_by_selection_visible, [selection, show_actions, datefilterby])
-        return filter
-
-    def __filter_by_selection_visible(self, model, iter, data):
-        selection, show_actions, datefilterby = data
-        selmodel, paths = selection.get_selected_rows()
-        task = model[iter][0]
-        if isinstance(task, GTDActionRow):
-            return show_actions
-        if task is None:
-            debug('FIXME: why are we comparing a none task?')
-            return False
-        #if isinstance(task.project, BaseNone) or isinstance(task.project.area, BaseNone) \
-        #   or isinstance(task.project.area.realm, BaseNone):
-        #    return True
-        else:
-            if task.project.area.realm.visible:
-                #FIXME - gross!!
-            	if datefilterby and not datefilterby.get_active().filter(task):
-                    return False
-                for path in paths:
-                    comp = selmodel[path][0] # either a project or a context
-                    if isinstance(comp, gtd.Context):
-                        if task.contexts.count(comp):
-                            return True
-                        if len(task.contexts) is 0 and isinstance(comp, gtd.ContextNone):
-                            return True
-                    elif isinstance(comp, gtd.Project):
-                        if task.project is comp:
-                            return True
-                    elif isinstance(comp, GTDActionRow):
-                        continue
-                    else:
-                        error('cannot filter Task on %s' % (comp.__class__.__name__))
-            return False
