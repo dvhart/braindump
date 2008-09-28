@@ -8,6 +8,7 @@ o backing store
   - consider usin ics files, especially if that would aid integration into things like the
     gnome clock/calendar panel applet (today's tasks in the applet, etc.)
   - something that can be network synced - and viewed from multiple clients? --mbligh
+  - look at using maildir, then can sync with offlineimap
 o Recursive delete option
   - recurse =false is used by default now and delete is disabled for the
     objects with paren't in the None Path
@@ -26,6 +27,15 @@ o replace the task filter strings with task filter by store objects, one for con
 o redesign the broken-ass gtd-popup-menu for right-button-press on all the tree views...
 o when changing the filtered list of tasks or projects, if the previously selected gtd object is
   still visible, it should be selected.
+o add more space around panels (selection filter, task list)
+o add a "[ ] include details" checkbox for the searches
+o Some issues with updating the task project combo box when realms become visible
+  -- FIXED by forcing a refilter if the project we want isn't found...  this makes for some sub-optimal
+     code as the refilter will happen again later as well.... 
+  -- separating the realm_visible_changed to realm_visible and realm_invisible signals _might_make this
+     go away...
+o when the list changes, if what you had selected before is now, make it selected again
+o Update area_selection model on realm_visible changes
 
 Packaging
 o Debian/Ubuntu
@@ -50,6 +60,11 @@ o MetaFilters - allow the creation of project and task filters by the user
   using boolean logic: "Calls and Morning", "Evening or Weekend"
 o consider making rename less easy - can be done on accident
 o nag mail for delegated tasks
+o export to html
+o report generation (monthly reports, etc.)
+o consider multiple notes per task/project, automatically dated, removed with a single click on an [x]...
+o consider using a disct of fields.  This would make writing plugins easier,
+  and the backing stores simpler.
 
 Other
 o look at adding braindump to http://pypi.python.org/pypi ?? timrc's suggestion
@@ -63,13 +78,6 @@ o tickler integration to calendars plus internal notification
 o resource tab (basically embedding zim-like functionality)
 
 Default Parent GTD Nodes
-o When creating new items (projects, areas, tasks) we have to select something
-  as the parent node.  For a task that's a project (and the default contexts need
-  to be known too).  Suggest using radio buttons (checkbuttons in the case of
-  contexts) in the filter-view so we know what to use when creating new items
-  with the action_rows.  For Realms... perhaps they have three states: invisible,
-  visible, and visible-default.  If no default of any is selected, then the
-  NonePath (or no contexts) should be used
 o The Task and Proect Views should always display items from the NonePath, and
   perhaps render them in such as way as to indicate to the user that they need to
   update them.

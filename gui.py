@@ -24,6 +24,7 @@ import time
 import datetime
 import gtk, gtk.glade
 import gnome, gnome.ui
+import sexy
 from singleton import *
 import gtd
 from gui_datastores import *
@@ -876,3 +877,48 @@ class ProjectDetailsForm(WidgetWrapper):
                 area.add_project(self.__project)
             self.__project.area = area
 
+class SearchEntry(WidgetWrapper):
+    __alignment = None
+    __entry = None
+    __active = False
+    __focused = False # we should be able to check this right?
+    __hint = "Search..."
+
+    def __init__(self, name):
+        WidgetWrapper.__init__(self, name)
+        __alignment = GUI().get_widget(name)
+        __entry = sexy.IconEntry()
+        __entry.add_clear_button()
+        __entry.connect("icon-released", self.clear)
+        __entry.connect("focus-in-event", self._focus_in)
+        __entry.connect("focus-out-event", self._focus_out)
+        __entry.connect("changed", self.changed)
+        __entry.show()
+        __alignment.widget.add(__entry)
+        self._focus_out(__entry, None)
+
+    def _focus_in(self, widget, event):
+        debug("focused")
+        self.__focused = True
+        if not self.__active:
+            widget.set_text("")
+            widget.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
+
+    def _focus_out(self, widget, event):
+        debug("unfocused")
+        self.__focused = False
+        if widget.get_text() is "":
+            self.clear(widget)
+
+    def clear(self, widget, x=1, y=1):
+        debug("cleared")
+        if self.__focused is False:
+            widget.set_text(self.__hint)
+            widget.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse("gray"))
+            self.__active = False
+
+    def changed(self, widget):
+        search_string = widget.get_text()
+        debug("changed %s" % (search_string))
+        if not search_string == "" and not search_string == self.__hint:
+            self.__active = True

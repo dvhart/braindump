@@ -31,6 +31,7 @@ from logging import debug, info, warning, error, critical
 
 import gtk, gtk.glade
 import gnome, gnome.ui
+import sexy
 
 import gtd
 from gtd import GTD
@@ -186,7 +187,6 @@ class BrainDump(object):
         self.realm_toggles = RealmToggles("realm_toggles")
         self.gtd_row_popup = GTDRowPopup("gtd_row_popup")
 
-
 	# Task Tab
         self.task_filter_list = TaskFilterListView("task_filter_list")
 
@@ -205,6 +205,9 @@ class BrainDump(object):
 
         self.task_filter_by = ModelCombo("task_filter_by", self.task_selection_filter_store)
         self.task_filter_by.widget.connect("changed", lambda w: self.task_filter_list.widget.set_model(self.task_filter_by.get_active().model))
+
+        self.task_search = SearchEntry("task_search")
+        # FIXME: connect the new filter stuff here...
 
 	self.task_date_filter_by = GTDFilterCombo("taskdatefilterby", self.task_filter_store)
 
@@ -236,6 +239,9 @@ class BrainDump(object):
         # FIXME: Error checking, may need a member callback here
         self.area_filter_none = GUI().get_widget("area_filter_none")
         self.area_filter_none.widget.connect("clicked", lambda w: self.area_filter_list.widget.get_selection().unselect_all())
+
+        self.project_search = SearchEntry("project_search")
+        # FIXME: connect the new filter stuff here...
 
 	self.project_date_filter_by = GTDFilterCombo("projectdatefilterby", self.project_filter_store)
 
@@ -361,6 +367,13 @@ class BrainDump(object):
 
     def on_projectdatefilterby_changed(self, widget):
         self.project_store_filter_by_area.refilter()
+
+    def on_task_search_activate(self, widget):
+        debug("you activated the task search!")
+
+    def on_task_search_clear_clicked(self, widget):
+        debug("claring task search")
+        GUI().get_widget("task_search").widget.set_text("")
 
     def on_window_destroy(self, widget):
         gtk.main_quit()
