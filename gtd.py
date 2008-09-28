@@ -21,14 +21,23 @@
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
 import datetime
+from uuid import uuid4
 import pickle
 from singleton import *
 from notify.all import *
 from oproperty import *
 from logging import debug, info, warning, error, critical
 
+# FIXME: consider adding adding function pointers to the GTD() signals, then
+# I wouldn't need to override so may functions (like set_title) they could
+# could all just use the base implementation which would call self._sig_rename()
+
 class Base(object):
-    def __init__(self, title):
+    def __init__(self, id, title): # FIXME: make id something that gets past in or generated
+        if id is None:
+            self.id = uuid4()
+        else:
+            self.id = id
         self.__title = title
 
     def set_title(self, title):
@@ -42,8 +51,8 @@ class BaseNone(object):
 
 
 class Context(Base):
-    def __init__(self, title):
-        Base.__init__(self, title)
+    def __init__(self, id=None, title=""):
+        Base.__init__(self, id, title)
         GTD()._add_context(self)
 
     def set_title(self, title):
@@ -55,17 +64,17 @@ class ContextNone(Context, BaseNone):
     __metaclass__ = Singleton
 
     def __init__(self):
-        Base.__init__(self, "No Context")
+        Base.__init__(self, None, "No Context")
 
     def set_title(self, title):
         debug('Oops, tried to set title on %s' % (self.__class__.__name__))
 
 
 class Realm(Base):
-    def __init__(self, title, visible=True):
+    def __init__(self, id=None, title="", visible=True):
         self.areas = []
         self.visible = visible
-        Base.__init__(self, title)
+        Base.__init__(self, id, title)
         GTD()._add_realm(self)
 
     def set_title(self, title):
@@ -95,7 +104,7 @@ class RealmNone(Realm, BaseNone):
     __metaclass__ =  Singleton
 
     def __init__(self):
-        Base.__init__(self, "No Realm")
+        Base.__init__(self, None, "No Realm")
         self.visible = True
         self.areas = []
 
@@ -108,9 +117,9 @@ class RealmNone(Realm, BaseNone):
 
 
 class Area(Base):
-    def __init__(self, title, realm=RealmNone()):
+    def __init__(self, id=None, title="", realm=RealmNone()):
         self.projects = []
-        Base.__init__(self, title)
+        Base.__init__(self, id, title)
         self.realm = realm
         self.realm.add_area(self)
         GTD().sig_area_added(self)
@@ -138,7 +147,7 @@ class AreaNone(Area, BaseNone):
     __metaclass__ =  Singleton
 
     def __init__(self):
-        Base.__init__(self, "No Area")
+        Base.__init__(self, None, "No Area")
         self.projects = []
         self.realm = RealmNone()
         self.realm.add_area(self)
@@ -152,13 +161,13 @@ class AreaNone(Area, BaseNone):
 
 
 class Project(Base):
-    def __init__(self, title, notes="", area=AreaNone(), complete=False):
+    def __init__(self, id=None, title="", notes="", area=AreaNone(), complete=False):
         self.tasks = []
-        Base.__init__(self, title)
+        Base.__init__(self, id, title)
         self.area = area
         self.notes = notes
-        self.startdate = None # these will be datetime objects
-        self.duedate = None
+        self.start_date = None # these will be datetime objects
+        self.due_date = None
         if self.area:
             debug('project area is %s' % (self.area))
             self.area.add_project(self)
@@ -182,7 +191,7 @@ class ProjectNone(Project, BaseNone):
     __metaclass__ = Singleton
 
     def __init__(self):
-        Base.__init__(self, "No Project")
+        Base.__init__(self, None, "No Project")
         self.tasks = []
         self.area = AreaNone()
         self.area.add_project(self)
@@ -194,18 +203,17 @@ class ProjectNone(Project, BaseNone):
 
 
 class Task(Base):
-    def __init__(self, title, project=ProjectNone(), contexts=[], notes="", waiting=False, complete=False):
-        Base.__init__(self, title)
+    def __init__(self, id=None, title="", project=ProjectNone(), contexts=[], notes="", waiting=False, complete=False):
+        Base.__init__(self, id, title)
         self.project = project
         self.contexts = contexts
         self.notes = notes
-        self.startdate = None # these will be datetime objects
-        self.duedate = None
+        self.start_date = None # these will be datetime objects
+        self.due_date = None
         self.waiting = waiting
         self.complete = complete
         # FIXME: how do we connect this to the "NoneProject"
         if self.project:
-            debug('task project is: %s' % (self.project))
             self.project.add_task(self)
         GTD().sig_task_added(self)
 
@@ -226,10 +234,9 @@ class Task(Base):
 class GTD(object):
     __metaclass__ = Singleton
 
-    def __init__(self, filename):
-        self.contexts = []
-        self.realms = []
-        RealmNone()
+    def __init__(self):
+        self.contexts = [ContextNone()]
+        self.realms = [RealmNone()]
 
         # PyNotify Signals
         self.sig_realm_visible_changed = Signal()
@@ -259,33 +266,33 @@ class GTD(object):
 
     def load_test_data(self):
         # load test data
-        Context("Evening")
-        Context("Weekend")
-        Context("Errands")
-        Context("Online")
-        Context("Computer")
-        Context("Calls")
-        Realm("Personal")
-        Realm("Professional")
-        remodel = Area("Remodel", self.realms[0])
-        staffdev = Area("Staff Development", self.realms[1])
+        Context(None, "Evening")
+        Context(None, "Weekend")
+        Context(None, "Errands")
+        Context(None, "Online")
+        Context(None, "Computer")
+        Context(None, "Calls")
+        Realm(None, "Personal")
+        Realm(None, "Professional")
+        remodel = Area(None, "Remodel", self.realms[0])
+        staffdev = Area(None, "Staff Development", self.realms[1])
 
-        braindump = Project("BrainDump", "", staffdev, False)
-        braindump.startdate = datetime.datetime.today()
-        braindump.duedate = datetime.datetime.today() + datetime.timedelta(days=7)
-        deck = Project("front deck", "", remodel, False)
-        deck.startdate = datetime.datetime.today() + datetime.timedelta(days=7)
-        deck.duedate = datetime.datetime.today() + datetime.timedelta(days=14)
-        landscape = Project("landscape", "", remodel, False)
+        braindump = Project(None, "BrainDump", "", staffdev, False)
+        braindump.start_date = datetime.datetime.today()
+        braindump.due_date = datetime.datetime.today() + datetime.timedelta(days=7)
+        deck = Project(None, "front deck", "", remodel, False)
+        deck.start_date = datetime.datetime.today() + datetime.timedelta(days=7)
+        deck.due_date = datetime.datetime.today() + datetime.timedelta(days=14)
+        landscape = Project(None, "landscape", "", remodel, False)
         # no dates for landscape - it's a someday project
 
-        taska = Task("research gnome list_item", braindump, [self.contexts[3]], "notes A", False, False)
-	taska.startdate = datetime.datetime.today()
-	taska.duedate = datetime.datetime.today() + datetime.timedelta(days=1)
-        taskb = Task("extend gnome list_item", braindump, [self.contexts[3]], "notes B", False, False)
-	taskb.startdate = datetime.datetime.today() + datetime.timedelta(days=7)
-	taskb.startdate = datetime.datetime.today() + datetime.timedelta(days=14)
-        taskc = Task("lay deck boards", deck, [self.contexts[1]], "use stained boards first", False, False)
+        taska = Task(None, "research gnome list_item", braindump, [self.contexts[3]], "notes A", False, False)
+	taska.start_date = datetime.datetime.today()
+	taska.due_date = datetime.datetime.today() + datetime.timedelta(days=1)
+        taskb = Task(None, "extend gnome list_item", braindump, [self.contexts[3]], "notes B", False, False)
+	taskb.start_date = datetime.datetime.today() + datetime.timedelta(days=7)
+	taskb.start_date = datetime.datetime.today() + datetime.timedelta(days=14)
+        taskc = Task(None, "lay deck boards", deck, [self.contexts[1]], "use stained boards first", False, False)
 	# no dates for taskc - it's a someday task
     
     def context_tasks(self, context):
@@ -351,22 +358,3 @@ class GTD(object):
         if task.project:
             task.project.remove_task(task)
             self.sig_task_removed(task)
-
-
-# Named constructor to avoid recursive calls to __init__ due to tree elements calling GTD() for signal emission
-# FIXME: freakishly ugly hack, was supposed to be a named constructor of GTD class... not sur ehow python would do that
-def save(tree, filename):
-    info('saving tree to %s' % (filename))
-    f = open(filename, 'w')
-    pickle.dump(tree, f)
-    f.close()
-
-
-def load(filename):
-    info('opening tree from %s' % (filename))
-    f = open(filename, 'r')
-    tree = pickle.load(f)
-    f.close()
-    return tree
-
-

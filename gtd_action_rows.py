@@ -41,7 +41,7 @@ class NewContext(GTDActionRow):
     # When our title is changed by the user, we just create a new context and emit the signal
     def set_title(self, title):
         if not title == self.title:
-            context = Context(title)
+            context = Context(None, title)
 
 
 class NewRealm(GTDActionRow):
@@ -50,7 +50,7 @@ class NewRealm(GTDActionRow):
 
     def set_title(self, title):
         if not title == self.title:
-            realm = Realm(title)
+            realm = Realm(None, title)
 
 
 class NewArea(GTDActionRow):
@@ -60,7 +60,7 @@ class NewArea(GTDActionRow):
 
     def set_title(self, title):
         if not title == self.title:
-            area = Area(title, self.realm)
+            area = Area(None, title, self.realm)
 
 
 class NewProject(GTDActionRow):
@@ -69,7 +69,7 @@ class NewProject(GTDActionRow):
 
     def set_title(self, title):
         if not title == self.title:
-            project = Project(title)
+            project = Project(None, title)
 
 
 class NewTask(GTDActionRow):
@@ -78,4 +78,4 @@ class NewTask(GTDActionRow):
 
     def set_title(self, title):
         if not title == self.title:
-            task = Task(title)
+            task = Task(None, title)

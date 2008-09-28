@@ -39,6 +39,9 @@ from gui import *
 from gui_datastores import *
 from filters import *
 
+# FIXME: make this in a package, and import each module in a package
+# (ie support multiple backing stores)
+from xmlstore import *
 
 class GTDSignalTest:
     def __init__(self):
@@ -101,12 +104,19 @@ class BrainDump(object):
 
         # load test data for now, later get the last filename from gconf
         #self.filename = "test.gtd"
-        self.filename = None
-        GTD(self.filename)
-        if self.filename == None:
-            GTD().load_test_data()
+#        self.filename = None
+#        GTD(self.filename)
+#        if self.filename == None:
+#            GTD().load_test_data()
         self.gst = GTDSignalTest() # DELETEME.... later :)
 
+        # FIXME: testing xml backing store, we need a full routine to get
+        # the correct backing store module, the right path to open, etc
+        # either stored in gconf or maybe in a "config" module type file...
+        GTD(None)
+        self.backing_store = XMLStore()
+        self.backing_store.load("xml/")
+        self.backing_store.connect(GTD())
 
         ##### Build Data Stores #####
         # Instantiate the various GUI datastores and filters from the GTD() singleton tree
@@ -343,7 +353,7 @@ class BrainDump(object):
         '''Create a new task from the new task defaults, initiated from the task list.'''
         project = self.default_project_combo.get_active()
         context = self.default_context_combo.get_active()
-        gtd.Task(title, project, [context])
+        gtd.Task(None, title, project, [context])
 
     def on_task_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]
@@ -365,36 +375,36 @@ class BrainDump(object):
     def all_filter_callback(self, obj):
         # FIXME: ewww...
         if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
-            debug("%s %s %s" % (obj.title, obj.startdate, obj.duedate))
+            debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         return True
 
     def active_filter_callback(self, obj):
         if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
-            debug("%s %s %s" % (obj.title, obj.startdate, obj.duedate))
+            debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             today = datetime.datetime.today()
             # FIXME: ewwwwww
-            if not (obj.startdate is None and obj.duedate) and not (obj.startdate and obj.startdate <= today):
+            if not (obj.start_date is None and obj.due_date) and not (obj.start_date and obj.start_date <= today):
                 return False
         return True
 
     def future_filter_callback(self, obj):
         if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
-            debug("%s %s %s" % (obj.title, obj.startdate, obj.duedate))
+            debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             today = datetime.datetime.today()
-            if obj.startdate and obj.startdate <= today:
+            if obj.start_date and obj.start_date <= today:
                 return False
-            if not obj.startdate and not obj.duedate:
+            if not obj.start_date and not obj.due_date:
                 return False
         return True
 
     def someday_filter_callback(self, obj):
         if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
-            debug("%s %s %s" % (obj.title, obj.startdate, obj.duedate))
+            debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             today = datetime.datetime.today()
-            if obj.startdate or obj.duedate:
+            if obj.start_date or obj.due_date:
                 return False
         return True
 

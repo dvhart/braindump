@@ -38,6 +38,10 @@ class GTDStoreFilter(AndFilter):
         self.model_filter.set_visible_func(self.visible)
 
     def visible(self, model, iter, data=None):
+        debug("VISIBLE test of %s" % (model[iter][0].__class__.__name__))
+        if model[iter][0] is None:
+            error("GTD Object is None")
+            return False
         debug("checking filter for %s" % (model[iter][0].title))
         ret = self.filter(model[iter][0])
         debug("returning %s" % (ret))
@@ -177,7 +181,6 @@ class ContextStore(GTDStore):
     def __init__(self):
         GTDStore.__init__(self)
         self.model.append([NewContext("Create new context...")])
-        self.model.append([ContextNone()])
         for c in GTD().contexts:
             self.model.append([c])
 
@@ -187,7 +190,6 @@ class AreaStore(GTDStoreRealmFilter):
     def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
         GTDStoreRealmFilter.__init__(self)
         self.model.append([NewArea("Create new area...")])
-        self.model.append([AreaNone()])
         for r in GTD().realms:
             for a in r.areas:
                 self.model.append([a])
@@ -198,11 +200,11 @@ class RealmAreaStore(gobject.GObject):
     def __init__(self):
         gobject.GObject.__init__(self)
         self.model = gtk.TreeStore(gobject.TYPE_PYOBJECT)
-        # A bit irregular to add RealmNone() here directly, but the simplest solution
-        # as we don't create filters and have only one view of this model.
         self.model.append(None, [NewRealm("Create new realm...")])
-        self.model.append(None, [RealmNone()])
         for r in GTD().realms:
+            # the None path isn't editable, no point in showing it
+            if isinstance(r, gtd.RealmNone):
+                continue
             iter = self.model.append(None, [r])
             self.model.append(iter, [NewArea("Create new area...", r)])
             for a in r.areas:
@@ -271,7 +273,6 @@ class ProjectStore(GTDStoreRealmFilter):
     def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
         GTDStoreRealmFilter.__init__(self)
         self.model.append([NewProject("Create new project...")])
-        self.model.append([ProjectNone()])
         for r in GTD().realms:
             for a in r.areas:
                 for p in a.projects:
@@ -280,10 +281,15 @@ class ProjectStore(GTDStoreRealmFilter):
 
 class TaskStore(GTDStore):
     def __init__(self):
+        debug("building TaskStore")
         GTDStore.__init__(self)
         self.model.append([NewTask("Create new task...")])
         for r in GTD().realms:
+            debug("from realm: %s (%d areas)" % (r.title, len(r.areas)))
             for a in r.areas:
+                debug("from area: %s (%d projects)" % (a.title, len(a.projects)))
                 for p in a.projects:
+                    debug("from project: %s (%d tasks)" % (p.title, len(p.tasks)))
                     for t in p.tasks:
+                        debug("adding task: %s" % (t.title))
                         self.model.append([t])
