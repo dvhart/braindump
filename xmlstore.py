@@ -16,10 +16,9 @@ _DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 # FIXME: I think in the end, we should eliminate the singleton GTD()
 # and just return a gtd tree from here...
 class XMLStore(object):
-    __path = None
 
     def __init__(self):
-        pass
+        self.__path = None
 
     def _obj_filename(self, obj):
         return os.path.join(self.__path, str(obj.id) + ".xml")
@@ -173,12 +172,11 @@ class XMLStore(object):
 # ContentHandler, DTDHandler, EntityResolver, and ErrorHandler
 # consider HandlerBase ?
 class GTDContentHandler(handler.ContentHandler):
-    __chars = ""     # the CDATA the parser has collected
-    __subject = None # the object we are currently building
-    __cache = {}     # a dict of objects we have seen referenced in the file and constructed
 
     def __init__(self):
-        pass
+        self.__chars = ""     # the CDATA the parser has collected
+        self.__subject = None # the object we are currently building
+        self.__cache = {}     # a dict of objects we have seen referenced in the file and constructed
 
     def startElement(self, name, attrs):
         print "\nStart element: ", name

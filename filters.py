@@ -26,7 +26,6 @@ from logging import debug, info, warning, error, critical
 
 
 class Filter(object):
-    __callback = None
 
     def __init__(self, callback):
         self.__callback = callback # FIXME: is this valid? or do I need self?

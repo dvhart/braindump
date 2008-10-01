@@ -145,8 +145,6 @@ class RealmCheckToolButton(gtk.ToolItem):
 class RealmToggles(WidgetWrapper):
     """A toolbar for toggling realm visibility"""
 
-    __realm_buttons = {}
-
     def __init__(self, name):
         """Construct a toolbar for toggling realm visibility.
 
@@ -155,6 +153,7 @@ class RealmToggles(WidgetWrapper):
         """
         # FIXME: check for widget type: gtk.Toolbar and 0 children
         WidgetWrapper.__init__(self, name)
+        self.__realm_buttons = {}
         ti = gtk.ToolItem()
         label = gtk.Label("Show Realms:")
         label.set_padding(6, 0)
@@ -313,9 +312,6 @@ class TaskListView(GTDTreeView):
     follow_new -- whether or not to jump to a newly created task
     """
     
-    __new_task_handler = None
-    follow_new = True
-
     def __init__(self, name, task_store, new_task_handler):
         """Construct a treeview for tasks.
 
@@ -324,6 +320,8 @@ class TaskListView(GTDTreeView):
         task_store -- the TaskStore for gtd.Tasks
         """
         GTDTreeView.__init__(self, name)
+        self.follow_new = True
+
         self.__new_task_handler = new_task_handler
         self.widget.set_model(task_store.model_filter)
         task_store.model_filter.connect("row_inserted", self._on_row_inserted)
@@ -591,15 +589,15 @@ class RealmAreaTreeView(GTDTreeView):
 #        if Shrink=Yes, then we can get widget clipping which looks bad.
 # FIXME: use names like "add_context()" rather than signal names
 class ContextTable(WidgetWrapper):
-    __context_cbs = {}
-    __max_width = 0
-    __last_allocation = None
-    __on_toggled = None
 
     def __init__(self, name, toggle_handler):
         WidgetWrapper.__init__(self, name)
         self.__on_toggled = toggle_handler
         self.__table = gtk.Table()
+        self.__context_cbs = {}
+        self.__max_width = 0
+        self.__last_allocation = None
+
         self.widget.add(self.__table)
         self.__table.show()
         for c in GTD().contexts:
@@ -713,7 +711,6 @@ class GTDFilterCombo(WidgetWrapper):
 
 
 class GTDCombo(WidgetWrapper):
-    __none = None
 
     def __init__(self, name, model, none=None):
         WidgetWrapper.__init__(self, name)
@@ -764,11 +761,11 @@ class GTDCombo(WidgetWrapper):
 
 
 class GTDRowPopup(WidgetWrapper):
-    __tree_view = None
-    __edit_col = 0
 
     def __init__(self, name):
         WidgetWrapper.__init__(self, name)
+        self.__tree_view = None
+        self.__edit_col = 0
     
     # gtk signal callbacks (defined in and connected via Glade)
     def on_gtd_row_popup_rename(self, widget):
@@ -835,7 +832,6 @@ class RealmAreaDialog(WidgetWrapper):
 
 # FIXME: too much application knowledge embedded here (GTD signals and other widgets) ?
 class TaskDetailsForm(WidgetWrapper):
-    __task = None
 
     def __init__(self, name, project_store):
         WidgetWrapper.__init__(self, name)
@@ -844,6 +840,7 @@ class TaskDetailsForm(WidgetWrapper):
         self.__due = GUI().get_widget("task_due")
         self.__task_project = GTDCombo("task_project", project_store, ProjectNone())
         self.__task_contexts = ContextTable("task_contexts_table", self.on_context_toggled)
+        self.__task = None
 
         self.__task_notes.widget.get_buffer().connect("changed", self.on_task_notes_changed)
 
@@ -912,7 +909,6 @@ class TaskDetailsForm(WidgetWrapper):
 
 # FIXME: too much application knowledge embedded here (GTD signals and other widgets) ?
 class ProjectDetailsForm(WidgetWrapper):
-    __project = None
 
     def __init__(self, name, area_store):
         WidgetWrapper.__init__(self, name)
@@ -920,6 +916,7 @@ class ProjectDetailsForm(WidgetWrapper):
         self.__start = GUI().get_widget("project_start")
         self.__due = GUI().get_widget("project_due")
         self.__project_area = GTDCombo("project_area", area_store, AreaNone())
+        self.__project = None
 
         self.__project_notes.widget.get_buffer().connect("changed", self.on_project_notes_changed)
 
@@ -977,16 +974,15 @@ class ProjectDetailsForm(WidgetWrapper):
             self.__project.area = area
 
 class SearchEntry(WidgetWrapper):
-    __alignment = None
-    __entry = None
-    __active = False # FIXME: we could just have search_string... either a string or none... same detail, more useful...
-    __focused = False # we should be able to check this right?
-    __hint = "Search..."
 
     def __init__(self, name):
         WidgetWrapper.__init__(self, name)
         self.__alignment = GUI().get_widget(name)
         self.__entry = sexy.IconEntry()
+        self.__active = False # FIXME: we could just have search_string... either a string or none... same detail, more useful...
+        self.__focused = False # we should be able to check this right?
+        self.__hint = "Search..."
+
         self.__entry.add_clear_button()
         self.__entry.connect("icon-released", self.clear)
         self.__entry.connect("focus-in-event", self._focus_in)

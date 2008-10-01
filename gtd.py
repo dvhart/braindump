@@ -176,10 +176,6 @@ class AreaNone(Area, BaseNone):
 
 
 class Project(Base):
-    __notes = ""
-    __start_date = None
-    __due_date = None
-    __complete = False
 
     def __init__(self, id=None, title="", notes="", area=None, complete=False):
         self.tasks = []
@@ -251,12 +247,6 @@ class ProjectNone(Project, BaseNone):
 
 
 class Task(Base):
-    contexts = []
-    __notes = ""
-    __start_date = None
-    __due_date = None
-    __waiting = False
-    __complete = False
 
     def __init__(self, id=None, title="", project=None, contexts=None, notes="", waiting=False, complete=False):
         Base.__init__(self, id, title)
