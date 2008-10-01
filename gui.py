@@ -868,7 +868,7 @@ class TaskDetailsForm(WidgetWrapper):
         else:
             self.widget.set_sensitive(False)
 
-        #self.__task_notes.widget.get_buffer().set_text(notes)
+        self.__task_notes.widget.get_buffer().set_text(notes)
         self.__start.widget.set_time(start_date)
         self.__due.widget.set_time(due_date)
         self.__task_project.set_active(project)
