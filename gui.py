@@ -122,6 +122,26 @@ class ModelItem(object):
         self.model = model
 
 
+class RealmCheckToolButton(gtk.ToolItem):
+    def __init__(self, realm, callback):
+        gtk.ToolItem.__init__(self)
+        self.__realm = realm
+        self.__align = gtk.Alignment(0.5, 0.5, 0, 0)
+        self.__align.set_padding(0, 0, 6, 6)
+        self.__cb = gtk.CheckButton(realm.title)
+        self.__cb.set_active(realm.visible)
+        self.__cb.connect("toggled", callback, realm)
+        self.__align.add(self.__cb)
+        self.add(self.__align)
+        self.show_all()
+
+    def update(self):
+        self.__cb.set_label(self.__realm.title)
+
+    def show(self):
+        self.__cb.set_active(True)
+
+
 class RealmToggles(WidgetWrapper):
     """A toolbar for toggling realm visibility"""
 
@@ -135,6 +155,12 @@ class RealmToggles(WidgetWrapper):
         """
         # FIXME: check for widget type: gtk.Toolbar and 0 children
         WidgetWrapper.__init__(self, name)
+        ti = gtk.ToolItem()
+        label = gtk.Label("Show Realms:")
+        label.set_padding(6, 0)
+        ti.add(label)
+        self.widget.add(ti)
+        ti.show_all()
         for r in GTD().realms:
             self.add_realm(r)
         GTD().sig_realm_added.connect(self.add_realm)
@@ -146,24 +172,22 @@ class RealmToggles(WidgetWrapper):
 
     # FIXME: alpha order?
     def add_realm(self, realm):
-        """Add a gtk.ToggleToolButton for realm."""
-        # FIXME: check it doesn't already exist
+        """Add a button for realm to the toolbar."""
+        if self.__realm_buttons.has_key(realm):
+            debug("realm already present")
+            return
         # don't display the RealmNone, it is always visible
         if isinstance(realm, gtd.RealmNone):
             return
-        tb = gtk.ToggleToolButton()
-        tb.set_property("label", realm.title)
-        tb.set_active(realm.visible)
-        tb.connect("toggled", self._on_toggled, realm)
-        tb.show()
-        self.widget.insert(tb, 0)
-        self.__realm_buttons[realm] = tb
+        cb = RealmCheckToolButton(realm, self._on_toggled)
+        self.widget.add(cb)
+        self.__realm_buttons[realm] = cb
 
     # FIXME: alpha reorder?
     def update_realm(self, realm):
         """Update the label of the button corresponding to realm."""
         if self.__realm_buttons.has_key(realm):
-            self.__realm_buttons[realm].set_property("label", realm.title)
+            self.__realm_buttons[realm].update()
         # FIXME: throw exception if not?
 
     def remove_realm(self, realm):
@@ -171,6 +195,10 @@ class RealmToggles(WidgetWrapper):
         if self.__realm_buttons.has_key(realm):
             self.widget.remove(self.__realm_buttons[realm])
             del self.__realm_buttons[realm]
+
+    def show_all(self):
+        for realm in self.__realm_buttons.keys():
+            self.__realm_buttons[realm].show()
 
 
 class GTDTreeView(WidgetWrapper):
@@ -560,6 +588,7 @@ class RealmAreaTreeView(GTDTreeView):
 #        now this widget won't shrink (reduce cols) once they get added
 #        so it basically ratchets wider with now way of shrinking.  But
 #        if Shrink=Yes, then we can get widget clipping which looks bad.
+# FIXME: use names like "add_context()" rather than signal names
 class ContextTable(WidgetWrapper):
     __context_cbs = {}
     __max_width = 0
@@ -572,8 +601,9 @@ class ContextTable(WidgetWrapper):
         self.__table = gtk.Table()
         self.widget.add(self.__table)
         self.__table.show()
-        for context in GTD().contexts:
-            self.on_context_added(context)
+        for c in GTD().contexts:
+            if not isinstance(c, gtd.ContextNone):
+                self.on_context_added(c)
         # FIXME: decide if this should be connected outside of the widget...
         GTD().sig_context_added.connect(self.on_context_added)
         GTD().sig_context_renamed.connect(self.on_context_renamed)
@@ -613,6 +643,7 @@ class ContextTable(WidgetWrapper):
         for c, cb in self.__context_cbs.iteritems():
             cb.set_property("active", False)
 
+    # FIXME: this doesn't appear to be adequate
     def on_context_renamed(self, context):
         if self.__context_cbs.has_key(context):
             self.__context_cbs[context].set_label(context.title)
@@ -655,9 +686,8 @@ class ModelCombo(WidgetWrapper):
 
 # FIXME: bad name... I think...
 class GTDFilterCombo(WidgetWrapper):
-    def __init__(self, name, model, none=None):
+    def __init__(self, name, model):
         WidgetWrapper.__init__(self, name)
-        self.__none = none
         debug('%s model is %s' % (name, model.__class__.__name__))
         self.widget.set_model(model)
         renderer = gtk.CellRendererText()

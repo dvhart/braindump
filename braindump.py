@@ -155,22 +155,17 @@ class BrainDump(object):
 
         # Task selection filter store
         self.task_selection_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
-        self.task_selection_filter_store.append([gui.ModelItem("By Context", self.context_store.filter_new())])
-        self.task_selection_filter_store.append([gui.ModelItem("By Project", self.project_store_filter_by_realm_no_action)])
+        self.task_selection_filter_store.append([gui.ModelItem("By Context",
+            self.context_store.filter_new())])
+        self.task_selection_filter_store.append([gui.ModelItem("By Project",
+            self.project_store_filter_by_realm_no_action)])
 
-        # Task date filter store
-        self.task_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
-        self.task_filter_store.append([gui.FilterItem("All Tasks", self.all_filter_callback)])
-        self.task_filter_store.append([gui.FilterItem("Active Tasks", self.active_filter_callback)])
-        self.task_filter_store.append([gui.FilterItem("Future Tasks", self.future_filter_callback)])
-        self.task_filter_store.append([gui.FilterItem("Someday Tasks", self.someday_filter_callback)])
-
-        # Project date filter store
-        self.project_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
-        self.project_filter_store.append([gui.FilterItem("All Projects", self.all_filter_callback)])
-        self.project_filter_store.append([gui.FilterItem("Active Projects", self.active_filter_callback)])
-        self.project_filter_store.append([gui.FilterItem("Future Projects", self.future_filter_callback)])
-        self.project_filter_store.append([gui.FilterItem("Someday Projects", self.someday_filter_callback)])
+        # Date filter store
+        self.date_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        self.date_filter_store.append([gui.FilterItem("All Items", self.all_filter_callback)])
+        self.date_filter_store.append([gui.FilterItem("Active Items", self.active_filter_callback)])
+        self.date_filter_store.append([gui.FilterItem("Future Items", self.future_filter_callback)])
+        self.date_filter_store.append([gui.FilterItem("Someday Items", self.someday_filter_callback)])
 
 
         ##### Connect GTD Signals #####
@@ -214,6 +209,11 @@ class BrainDump(object):
         self.realm_toggles = RealmToggles("realm_toggles")
         self.gtd_row_popup = GTDRowPopup("gtd_row_popup")
 
+        # Date filter and search bar
+        self.filter_by_date = GTDFilterCombo("filter_by_date", self.date_filter_store)
+        self.search = SearchEntry("search")
+        self.search.connect("changed", self.on_search_changed)
+
         # Task Tab
         self.task_filter_list = TaskFilterListView("task_filter_list")
 
@@ -233,12 +233,6 @@ class BrainDump(object):
         self.task_filter_by = ModelCombo("task_filter_by", self.task_selection_filter_store)
         self.task_filter_by.widget.connect("changed", lambda w: self.task_filter_list.widget.set_model(self.task_filter_by.get_active().model.model_filter))
 
-        self.task_search = SearchEntry("task_search")
-        self.task_search.connect("changed", self.on_task_search_changed)
-
-        # FIXME: better names (here and in glade)
-        self.task_date_filter_by = GTDFilterCombo("taskdatefilterby", self.task_filter_store)
-
         self.task_list = TaskListView("task_list", self.task_store_filter, self.on_new_task)
         self.task_filter_list.widget.get_selection().connect("changed", self.task_store.refilter)
 
@@ -246,11 +240,9 @@ class BrainDump(object):
                                                  self.project_store_filter_by_realm_no_action)
 
         # New task default form
-        self.default_project_combo = GTDCombo("default_project_combo",
-                                              self.project_store_filter_by_realm_no_action, ProjectNone())
-        self.default_project_combo.set_active(None)
-        self.default_context_combo = GTDCombo("default_context_combo", self.context_store_filter_no_action)
-        self.default_context_combo.set_active(None)
+        self.default_project = GTDCombo("default_project",
+                                         self.project_store_filter_by_realm_no_action, ProjectNone())
+        self.default_context = GTDCombo("default_context", self.context_store_filter_no_action)
 
 
         # Project Tab
@@ -265,12 +257,6 @@ class BrainDump(object):
         # FIXME: Error checking, may need a member callback here
         self.area_filter_none = GUI().get_widget("area_filter_none")
         self.area_filter_none.widget.connect("clicked", lambda w: self.area_filter_list.widget.get_selection().unselect_all())
-
-        self.project_search = SearchEntry("project_search")
-        self.project_search.connect("changed", self.on_project_search_changed)
-
-        # FIXME: better names (here and in glade)
-        self.project_date_filter_by = GTDFilterCombo("projectdatefilterby", self.project_filter_store)
 
         self.area_filter_list.widget.get_selection().connect("changed", self.project_store.refilter)
         self.project_list = ProjectListView("project_list", self.project_store_filter_by_area)
@@ -288,25 +274,26 @@ class BrainDump(object):
 
         # Setup initial state
         # FIXME: store this in gconf?
+        GUI().get_widget("work_with").widget.set_active(0)
+        self.filter_by_date.widget.set_active(0)
         self.task_filter_by.widget.set_active(0)
         self.task_filter_list.widget.get_selection().select_all()
-        self.task_date_filter_by.widget.set_active(0)
-
         self.area_filter_list.widget.get_selection().select_all()
-        self.project_date_filter_by.widget.set_active(0)
+        self.default_project.set_active(-1)
+        self.default_context.set_active(-1)
 
         # Build the filters and refilter them
         self.task_store_filter.append(self.task_by_realm)
         self.task_store_filter.append(Filter(self.task_filter_list.selection_match))
-        self.task_store_filter.append(Filter(self.task_search.search))
-        self.task_store_filter.append(Filter(self.task_date_filter_by.filter))
+        self.task_store_filter.append(Filter(self.search.search))
+        self.task_store_filter.append(Filter(self.filter_by_date.filter))
         self.task_store_filter.refilter()
 
         self.project_store_filter_by_area.append(self.project_by_realm)
         self.project_store_filter_by_area.append(Filter(lambda p: not isinstance(p, gtd.BaseNone))) # FIXME: bit of a hack...
         self.project_store_filter_by_area.append(Filter(self.area_filter_list.selection_match))
-        self.project_store_filter_by_area.append(Filter(self.project_search.search))
-        self.project_store_filter_by_area.append(Filter(self.project_date_filter_by.filter))
+        self.project_store_filter_by_area.append(Filter(self.search.search))
+        self.project_store_filter_by_area.append(Filter(self.filter_by_date.filter))
         self.project_store_filter_by_area.refilter()
 
         self.project_store_filter_by_realm.append(self.project_by_realm)
@@ -318,19 +305,44 @@ class BrainDump(object):
     def on_quit_activate(self, menuitem):
         gtk.main_quit()
 
+    def on_work_with_tasks_toggled(self, menuitem):
+        if menuitem.get_active():
+            work_with = GUI().get_widget("work_with").widget
+            index = work_with.get_active()
+            if index == 1:
+                work_with.set_active(0)
+
+    def on_work_with_projects_toggled(self, menuitem):
+        if menuitem.get_active():
+            work_with = GUI().get_widget("work_with").widget
+            index = work_with.get_active()
+            if index == 0:
+                work_with.set_active(1)
+
     def on_realms_and_areas_activate(self, menuitem):
         self.realm_area_dialog.widget.show()
 
     def on_new_task_defaults_activate(self, menuitem):
         form = GUI().get_widget("new_task_defaults_form").widget
         if menuitem.active:
+            self.default_project.widget.set_active(0)
+            self.default_context.widget.set_active(0)
             form.show()
             self.task_list.follow_new = False
         else:
             form.hide()
-            self.default_project_combo.widget.set_active(0)
-            self.default_context_combo.widget.set_active(0)
+            self.default_project.widget.set_active(-1)
+            self.default_context.widget.set_active(-1)
             self.task_list.follow_new = True
+
+    def on_show_realms_toggled(self, menuitem):
+        # FIXME: consider removing the realm_filter on hide, and putting it back on show
+        # rather than show_all on hide
+        if menuitem.active:
+            self.realm_toggles.widget.show()
+        else:
+            self.realm_toggles.widget.show_all()
+            self.realm_toggles.widget.hide()
 
     def on_details_activate(self, menuitem):
         # FIXME: the main window should grow/shrink to accomodate this form
@@ -351,8 +363,8 @@ class BrainDump(object):
     # Widget callbacks
     def on_new_task(self, title):
         '''Create a new task from the new task defaults, initiated from the task list.'''
-        project = self.default_project_combo.get_active()
-        context = self.default_context_combo.get_active()
+        project = self.default_project.get_active()
+        context = self.default_context.get_active()
         gtd.Task(None, title, project, [context])
 
     def on_task_list_cursor_changed(self, tree):
@@ -382,7 +394,7 @@ class BrainDump(object):
         if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
-            today = datetime.datetime.today()
+            today = datetime.today()
             # FIXME: ewwwwww
             if not (obj.start_date is None and obj.due_date) and not (obj.start_date and obj.start_date <= today):
                 return False
@@ -392,7 +404,7 @@ class BrainDump(object):
         if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
-            today = datetime.datetime.today()
+            today = datetime.today()
             if obj.start_date and obj.start_date <= today:
                 return False
             if not obj.start_date and not obj.due_date:
@@ -403,22 +415,36 @@ class BrainDump(object):
         if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
-            today = datetime.datetime.today()
+            today = datetime.today()
             if obj.start_date or obj.due_date:
                 return False
         return True
 
-    def on_task_search_changed(self, widget):
-        self.task_store_filter.refilter()
+    def on_work_with_changed(self, widget):
+        index = widget.get_active()
+        if index != 0 and index != 1:
+            error("work_with index out of range")
+            index = 0
+        GUI().get_widget("notebook").widget.set_current_page(index)
+        if index == 0:
+            GUI().get_widget("work_with_tasks").widget.set_active(True)
+        elif index == 1:
+            GUI().get_widget("work_with_projects").widget.set_active(True)
 
-    def on_taskdatefilterby_changed(self, widget):
+    def on_filter_by_date_changed(self, widget):
         self.task_store_filter.refilter()
-
-    def on_project_search_changed(self, widget):
         self.project_store_filter_by_area.refilter()
 
-    def on_projectdatefilterby_changed(self, widget):
+    def on_search_changed(self, widget):
+        # FIXME: only do one or the other, depending on which we're working with
+        self.task_store_filter.refilter()
         self.project_store_filter_by_area.refilter()
+
+    def on_details_close_clicked(self, widget):
+        GUI().get_widget("details").widget.set_active(False)
+
+    def on_task_defaults_close_clicked(self, widget):
+        GUI().get_widget("new_task_defaults").widget.set_active(False)
 
     def on_window_destroy(self, widget):
         gtk.main_quit()

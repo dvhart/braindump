@@ -292,4 +292,6 @@ class TaskStore(GTDStore):
                     debug("from project: %s (%d tasks)" % (p.title, len(p.tasks)))
                     for t in p.tasks:
                         debug("adding task: %s" % (t.title))
+                        for c in t.contexts:
+                            debug("\t%s" % (c.title))
                         self.model.append([t])

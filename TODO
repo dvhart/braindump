@@ -21,6 +21,9 @@ o fix about dialog name "braindump.py" to "BrainDump", glade shows "BrainDump
   "braindump.py" ???
 o recalculate sizing for context table after context renaming
 o update spacing etc according to Gnome HIG
+  - using 6 pixel spacing between labels and controls, seem smore consistent with gedit and evolution
+  - decide what to do about left side of the window.  Lining up with the menu indents everything
+    a bit too much
 o consider implementing a date/time widget like: http://www.mail-archive.com/pygtk@daa.com.au/msg12160.html
 o replace the task filter strings with task filter by store objects, one for contexts and one for projects,
   each one telling the filter_by_selection box which model to use
@@ -61,10 +64,12 @@ o MetaFilters - allow the creation of project and task filters by the user
 o consider making rename less easy - can be done on accident
 o nag mail for delegated tasks
 o export to html
-o report generation (monthly reports, etc.)
+o report generation (monthly reports, burn-down, etc.)
 o consider multiple notes per task/project, automatically dated, removed with a single click on an [x]...
 o consider using a disct of fields.  This would make writing plugins easier,
   and the backing stores simpler.
+o consider storing realm.visible in the backing store to easily open up in the same state...
+o stacked sidebar
 
 Other
 o look at adding braindump to http://pypi.python.org/pypi ?? timrc's suggestion
