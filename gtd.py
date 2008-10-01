@@ -102,7 +102,7 @@ class Realm(Base):
         GTD().sig_realm_visible_changed(self)
 
 
-class RealmNone(Realm, BaseNone):
+class RealmNone(Base, BaseNone):
     __metaclass__ =  Singleton
 
     def __init__(self):
@@ -113,9 +113,14 @@ class RealmNone(Realm, BaseNone):
     def set_title(self, title):
         debug('Oops, tried to set title on %s' % (self.__class__.__name__))
 
+    def add_area(self, area):
+        self.areas.append(area)
+        area.realm = self
+
     def remove_area(self, area):
         if area is not AreaNone():
-            Realm.remove_area(self, area)
+            self.areas.remove(area)
+            area.realm = None
 
 
 class Area(Base):
@@ -157,22 +162,26 @@ class Area(Base):
     realm = OProperty(lambda s: s.__realm, set_realm)
 
 
-class AreaNone(Area, BaseNone):
+class AreaNone(Base, BaseNone):
     __metaclass__ =  Singleton
 
     def __init__(self):
         Base.__init__(self, None, "No Area")
-        # FIXME: why can't we use the inherited realm property?  Is it the Singleton?
-        self.projects = [] #1
+        self.projects = []
         self.realm = RealmNone()
         self.realm.add_area(self)
     
     def set_title(self, title):
         debug('Oops, tried to set title on %s' % (self.__class__.__name__))
 
+    def add_project(self, project):
+        self.projects.append(project)
+        project.area = self
+
     def remove_project(self, project):
         if project is not ProjectNone():
-            Area.remove_project(self, project)
+            self.projects.remove(project)
+            project.area = None
 
 
 class Project(Base):
@@ -231,7 +240,7 @@ class Project(Base):
     due_date = OProperty(lambda s: s.__due_date, set_due_date)
     complete = OProperty(lambda s: s.__complete, set_complete)
 
-class ProjectNone(Project, BaseNone):
+class ProjectNone(Base, BaseNone):
     __metaclass__ = Singleton
 
     def __init__(self):
@@ -240,10 +249,20 @@ class ProjectNone(Project, BaseNone):
         self.area = AreaNone()
         self.area.add_project(self)
         self.notes = ""
+        self.start_date = False
+        self.due_date = False
         self.complete = False
 
     def set_title(self, title):
         debug('Oops, tried to set title on %s' % (self.__class__.__name__))
+
+    def add_task(self, task):
+        self.tasks.append(task)
+        task.project = self
+
+    def remove_task(self, task):
+        self.tasks.remove(task)
+        task.project = None
 
 
 class Task(Base):
@@ -325,6 +344,8 @@ class GTD(object):
     def __init__(self):
         self.contexts = [ContextNone()]
         self.realms = [RealmNone()]
+        AreaNone()
+        ProjectNone()
 
         # PyNotify Signals
         self.sig_realm_visible_changed = Signal()
