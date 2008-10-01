@@ -1,5 +1,5 @@
 import os, os.path
-import stat
+#import stat
 import fnmatch
 from xml.sax import saxutils, make_parser, handler
 import uuid
@@ -78,7 +78,7 @@ class XMLStore(object):
         # iterate on every xml file in "path"
         for file in os.listdir(path):
             if fnmatch.fnmatch(file, '*.xml'):
-                print "Loading GTD object from:", os.path.join(path, file)
+                debug("Loading GTD object from: %s" % (os.path.join(path, file)))
                 parser.parse(os.path.join(path, file))
 
     def save(self, gtd_tree):
@@ -120,7 +120,7 @@ class XMLStore(object):
             self._simple_element(x, "project_ref", {"id":str(task.project.id)})
         for c in task.contexts:
             if not isinstance(c, gtd.ContextNone):
-                print "referencing context: ", c.title
+                debug("referencing context: %s" % (c.title))
                 self._simple_element(x, "context_ref", {"id":str(c.id)})
         self._simple_element(x, "complete", {}, str(task.complete))
         x.endElement("task")

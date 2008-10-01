@@ -119,12 +119,10 @@ class RealmNone(Realm, BaseNone):
 
 
 class Area(Base):
-    projects = []
-    __realm = None
 
     def __init__(self, id=None, title="", realm=RealmNone()):
-        Base.__init__(self, id, title)
         self.projects = []
+        Base.__init__(self, id, title)
         self.__realm = realm
         self.__realm.add_area(self)
         GTD().sig_area_added(self)
@@ -165,6 +163,7 @@ class AreaNone(Area, BaseNone):
     def __init__(self):
         Base.__init__(self, None, "No Area")
         # FIXME: why can't we use the inherited realm property?  Is it the Singleton?
+        self.projects = [] #1
         self.realm = RealmNone()
         self.realm.add_area(self)
     
@@ -177,13 +176,13 @@ class AreaNone(Area, BaseNone):
 
 
 class Project(Base):
-    tasks = []
     __notes = ""
     __start_date = None
     __due_date = None
     __complete = False
 
     def __init__(self, id=None, title="", notes="", area=None, complete=False):
+        self.tasks = []
         Base.__init__(self, id, title)
         if area:
             self.__area = area
@@ -259,13 +258,17 @@ class Task(Base):
     __waiting = False
     __complete = False
 
-    def __init__(self, id=None, title="", project=None, contexts=[], notes="", waiting=False, complete=False):
+    def __init__(self, id=None, title="", project=None, contexts=None, notes="", waiting=False, complete=False):
         Base.__init__(self, id, title)
         if project:
             self.project = project
         else:
             self.project = ProjectNone()
         self.project.add_task(self)
+        # FIXME: if we have contexts=[] in the signature, it will have 3 items in it, even if
+        # called without that parameter... weird...
+        if not contexts:
+            contexts = []
         # FIXME: public contexts breaks data hiding, should implement
         # an iterator (otherwise someone could do
         #      mytask.contexts.append(mycontext)
@@ -364,37 +367,6 @@ class GTD(object):
         self.realms.append(realm)
         GTD().sig_realm_added(realm)
 
-    def load_test_data(self):
-        # load test data
-        Context(None, "Evening")
-        Context(None, "Weekend")
-        Context(None, "Errands")
-        Context(None, "Online")
-        Context(None, "Computer")
-        Context(None, "Calls")
-        Realm(None, "Personal")
-        Realm(None, "Professional")
-        remodel = Area(None, "Remodel", self.realms[0])
-        staffdev = Area(None, "Staff Development", self.realms[1])
-
-        braindump = Project(None, "BrainDump", "", staffdev, False)
-        braindump.start_date = datetime.datetime.today()
-        braindump.due_date = datetime.datetime.today() + datetime.timedelta(days=7)
-        deck = Project(None, "front deck", "", remodel, False)
-        deck.start_date = datetime.datetime.today() + datetime.timedelta(days=7)
-        deck.due_date = datetime.datetime.today() + datetime.timedelta(days=14)
-        landscape = Project(None, "landscape", "", remodel, False)
-        # no dates for landscape - it's a someday project
-
-        taska = Task(None, "research gnome list_item", braindump, [self.contexts[3]], "notes A", False, False)
-	taska.start_date = datetime.datetime.today()
-	taska.due_date = datetime.datetime.today() + datetime.timedelta(days=1)
-        taskb = Task(None, "extend gnome list_item", braindump, [self.contexts[3]], "notes B", False, False)
-	taskb.start_date = datetime.datetime.today() + datetime.timedelta(days=7)
-	taskb.start_date = datetime.datetime.today() + datetime.timedelta(days=14)
-        taskc = Task(None, "lay deck boards", deck, [self.contexts[1]], "use stained boards first", False, False)
-	# no dates for taskc - it's a someday task
-    
     def context_tasks(self, context):
         tasks = []
         for r in self.realms:
@@ -458,3 +430,17 @@ class GTD(object):
         if task.project:
             task.project.remove_task(task)
             self.sig_task_removed(task)
+
+    def print_tree(self):
+        print "***** THE CURRENT GTD TREE *****"
+        for r in self.realms:
+            print r.title
+            for a in r.areas:
+                print "\t'", a.title, "'"
+                for p in a.projects:
+                    print "\t\t'", p.title, "'"
+                    for t in p.tasks:
+                        print "\t\t\t'", t.title, "'"
+                        for c in t.contexts:
+                            print "\t\t\t\t'", c.title, "'"
+        print "*******************************"

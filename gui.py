@@ -845,7 +845,7 @@ class TaskDetailsForm(WidgetWrapper):
         self.__task_project = GTDCombo("task_project", project_store, ProjectNone())
         self.__task_contexts = ContextTable("task_contexts_table", self.on_context_toggled)
 
-        self.__task_notes.widget.get_buffer().connect("changed", self._on_task_notes_changed)
+        self.__task_notes.widget.get_buffer().connect("changed", self.on_task_notes_changed)
 
     def set_task(self, task):
         self.__task = task
@@ -868,7 +868,7 @@ class TaskDetailsForm(WidgetWrapper):
         else:
             self.widget.set_sensitive(False)
 
-        self.__task_notes.widget.get_buffer().set_text(notes)
+        #self.__task_notes.widget.get_buffer().set_text(notes)
         self.__start.widget.set_time(start_date)
         self.__due.widget.set_time(due_date)
         self.__task_project.set_active(project)
@@ -880,7 +880,7 @@ class TaskDetailsForm(WidgetWrapper):
     def get_project(self):
         return self.__task_project.get_active()
 
-    def _on_task_notes_changed(self, buffer):
+    def on_task_notes_changed(self, buffer):
         if isinstance(self.__task, gtd.Task):
             self.__task.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
 
