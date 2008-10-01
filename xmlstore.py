@@ -31,6 +31,8 @@ class XMLStore(object):
         x.endElement(name)
         x.characters("\n") # FIXME: what is the portable way to do this?
 
+    # FIXME: this is now of dubious utility (only context and realm can use it..., and probably
+    # shouldn't in favor of a more consistent xml file format (<title>...) in every object...
     def _save_simple_element(self, name, obj):
         id_str = str(obj.id)
         fd = open("xml/" + id_str + ".xml", "w")
@@ -125,6 +127,8 @@ class XMLStore(object):
         x.endDocument()
 
     def save_project(self, project):
+        debug("saving project: %s" % (project.title))
+        debug("project area: %s" % (project.area))
         global _DATE_FORMAT
         id_str = str(project.id)
 
@@ -144,13 +148,23 @@ class XMLStore(object):
         self._simple_element(x, "notes", {}, project.notes)
         self._simple_element(x, "start_date", {}, start_date_str)
         self._simple_element(x, "due_date", {}, due_date_str)
-        self._simple_element(x, "area_ref", {"id":str(project.area.id)})
+        if not isinstance(project.area, gtd.AreaNone):
+            self._simple_element(x, "area_ref", {"id":str(project.area.id)})
         self._simple_element(x, "complete", {}, str(project.complete))
         x.endElement("project")
         x.endDocument()
 
     def save_area(self, area):
-        self._save_simple_element("area", area)
+        id_str = str(area.id)
+        fd = open("xml/" + id_str + ".xml", "w")
+        x = saxutils.XMLGenerator(fd)
+        x.startDocument()
+        x.startElement("area", {"id":id_str})
+        x.characters("\n")
+        self._simple_element(x, "title", {}, area.title)
+        self._simple_element(x, "realm_ref", {"id":str(area.realm.id)})
+        x.endElement("area")
+        x.endDocument()
 
     def save_realm(self, realm):
         self._save_simple_element("realm", realm)

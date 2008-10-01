@@ -67,8 +67,10 @@ class NewProject(GTDActionRow):
     def __init__(self, title):
         GTDActionRow.__init__(self, title)
 
+    # FIXME: we no longer use this for projects... see ProjectListView
     def set_title(self, title):
         if not title == self.title:
+            debug("NewProject.set_title %s" % (title))
             project = Project(None, title)
 
 
@@ -76,6 +78,7 @@ class NewTask(GTDActionRow):
     def __init__(self, title):
         GTDActionRow.__init__(self, title)
 
+    # FIXME: we no longer use this for tasks... see TaskListView
     def set_title(self, title):
         if not title == self.title:
             task = Task(None, title)

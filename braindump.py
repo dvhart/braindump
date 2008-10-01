@@ -118,6 +118,8 @@ class BrainDump(object):
         self.backing_store.load("xml/")
         self.backing_store.connect(GTD())
 
+        #GTD().print_tree()
+
         ##### Build Data Stores #####
         # Instantiate the various GUI datastores and filters from the GTD() singleton tree
         # FIXME: filter name is overloaded, clarify model, store, and filter.
@@ -139,7 +141,7 @@ class BrainDump(object):
         self.area_store_filter_by_realm = self.area_store.filter_new()
         self.area_store_filter_by_realm.append(self.area_by_realm)
         self.area_store_filter_by_realm_no_action = self.area_store.filter_new()
-        self.area_store_filter_by_realm.extend([self.area_by_realm, self.hide_actions])
+        self.area_store_filter_by_realm_no_action.extend([self.area_by_realm, self.hide_actions])
 
         self.project_store = ProjectStore()
         self.project_store_filter_by_realm = self.project_store.filter_new()

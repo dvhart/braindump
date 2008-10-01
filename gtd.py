@@ -119,9 +119,12 @@ class RealmNone(Realm, BaseNone):
 
 
 class Area(Base):
+    projects = []
+    __realm = None
+
     def __init__(self, id=None, title="", realm=RealmNone()):
-        self.projects = []
         Base.__init__(self, id, title)
+        self.projects = []
         self.__realm = realm
         self.__realm.add_area(self)
         GTD().sig_area_added(self)
@@ -132,7 +135,11 @@ class Area(Base):
         GTD().sig_area_modified(self)
 
     def set_realm(self, realm):
-        self.__realm = realm
+        if not realm:
+            error("realm is None")
+            self.__realm = RealmNone()
+        else:
+            self.__realm = realm
         GTD().sig_area_modified(self)
 
     def get_tasks(self):
@@ -157,7 +164,7 @@ class AreaNone(Area, BaseNone):
 
     def __init__(self):
         Base.__init__(self, None, "No Area")
-        self.projects = []
+        # FIXME: why can't we use the inherited realm property?  Is it the Singleton?
         self.realm = RealmNone()
         self.realm.add_area(self)
     
@@ -170,13 +177,13 @@ class AreaNone(Area, BaseNone):
 
 
 class Project(Base):
+    tasks = []
     __notes = ""
     __start_date = None
     __due_date = None
     __complete = False
 
     def __init__(self, id=None, title="", notes="", area=None, complete=False):
-        self.tasks = []
         Base.__init__(self, id, title)
         if area:
             self.__area = area

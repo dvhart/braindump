@@ -500,7 +500,8 @@ class ProjectListView(GTDTreeView):
         if project.title == new_text:
             return
         if isinstance(project, NewProject):
-            Project(new_text)
+            # FIXME: NewProject can do this itself...
+            Project(None, new_text)
         else:
             project.title = new_text
 
@@ -920,7 +921,7 @@ class ProjectDetailsForm(WidgetWrapper):
         self.__due = GUI().get_widget("project_due")
         self.__project_area = GTDCombo("project_area", area_store, AreaNone())
 
-        self.__project_notes.widget.get_buffer().connect("changed", self._on_project_notes_changed)
+        self.__project_notes.widget.get_buffer().connect("changed", self.on_project_notes_changed)
 
     def set_project(self, project): # FIXME: consider just using an attribute?
         self.__project = project
@@ -952,7 +953,7 @@ class ProjectDetailsForm(WidgetWrapper):
     def get_area(self):
         return self.__project_area.get_active()
 
-    def _on_project_notes_changed(self, buffer):
+    def on_project_notes_changed(self, buffer):
         if isinstance(self.__project, gtd.Project):
             self.__project.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
 
@@ -968,6 +969,7 @@ class ProjectDetailsForm(WidgetWrapper):
 
     def on_project_area_changed(self, area_combo):
         area = self.get_area()
+        debug("%s" % (area.title))
         if isinstance(self.__project, gtd.Project) and not self.__project.area == area:
             self.__project.area.remove_project(self.__project)
             if isinstance(area, gtd.Area):
