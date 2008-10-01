@@ -47,6 +47,13 @@ class XMLStore(object):
         tree.sig_area_added.connect(self.save_area)
         tree.sig_realm_added.connect(self.save_realm)
 
+        # modify signals
+        tree.sig_context_modified.connect(self.save_context)
+        tree.sig_task_modified.connect(self.save_task)
+        tree.sig_project_modified.connect(self.save_project)
+        tree.sig_area_modified.connect(self.save_area)
+        tree.sig_realm_modified.connect(self.save_realm)
+
         # remove signals
         tree.sig_context_removed.connect(self.delete_object)
         tree.sig_task_removed.connect(self.delete_object)
@@ -123,10 +130,10 @@ class XMLStore(object):
 
         start_date_str = ""
         due_date_str = ""
-        if task.start_date:
-            start_date_str = task.start_date.strftime(_DATE_FORMAT)
-        if task.due_date:
-            due_date_str = task.due_date.strftime(_DATE_FORMAT)
+        if project.start_date:
+            start_date_str = project.start_date.strftime(_DATE_FORMAT)
+        if project.due_date:
+            due_date_str = project.due_date.strftime(_DATE_FORMAT)
 
         fd = open("xml/" + id_str + ".xml", "w")
         x = saxutils.XMLGenerator(fd)

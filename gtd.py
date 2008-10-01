@@ -58,6 +58,7 @@ class Context(Base):
     def set_title(self, title):
         Base.set_title(self, title)
         GTD().sig_context_renamed(self)
+        GTD().sig_context_modified(self)
 
 
 class ContextNone(Context, BaseNone):
@@ -80,6 +81,7 @@ class Realm(Base):
     def set_title(self, title):
         Base.set_title(self, title)
         GTD().sig_realm_renamed(self)
+        GTD().sig_realm_modified(self)
 
     def get_tasks(self):
         tasks = []
@@ -120,13 +122,18 @@ class Area(Base):
     def __init__(self, id=None, title="", realm=RealmNone()):
         self.projects = []
         Base.__init__(self, id, title)
-        self.realm = realm
-        self.realm.add_area(self)
+        self.__realm = realm
+        self.__realm.add_area(self)
         GTD().sig_area_added(self)
 
     def set_title(self, title):
         Base.set_title(self, title)
         GTD().sig_area_renamed(self)
+        GTD().sig_area_modified(self)
+
+    def set_realm(self, realm):
+        self.__realm = realm
+        GTD().sig_area_modified(self)
 
     def get_tasks(self):
         tasks = []
@@ -141,6 +148,8 @@ class Area(Base):
     def remove_project(self, project):
         self.projects.remove(project)
         project.area = None
+
+    realm = OProperty(lambda s: s.__realm, set_realm)
 
 
 class AreaNone(Area, BaseNone):
@@ -161,22 +170,50 @@ class AreaNone(Area, BaseNone):
 
 
 class Project(Base):
-    def __init__(self, id=None, title="", notes="", area=AreaNone(), complete=False):
+    __notes = ""
+    __start_date = None
+    __due_date = None
+    __complete = False
+
+    def __init__(self, id=None, title="", notes="", area=None, complete=False):
         self.tasks = []
         Base.__init__(self, id, title)
-        self.area = area
-        self.notes = notes
-        self.start_date = None # these will be datetime objects
-        self.due_date = None
-        if self.area:
-            debug('project area is %s' % (self.area))
-            self.area.add_project(self)
-        self.complete = complete
+        if area:
+            self.__area = area
+        else:
+            self.__area = AreaNone()
+        self.area.add_project(self)
+
+        self.__notes = notes
+        self.__start_date = None
+        self.__due_date = None
+        self.__complete = complete
         GTD().sig_project_added(self)
 
     def set_title(self, title):
         Base.set_title(self, title)
         GTD().sig_project_renamed(self)
+        GTD().sig_project_modified(self)
+
+    def set_area(self, area):
+        self.__area = area
+        GTD().sig_project_modified(self)
+
+    def set_complete(self, complete):
+        self.__complete = complete
+        GTD().sig_project_modified(self)
+
+    def set_notes(self, notes):
+        self.__notes = notes
+        GTD().sig_project_modified(self)
+
+    def set_start_date(self, start_date):
+        self.__start_date = start_date
+        GTD().sig_project_modified(self)
+
+    def set_due_date(self, due_date):
+        self.__due_date = due_date
+        GTD().sig_project_modified(self)
 
     def add_task(self, task):
         self.tasks.append(task)
@@ -186,6 +223,11 @@ class Project(Base):
         self.tasks.remove(task)
         task.project = None
 
+    area = OProperty(lambda s: s.__area, set_area)
+    notes = OProperty(lambda s: s.__notes, set_notes)
+    start_date = OProperty(lambda s: s.__start_date, set_start_date)
+    due_date = OProperty(lambda s: s.__due_date, set_due_date)
+    complete = OProperty(lambda s: s.__complete, set_complete)
 
 class ProjectNone(Project, BaseNone):
     __metaclass__ = Singleton
@@ -203,31 +245,77 @@ class ProjectNone(Project, BaseNone):
 
 
 class Task(Base):
-    def __init__(self, id=None, title="", project=ProjectNone(), contexts=[], notes="", waiting=False, complete=False):
+    contexts = []
+    __notes = ""
+    __start_date = None
+    __due_date = None
+    __waiting = False
+    __complete = False
+
+    def __init__(self, id=None, title="", project=None, contexts=[], notes="", waiting=False, complete=False):
         Base.__init__(self, id, title)
-        self.project = project
+        if project:
+            self.project = project
+        else:
+            self.project = ProjectNone()
+        self.project.add_task(self)
+        # FIXME: public contexts breaks data hiding, should implement
+        # an iterator (otherwise someone could do
+        #      mytask.contexts.append(mycontext)
+        # and it wouldn't get written back to disk as the _modified signal
+        # won't be emitted.
         self.contexts = contexts
-        self.notes = notes
-        self.start_date = None # these will be datetime objects
-        self.due_date = None
-        self.waiting = waiting
-        self.complete = complete
-        # FIXME: how do we connect this to the "NoneProject"
-        if self.project:
-            self.project.add_task(self)
+        self.__notes = notes
+        self.__start_date = None # these will be datetime objects
+        self.__due_date = None
+        self.__waiting = waiting
+        self.__complete = complete
         GTD().sig_task_added(self)
 
     def set_title(self, title):
         Base.set_title(self, title)
         GTD().sig_task_renamed(self)
 
+    def set_project(self, project):
+        # FIXME: I think this is a hack, this should never be None
+        # maybe just throw an exception here ? or an assert?
+        if project:
+            self.__project = project
+        else:
+            self.__project = ProjectNone()
+        GTD().sig_task_modified(self)
+
+    def set_complete(self, complete):
+        self.__complete = complete
+        GTD().sig_task_modified(self)
+
+    def set_notes(self, notes):
+        self.__notes = notes
+        GTD().sig_task_modified(self)
+
+    def set_start_date(self, start_date):
+        self.__start_date = start_date
+        GTD().sig_task_modified(self)
+
+    def set_due_date(self, due_date):
+        self.__due_date = due_date
+        GTD().sig_task_modified(self)
+
     def add_context(self, context):
         if self.contexts.count(context) == 0:
             self.contexts.append(context)
+            GTD().sig_task_modified(self)
 
     def remove_context(self, context):
         if self.contexts.count(context):
             self.contexts.remove(context)
+            GTD().sig_task_modified(self)
+
+    project = OProperty(lambda s: s.__project, set_project)
+    notes = OProperty(lambda s: s.__notes, set_notes)
+    start_date = OProperty(lambda s: s.__start_date, set_start_date)
+    due_date = OProperty(lambda s: s.__due_date, set_due_date)
+    complete = OProperty(lambda s: s.__complete, set_complete)
 
 
 # The top-level GTD tree
@@ -241,18 +329,23 @@ class GTD(object):
         # PyNotify Signals
         self.sig_realm_visible_changed = Signal()
         self.sig_realm_renamed = Signal()
+        self.sig_realm_modified = Signal()
         self.sig_realm_added = Signal()
         self.sig_realm_removed = Signal()
         self.sig_area_renamed = Signal()
+        self.sig_area_modified = Signal()
         self.sig_area_added = Signal()
         self.sig_area_removed = Signal()
         self.sig_project_renamed = Signal()
+        self.sig_project_modified = Signal()
         self.sig_project_added = Signal()
         self.sig_project_removed = Signal()
         self.sig_task_renamed = Signal()
+        self.sig_task_modified = Signal()
         self.sig_task_added = Signal()
         self.sig_task_removed = Signal()
         self.sig_context_renamed = Signal()
+        self.sig_context_modified = Signal()
         self.sig_context_added = Signal()
         self.sig_context_removed = Signal()
 
