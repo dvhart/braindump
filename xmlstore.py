@@ -198,36 +198,36 @@ class GTDContentHandler(handler.ContentHandler):
             # Primary objects: task, project, area, realm, and context
             # Set the __subject object when first encountered
             if name == "task":
-                obj = gtd.Task(id)
+                obj = gtd.Task.create(id)
             elif name == "project":
-                obj = gtd.Project(id)
+                obj = gtd.Project.create(id)
             elif name == "area":
-                obj = gtd.Area(id)
+                obj = gtd.Area.create(id)
             elif name == "realm":
-                obj = gtd.Realm(id)
+                obj = gtd.Realm.create(id)
             elif name == "context":
-                obj = gtd.Context(id)
+                obj = gtd.Context.create(id)
 
         # Reference objects: fetch or build them, then assign to the __subject
         if name == "context_ref":
             if not cached:
-                obj = gtd.Context(id)
+                obj = gtd.Context.create(id)
             self.__subject.add_context(obj)
         elif name == "project_ref":
             if not cached:
-                obj = gtd.Project(id)
+                obj = gtd.Project.create(id)
             self.__subject.project.remove_task(self.__subject)
             self.__subject.project = obj
             obj.add_task(self.__subject)
         elif name == "area_ref":
             if not cached:
-                obj = gtd.Area(id)
+                obj = gtd.Area.create(id)
             self.__subject.area.remove_project(self.__subject)
             self.__subject.area = obj
             obj.add_project(self.__subject)
         elif name == "realm_ref":
             if not cached:
-                obj = gtd.Realm(id)
+                obj = gtd.Realm.create(id)
             self.__subject.realm.remove_area(self.__subject)
             self.__subject.realm = obj
             obj.add_area(self.__subject)

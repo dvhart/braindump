@@ -367,7 +367,7 @@ class BrainDump(object):
         '''Create a new task from the new task defaults, initiated from the task list.'''
         project = self.default_project.get_active()
         context = self.default_context.get_active()
-        gtd.Task(None, title, project, [context])
+        gtd.Task.create(None, title, project, [context])
 
     def on_task_list_cursor_changed(self, tree):
         path = tree.get_cursor()[0]

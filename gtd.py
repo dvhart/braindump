@@ -33,7 +33,7 @@ from logging import debug, info, warning, error, critical
 # could all just use the base implementation which would call self._sig_rename()
 
 class Base(object):
-    def __init__(self, id, title): # FIXME: make id something that gets past in or generated
+    def __init__(self, id, title):
         if id is None:
             self.id = uuid4()
         else:
@@ -51,9 +51,14 @@ class BaseNone(object):
 
 
 class Context(Base):
+    def create(id=None, title=""):
+        context = Context(id, title)
+        GTD()._add_context(context)
+        return context
+    create = staticmethod(create)
+
     def __init__(self, id=None, title=""):
         Base.__init__(self, id, title)
-        GTD()._add_context(self)
 
     def set_title(self, title):
         Base.set_title(self, title)
@@ -72,11 +77,16 @@ class ContextNone(Context, BaseNone):
 
 
 class Realm(Base):
-    def __init__(self, id=None, title="", visible=True):
+    def create(id=None, title="", visible=True):
+        realm = Realm(id, title, visible)
+        GTD()._add_realm(realm)
+        return realm
+    create = staticmethod(create)
+
+    def __init__(self, id, title, visible):
         self.areas = []
         self.visible = visible
         Base.__init__(self, id, title)
-        GTD()._add_realm(self)
 
     def set_title(self, title):
         Base.set_title(self, title)
@@ -91,11 +101,9 @@ class Realm(Base):
 
     def add_area(self, area):
         self.areas.append(area)
-        area.realm = self
 
     def remove_area(self, area):
         self.areas.remove(area)
-        area.realm = None
 
     def set_visible(self, visible):
         self.visible = visible
@@ -115,22 +123,24 @@ class RealmNone(Base, BaseNone):
 
     def add_area(self, area):
         self.areas.append(area)
-        area.realm = self
 
     def remove_area(self, area):
         if area is not AreaNone():
             self.areas.remove(area)
-            area.realm = None
 
 
 class Area(Base):
+    def create(id=None, title="", realm=RealmNone()):
+        area = Area(id, title, realm)
+        GTD().sig_area_added(area)
+        return area
+    create = staticmethod(create)
 
-    def __init__(self, id=None, title="", realm=RealmNone()):
+    def __init__(self, id, title, realm):
         self.projects = []
         Base.__init__(self, id, title)
         self.__realm = realm
         self.__realm.add_area(self)
-        GTD().sig_area_added(self)
 
     def set_title(self, title):
         Base.set_title(self, title)
@@ -153,11 +163,9 @@ class Area(Base):
 
     def add_project(self, project):
         self.projects.append(project)
-        project.area = self
 
     def remove_project(self, project):
         self.projects.remove(project)
-        project.area = None
 
     realm = OProperty(lambda s: s.__realm, set_realm)
 
@@ -176,17 +184,20 @@ class AreaNone(Base, BaseNone):
 
     def add_project(self, project):
         self.projects.append(project)
-        project.area = self
 
     def remove_project(self, project):
         if project is not ProjectNone():
             self.projects.remove(project)
-            project.area = None
 
 
 class Project(Base):
+    def create(id=None, title="", notes="", area=None, complete=False):
+        project = Project(id, title, notes, area, complete)
+        GTD().sig_project_added(project)
+        return project
+    create = staticmethod(create)
 
-    def __init__(self, id=None, title="", notes="", area=None, complete=False):
+    def __init__(self, id, title, notes, area, complete):
         self.tasks = []
         Base.__init__(self, id, title)
         if area:
@@ -199,7 +210,6 @@ class Project(Base):
         self.__start_date = None
         self.__due_date = None
         self.__complete = complete
-        GTD().sig_project_added(self)
 
     def set_title(self, title):
         Base.set_title(self, title)
@@ -228,11 +238,9 @@ class Project(Base):
 
     def add_task(self, task):
         self.tasks.append(task)
-        task.project = self
 
     def remove_task(self, task):
         self.tasks.remove(task)
-        task.project = None
 
     area = OProperty(lambda s: s.__area, set_area)
     notes = OProperty(lambda s: s.__notes, set_notes)
@@ -258,22 +266,25 @@ class ProjectNone(Base, BaseNone):
 
     def add_task(self, task):
         self.tasks.append(task)
-        task.project = self
 
     def remove_task(self, task):
         self.tasks.remove(task)
-        task.project = None
 
 
 class Task(Base):
+    def create(id=None, title="", project=None, contexts=None, notes="", waiting=False, complete=False):
+        task = Task(id, title, project, contexts, notes, waiting, complete)
+        GTD().sig_task_added(task)
+        return task
+    create = staticmethod(create)
 
-    def __init__(self, id=None, title="", project=None, contexts=None, notes="", waiting=False, complete=False):
+    def __init__(self, id, title, project, contexts, notes, waiting, complete):
         Base.__init__(self, id, title)
         if project:
-            self.project = project
+            self.__project = project
         else:
-            self.project = ProjectNone()
-        self.project.add_task(self)
+            self.__project = ProjectNone()
+        self.__project.add_task(self)
         # FIXME: if we have contexts=[] in the signature, it will have 3 items in it, even if
         # called without that parameter... weird...
         if not contexts:
@@ -289,7 +300,6 @@ class Task(Base):
         self.__due_date = None
         self.__waiting = waiting
         self.__complete = complete
-        GTD().sig_task_added(self)
 
     def set_title(self, title):
         Base.set_title(self, title)

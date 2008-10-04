@@ -499,7 +499,7 @@ class ProjectListView(GTDTreeView):
             return
         if isinstance(project, NewProject):
             # FIXME: NewProject can do this itself...
-            Project(None, new_text)
+            Project.create(None, new_text)
         else:
             project.title = new_text
 
