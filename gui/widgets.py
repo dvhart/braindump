@@ -225,7 +225,7 @@ class GTDTreeView(WidgetWrapper):
            and not isinstance(self.get_current(), GTDActionRow) \
            and not isinstance(self.get_current(), BaseNone):
             # FIXME: this is really not type safe, the widget isn't tested to be a GTDPopupMenu
-            popup = GUI().get_widget(widget.get_name()) 
+            popup = GUI().get_widget(widget.get_name())
             popup.set_tree_and_col(self, self.widget.get_column(col))
             widget.popup(None, None, None, event.button, event.time)
             return True
@@ -307,11 +307,11 @@ class TaskFilterListView(GTDTreeView):
 
 class TaskListView(GTDTreeView):
     """A treeview to display tasks.
-    
+
     Public members variables:
     follow_new -- whether or not to jump to a newly created task
     """
-    
+
     def __init__(self, name, task_store, new_task_handler):
         """Construct a treeview for tasks.
 
@@ -659,7 +659,7 @@ class ContextTable(WidgetWrapper):
         if self.__context_cbs.has_key(context):
             del self.__context_cbs[context]
         self.__rebuild(self.widget.allocation, True)
- 
+
 
 class ModelCombo(WidgetWrapper):
     def __init__(self, name, model, none=None):
@@ -729,7 +729,7 @@ class GTDCombo(WidgetWrapper):
         else:
             # FIXME: throw an exception
             error('obj is not a gtd.Base: %s' % (obj.__class__.__name__))
-            
+
     def get_active(self):
         iter = self.widget.get_active_iter()
         if iter:
@@ -766,7 +766,7 @@ class GTDRowPopup(WidgetWrapper):
         WidgetWrapper.__init__(self, name)
         self.__tree_view = None
         self.__edit_col = 0
-    
+
     # gtk signal callbacks (defined in and connected via Glade)
     def on_gtd_row_popup_rename(self, widget):
         obj = self.__tree_view.get_current()
