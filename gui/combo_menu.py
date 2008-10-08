@@ -37,7 +37,7 @@ class ComboMenu(gtk.ToggleButton):
         self.add(self._hbox)
 
         self._menu = gtk.Menu()
-        self._menu.connect("deactivate", lambda w: self.set_active(False))
+        self._menu.connect("deactivate", lambda w: gtk.ToggleButton.set_active(self, False))
         self._menu.attach_to_widget(self, None)
 
         self.connect("button_press_event", self._on_button_press)
