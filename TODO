@@ -4,42 +4,31 @@ unimplemented bit, and hack away...  I'll update this file to remind me
 of things I can't just as easily do via inline '# FIXME's
 
 Basic Functionality
-o backing store
-  - consider usin ics files, especially if that would aid integration into things like the
-    gnome clock/calendar panel applet (today's tasks in the applet, etc.)
-  - something that can be network synced - and viewed from multiple clients? --mbligh
-  - look at using maildir, then can sync with offlineimap
 o Recursive delete option
   - recurse =false is used by default now and delete is disabled for the
     objects with paren't in the None Path
   - need a dialog to confirm recursive delete (may be a new menu item so
     "delete" never needs a dialog)
-o Distinguish Next Actions, Actions (that aren't ready now), and Waiting (Delegated)
-o due dates for Tasks
+o Determine how to deal with "Waiting" tasks, perhaps a delegated field?
 o fix about dialog name "braindump.py" to "BrainDump", glade shows "BrainDump
   1.0", not sure what's going on the about dialog's widget->name seems to be
   "braindump.py" ???
 o recalculate sizing for context table after context renaming
-o update spacing etc according to Gnome HIG
-  - using 6 pixel spacing between labels and controls, seem smore consistent with gedit and evolution
-  - decide what to do about left side of the window.  Lining up with the menu indents everything
-    a bit too much
-o consider implementing a date/time widget like: http://www.mail-archive.com/pygtk@daa.com.au/msg12160.html
-o replace the task filter strings with task filter by store objects, one for contexts and one for projects,
-  each one telling the filter_by_selection box which model to use
-o redesign the broken-ass gtd-popup-menu for right-button-press on all the tree views...
-o when changing the filtered list of tasks or projects, if the previously selected gtd object is
-  still visible, it should be selected.
-o add more space around panels (selection filter, task list)
+o decide what to do about left side of the window.  Lining up with the menu
+  indents everything a bit too much
+o consider implementing a date/time widget like (gnome-date-entry sucks goats): 
+  http://www.mail-archive.com/pygtk@daa.com.au/msg12160.html
+o replace the task filter strings with task filter by store objects, one for
+  contexts and one for projects, each one telling the filter_by_selection box
+  which model to use
+o redesign the broken-ass gtd-popup-menu for right-button-press on all the tree
+  views...
+o when changing the filtered list of tasks or projects, if the previously
+  selected gtd object is still visible, it should be selected.
 o add a "[ ] include details" checkbox for the searches
-o Some issues with updating the task project combo box when realms become visible
-  -- FIXED by forcing a refilter if the project we want isn't found...  this makes for some sub-optimal
-     code as the refilter will happen again later as well.... 
-  -- separating the realm_visible_changed to realm_visible and realm_invisible signals _might_make this
-     go away...
-o when the list changes, if what you had selected before is now, make it selected again
 o Update area_selection model on realm_visible changes
 o norelief combo box: http://code.google.com/p/pychess/source/browse/trunk/lib/pychess/widgets/ToggleComboBox.py?r=978 
+o stacked sidebar
 
 Packaging
 o Debian/Ubuntu
@@ -49,13 +38,12 @@ Artwork
 o Need a profesisonal icon
 
 Improvements
-o have the filter row animate (swell, glow, whatever) when something is added/removed
+o have the filter row animate (swell, glow, whatever) when something is
+  added/removed
 o consider using a treeview for tasks, and break them up into "Today"
   "Tomorrow"|"This Week" "Later/No Date"
 o task and project resource attachments (with twisty to hide)
 o recurring tasks
-o consider view toggles for "actionable" and "completed"
-  - actionable = "start date passed, or no start date" (opposite of tickler)
 o create plugin mechanism
 o consider making contexts two one or more realms (So when you turn off the
   work realm, all the work only contexts go away, some contexts will belong to
@@ -67,12 +55,12 @@ o nag mail for delegated tasks
 o export to html
 o report generation (monthly reports, burn-down, etc.)
 o consider multiple notes per task/project, automatically dated, removed with a single click on an [x]...
-o consider using a disct of fields.  This would make writing plugins easier,
+o consider using a dict of fields.  This would make writing plugins easier,
   and the backing stores simpler.
   - could also just use the method described here: 
     http://www.python.org/doc/2.2/ref/attribute-access.html
-o consider storing realm.visible in the backing store to easily open up in the same state...
-o stacked sidebar
+o consider storing realm.visible in the backing store to easily open up in the
+  same state...
 o grouped-by (date, project, context, area)
 o merge the notebook tabs into one.
 
@@ -80,8 +68,6 @@ Other
 o look at adding braindump to http://pypi.python.org/pypi ?? timrc's suggestion
 o decide on consistent coding style
   o widget naming: update, update_btn, etc.
-o Use a gtk_button_box instead of a toolbar for the realm buttons? (shouldn't
-  have to wrap them then)
 o gut requirements on GNOME, and try to be a pure gtk app by default
   - plugins can have GNOME dependencies
 o tickler integration to calendars plus internal notification
