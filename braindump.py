@@ -36,6 +36,7 @@ import sexy
 import gtd
 from gtd import GTD
 from gui.combo_menu import *
+from gui.details import *
 from gui.widgets import *
 from gui_datastores import *
 from filters import *
@@ -155,6 +156,8 @@ class BrainDump(object):
             self.context_store.filter_new())])
         self.task_selection_filter_store.append([ModelItem("By Project",
             self.project_store_filter_by_realm_no_action)])
+        self.task_selection_filter_store.append([ModelItem("By Area",
+            self.area_store_filter_by_realm_no_action)])
 
         # Date filter store
         self.date_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
@@ -210,66 +213,41 @@ class BrainDump(object):
         self.search = SearchEntry("search")
         self.search.connect("changed", self.on_search_changed)
 
-        # Test combo_menu widget
+        # The working mode, currently tasks and projects
         # FIXME: come up with a better naming scheme
         self.work_with = ComboMenu()
         self.work_with.set_markup("<b>", "</b>")
-        self.work_with.add_item("Tasks")
-        self.work_with.add_item("Projects")
+        self.work_with.set_data_func(lambda i: i[0])
+        self.work_with.add_item(("Tasks", self.task_store_filter))
+        self.work_with.add_item(("Projects", self.project_store_filter_by_area))
         self.work_with.connect("changed", self.on_work_with_changed)
         GUI().get_widget("work_with_placeholder").widget.add(self.work_with)
         self.work_with.show_all()
 
         # Task Tab
-        self.task_filter_list = TaskFilterListView("task_filter_list")
+        self.filter_list = FilterListView("filter_list")
 
-        # Select all the rows in the view
-        # FIXME: Error checking, may need a member callback here
-        self.task_filter_all = GUI().get_widget("task_filter_all")
-        self.task_filter_all.widget.connect("clicked", lambda w: self.task_filter_list.widget.get_selection().select_all())
-
-        # Select none of the rows in the view
-        # FIXME: Error checking, may need a member callback here
-        # FIXME: should select (No Context) or (No Project)
-        # never allow viewing no tasks at all (will cause problems creating
-        # new tasks as they will just vanish from the view)
-        self.task_filter_none = GUI().get_widget("task_filter_none")
-        self.task_filter_none.widget.connect("clicked", lambda w: self.task_filter_list.widget.get_selection().unselect_all())
+        # Clear the filter
+        self.filters_clear = GUI().get_widget("filters_clear")
+        self.filters_clear.widget.connect("clicked", lambda w: self.filter_list.widget.get_selection().unselect_all())
 
         self.task_filter_by = ModelCombo("task_filter_by", self.task_selection_filter_store)
-        self.task_filter_by.widget.connect("changed", lambda w: self.task_filter_list.widget.set_model(self.task_filter_by.get_active().model.model_filter))
+        self.task_filter_by.widget.connect("changed", lambda w: self.filter_list.widget.set_model(self.task_filter_by.get_active().model.model_filter))
 
-        self.task_list = TaskListView("task_list", self.task_store_filter, self.on_new_task)
-        self.task_filter_list.widget.get_selection().connect("changed", self.task_store.refilter)
+        # FIXME: rename, no longer task specific...
+        self.gtd_list = GTDListView("gtd_list", self.task_store_filter, self.on_new_task)
+        self.gtd_list.widget.get_selection().connect("changed", self.on_gtd_list_selection_changed)
+        self.filter_list.widget.get_selection().connect("changed", self.task_store.refilter)
+        self.filter_list.widget.get_selection().connect("changed", self.project_store.refilter)
 
-        self.task_details_form = TaskDetailsForm("task_details_form",
-                                                 self.project_store_filter_by_realm_no_action)
+        self.details_form = Details("details_form",
+                                    self.project_store_filter_by_realm_no_action,
+                                    self.area_store_filter_by_realm_no_action)
 
         # New task default form
         self.default_project = GTDCombo("default_project",
                                          self.project_store_filter_by_realm_no_action, ProjectNone())
         self.default_context = GTDCombo("default_context", self.context_store_filter_no_action)
-
-
-        # Project Tab
-        self.area_filter_list = AreaFilterListView("area_filter_list", self.area_store_filter_by_realm_no_action)
-
-        # Select all the rows in the view
-        # FIXME: Error checking, may need a member callback here
-        self.area_filter_all = GUI().get_widget("area_filter_all")
-        self.area_filter_all.widget.connect("clicked", lambda w: self.area_filter_list.widget.get_selection().select_all())
-
-        # Select none of the rows in the view
-        # FIXME: Error checking, may need a member callback here
-        self.area_filter_none = GUI().get_widget("area_filter_none")
-        self.area_filter_none.widget.connect("clicked", lambda w: self.area_filter_list.widget.get_selection().unselect_all())
-
-        self.area_filter_list.widget.get_selection().connect("changed", self.project_store.refilter)
-        self.project_list = ProjectListView("project_list", self.project_store_filter_by_area)
-
-        self.project_details_form = ProjectDetailsForm("project_details_form",
-                                                       self.area_store_filter_by_realm_no_action)
-
 
         # Dialog boxes
         self.realm_area_dialog = RealmAreaDialog("realm_area_dialog", self.realm_area_store)
@@ -283,21 +261,19 @@ class BrainDump(object):
         self.work_with.set_active(0)
         self.filter_by_date.widget.set_active(0)
         self.task_filter_by.widget.set_active(0)
-        self.task_filter_list.widget.get_selection().select_all()
-        self.area_filter_list.widget.get_selection().select_all()
         self.default_project.set_active(-1)
         self.default_context.set_active(-1)
 
         # Build the filters and refilter them
         self.task_store_filter.append(self.task_by_realm)
-        self.task_store_filter.append(Filter(self.task_filter_list.selection_match))
+        self.task_store_filter.append(Filter(self.filter_list.selection_match))
         self.task_store_filter.append(Filter(self.search.search))
         self.task_store_filter.append(Filter(self.filter_by_date.filter))
         self.task_store_filter.refilter()
 
         self.project_store_filter_by_area.append(self.project_by_realm)
-        self.project_store_filter_by_area.append(Filter(lambda p: not isinstance(p, gtd.BaseNone))) # FIXME: bit of a hack...
-        self.project_store_filter_by_area.append(Filter(self.area_filter_list.selection_match))
+        self.project_store_filter_by_area.append(Filter(lambda p: not isinstance(p, gtd.BaseNone)))
+        self.project_store_filter_by_area.append(Filter(self.filter_list.selection_match))
         self.project_store_filter_by_area.append(Filter(self.search.search))
         self.project_store_filter_by_area.append(Filter(self.filter_by_date.filter))
         self.project_store_filter_by_area.refilter()
@@ -332,12 +308,12 @@ class BrainDump(object):
             self.default_project.widget.set_active(0)
             self.default_context.widget.set_active(0)
             form.show()
-            self.task_list.follow_new = False
+            self.gtd_list.follow_new = False
         else:
             form.hide()
             self.default_project.widget.set_active(-1)
             self.default_context.widget.set_active(-1)
-            self.task_list.follow_new = True
+            self.gtd_list.follow_new = True
 
     def on_show_realms_toggled(self, menuitem):
         # FIXME: consider removing the realm_filter on hide, and putting it back on show
@@ -356,41 +332,29 @@ class BrainDump(object):
             filters.hide()
 
     def on_show_details_toggled(self, menuitem):
-        # FIXME: the main window should grow/shrink to accomodate this form
-        #        consider moving both forms to the same parent hbox so it can
-        #        be shown/hidden in one shot.
-        task_form = GUI().get_widget("task_details_form").widget
-        project_form = GUI().get_widget("project_details_form").widget
         if menuitem.active:
-            task_form.show()
-            project_form.show()
+            self.details_form.widget.show()
         else:
-            task_form.hide()
-            project_form.hide()
+            self.details_form.widget.hide()
 
     def on_about_activate(self, menuitem):
         self.about_dialog.widget.show()
 
     # Widget callbacks
     def on_new_task(self, title):
-        '''Create a new task from the new task defaults, initiated from the task list.'''
+        '''Create a new task from the new task defaults, initiated from the gtd_list.'''
         project = self.default_project.get_active()
         context = self.default_context.get_active()
         gtd.Task.create(None, title, project, [context])
 
-    def on_task_list_cursor_changed(self, tree):
-        path = tree.get_cursor()[0]
-        task = None
-        if path:
-            task = tree.get_model()[path][0]
-        self.task_details_form.set_task(task)
-
-    def on_project_list_cursor_changed(self, tree):
-        path = tree.get_cursor()[0]
-        project = None
-        if path:
-            project = tree.get_model()[path][0]
-        self.project_details_form.set_project(project)
+    def on_gtd_list_selection_changed(self, selection):
+        iter = selection.get_selected()[1]
+        tree = selection.get_tree_view()
+        model = tree.get_model()
+        subject = None
+        if iter:
+            subject = tree.get_model()[iter][0]
+        self.details_form.set_subject(subject)
 
     # Task and project date filter callbacks
     # FIXME: gotta be a better place for these!
@@ -435,7 +399,15 @@ class BrainDump(object):
         if index != 0 and index != 1:
             error("work_with index out of range")
             index = 0
-        GUI().get_widget("notebook").widget.set_current_page(index)
+        #GUI().get_widget("notebook").widget.set_current_page(index)
+        # update the gtd_list model
+        model = self.work_with.get_active_item()[1]
+        self.gtd_list.widget.set_model(model.model_filter)
+
+        # FIXME: update the rest of the gui to work with tasks or projects...
+        # XXXXXXXXX
+
+        # update the menu radio items accordingly
         if index == 0:
             GUI().get_widget("work_with_tasks").widget.set_active(True)
         elif index == 1:

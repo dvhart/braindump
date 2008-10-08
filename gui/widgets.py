@@ -200,7 +200,8 @@ class RealmToggles(WidgetWrapper):
             self.__realm_buttons[realm].show()
 
 
-class GTDTreeView(WidgetWrapper):
+# FIXME: I believe we can eliminate this class eventually...
+class GTDTreeViewBase(WidgetWrapper):
     def __init__(self, name):
         WidgetWrapper.__init__(self, name)
 
@@ -235,7 +236,7 @@ class GTDTreeView(WidgetWrapper):
 # FIXME: consider renaming this to not use "Filter" as this class
 # doesn't do the filtering, it's selection is used for that purpose
 # by the application.
-class TaskFilterListView(GTDTreeView):
+class FilterListView(GTDTreeViewBase):
     """A treeview to display contexts or projects."""
 
     def __init__(self, name):
@@ -244,7 +245,7 @@ class TaskFilterListView(GTDTreeView):
         Keyword arguments:
         widget        -- the gtk.TreeView widget to wrap
         """
-        GTDTreeView.__init__(self, name)
+        GTDTreeViewBase.__init__(self, name)
 
         # setup the column and cell renderer
         tvcolumn0 = gtk.TreeViewColumn()
@@ -270,56 +271,78 @@ class TaskFilterListView(GTDTreeView):
             title = "<i>"+title+"</i>"
         cell.set_property("markup", title)
 
-    def selection_match(self, task):
-        if isinstance(task, GTDActionRow):
+    def selection_match(self, obj):
+        print "selection match: ", obj.title
+        if isinstance(obj, GTDActionRow):
             return True
 
         selection = self.widget.get_selection()
         selmodel, paths = selection.get_selected_rows()
 
+        if len(paths) == 0:
+            return True
+
         # FIXME: is this still relevant
-        if task is None:
+        if obj is None:
             debug('FIXME: why are we comparing a none task?')
             return False
 
-        if task.project.area.realm.visible:
+        if isinstance(obj, gtd.Task):
+            if obj.project.area.realm.visible:
+                for path in paths:
+                    comp = selmodel[path][0] # either a project or a context
+                    if isinstance(comp, gtd.Context):
+                        if obj.contexts.count(comp):
+                            return True
+                        if len(obj.contexts) is 0 and isinstance(comp, gtd.ContextNone):
+                            return True
+                    elif isinstance(comp, gtd.Project):
+                        if obj.project is comp:
+                            return True
+                    elif isinstance(comp, gtd.Area):
+                        if obj.project.area is selmodel[path][0]:
+                            return True
+                    elif isinstance(comp, GTDActionRow):
+                        continue
+                    else:
+                        info('cannot filter Task on %s' % (comp.__class__.__name__))
+                        return True
+        elif isinstance(obj, gtd.Project):
             for path in paths:
                 comp = selmodel[path][0] # either a project or a context
-                if isinstance(comp, gtd.Context):
-                    if task.contexts.count(comp):
+                if isinstance(comp, gtd.Area):
+                    if obj.area is selmodel[path][0]:
                         return True
-                    if len(task.contexts) is 0 and isinstance(comp, gtd.ContextNone):
-                        return True
-                elif isinstance(comp, gtd.Project):
-                    if task.project is comp:
-                        return True
-                elif isinstance(comp, GTDActionRow):
-                    continue
                 else:
-                    error('cannot filter Task on %s' % (comp.__class__.__name__))
-            return False
+                    info('cannot filter Project on %s' % (comp.__class__.__name__))
+                    return True
+
+        return False
 
     # FIXME: we could connect this ourselves in __init__, but we don't have
     # access to the menu here... glade does this via the xml...... ew.....
-    def on_task_filter_list_button_press(self, widget, event):
-        return GTDTreeView.on_button_press(self, widget, event, 0)
+    def on_filter_list_button_press(self, widget, event):
+        return GTDTreeViewBase.on_button_press(self, widget, event, 0)
 
 
-class TaskListView(GTDTreeView):
-    """A treeview to display tasks.
+class GTDListView(GTDTreeViewBase):
+    """A treeview to display tasks and pojects.
 
     Public members variables:
-    follow_new -- whether or not to jump to a newly created task
+    follow_new -- whether or not to jump to a newly created gtd object
     """
 
+    # FIXME: should be ables to remove the store from the constructor
+    # as we will use several for this tree throughout the use of the program
+    # setup the callbacks from the caller
     def __init__(self, name, task_store, new_task_handler):
-        """Construct a treeview for tasks.
+        """Construct a treeview for tasks and projects.
 
         Keyword arguments:
         widget     -- the gtk.TreeView widget to wrap
         task_store -- the TaskStore for gtd.Tasks
         """
-        GTDTreeView.__init__(self, name)
+        GTDTreeViewBase.__init__(self, name)
         self.follow_new = True
 
         self.__new_task_handler = new_task_handler
@@ -330,136 +353,7 @@ class TaskListView(GTDTreeView):
         # create the TreeViewColumns to display the data
         tvcolumn0 = gtk.TreeViewColumn("Done")
         tvcolumn1 = gtk.TreeViewColumn("Title")
-
-        # append the columns to the view
-        self.widget.append_column(tvcolumn0)
-        self.widget.append_column(tvcolumn1)
-
-        # create the CellRenderers
-        cell0 = gtk.CellRendererToggle()
-        cell0.connect('toggled', self._on_toggled, self.widget.get_model(), 0)
-        cell1 = gtk.CellRendererText()
-        cell1.set_property('editable', True)
-        cell1.connect('edited', self._on_edited, lambda: self.widget.get_model(), 1)
-
-        # attach the CellRenderers to each column
-        tvcolumn0.pack_start(cell0) # expand True by default
-        tvcolumn1.pack_start(cell1)
-
-        # display data directly from the gtd object, rather than setting attributes
-        tvcolumn0.set_cell_data_func(cell0, self._data_func, "complete")
-        tvcolumn1.set_cell_data_func(cell1, self._data_func, "title")
-
-        # make it searchable
-        self.widget.set_search_column(1)
-
-    def _on_toggled(self, cell, path, model, column):
-        complete = model[path][column]
-        task = model[path][0]
-        if isinstance(task, gtd.Task):
-            task.complete = not task.complete
-
-    def _on_edited(self, cell, path, new_text, model_lambda, column):
-        task = model_lambda()[path][0]
-        if isinstance(task, NewTask):
-            if not task.title == new_text:
-                self.__new_task_handler(new_text)
-        else:
-            task.title = new_text
-
-    def _on_row_inserted(self, model, path, iter):
-        if (self.follow_new):
-            self.widget.set_cursor(path, None, True)
-
-    def _on_row_deleted(self, model, path):
-        if self.widget.get_cursor()[0] is None:
-            self.widget.set_cursor((0)) # FIXME: ideally we would just emit the cursor-changed
-                                        # signal when the current row was deleted... but for some
-                                        # reason this doesn't happen...
-
-    def _data_func(self, column, cell, model, iter, data):
-        task = model[iter][0]
-        if data is "complete":
-            if isinstance(task, GTDActionRow):
-                cell.set_property("inconsistent", True)
-            else:
-                cell.set_property("active", task.complete)
-                cell.set_property("inconsistent", False)
-        elif data is "title":
-            title = task.title
-            if isinstance(task, GTDActionRow):
-                title = "<i>"+title+"</i>"
-            cell.set_property("markup", title)
-        else:
-            # FIXME: throw an exception
-            error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
-
-    # gtk signal callbacks (defined in and connected via Glade)
-    # FIXME: can't do this in _init_ since glade is passing in the menu
-    # to  display (widget)
-    def on_task_list_button_press(self, widget, event):
-        return GTDTreeView.on_button_press(self, widget, event, 1)
-
-
-class AreaFilterListView(GTDTreeView):
-    def __init__(self, name, area_store):
-        GTDTreeView.__init__(self, name)
-        self.widget.set_model(area_store.model_filter)
-
-        # setup the column and cell renderer
-        tvcolumn0 = gtk.TreeViewColumn()
-        cell0 = gtk.CellRendererText()
-        cell0.set_property('editable', True)
-        cell0.connect('edited', self._on_edited, lambda: self.widget.get_model(), 0)
-        tvcolumn0.pack_start(cell0, False)
-        tvcolumn0.set_cell_data_func(cell0, self._data_func, "data")
-        self.widget.append_column(tvcolumn0)
-
-        # setup selection modes and callback
-        self.widget.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
-        self.widget.set_rubber_banding(True)
-
-    def _on_edited(self, cell, path, new_text, model_lambda, column):
-        model_lambda()[path][column].title = new_text
-
-    def _data_func(self, column, cell, model, iter, data):
-        area = model[iter][0]
-        title = area.title
-        if isinstance(area, GTDActionRow) or isinstance(area, gtd.BaseNone):
-            title = "<i>"+title+"</i>"
-        cell.set_property("markup", title)
-
-    # signal callbacks
-    def on_area_filter_list_button_press(self, widget, event):
-        return GTDTreeView.on_button_press(self, widget, event, 0)
-
-    def selection_match(self, project):
-        selection = self.widget.get_selection()
-        selmodel, paths = selection.get_selected_rows()
-        if project == None:
-            return True
-
-        if isinstance(project, GTDActionRow):
-            return True
-
-        for path in paths:
-            if project.area is selmodel[path][0]:
-                return True
-
-        return False
-
-
-class ProjectListView(GTDTreeView):
-    def __init__(self, name, project_store):
-        GTDTreeView.__init__(self, name)
-        self.widget.set_model(project_store.model_filter)
-        project_store.model_filter.connect("row_inserted", self._on_row_inserted)
-        project_store.model_filter.connect("row_deleted", self._on_row_deleted)
-
-        # create the TreeViewColumns to display the data
-        tvcolumn0 = gtk.TreeViewColumn("Done")
-        tvcolumn1 = gtk.TreeViewColumn("Title")
-        tvcolumn2 = gtk.TreeViewColumn("Tasks")
+        tvcolumn2 = gtk.TreeViewColumn("Due")
 
         # append the columns to the view
         self.widget.append_column(tvcolumn0)
@@ -475,36 +369,38 @@ class ProjectListView(GTDTreeView):
         cell2 = gtk.CellRendererText()
 
         # attach the CellRenderers to each column
-        tvcolumn0.pack_start(cell0, False)
-        tvcolumn1.pack_start(cell1) # expand True by default
-        tvcolumn2.pack_start(cell2, False)
+        tvcolumn0.pack_start(cell0) # expand True by default
+        tvcolumn1.pack_start(cell1)
+        tvcolumn2.pack_start(cell2)
 
         # display data directly from the gtd object, rather than setting attributes
         tvcolumn0.set_cell_data_func(cell0, self._data_func, "complete")
         tvcolumn1.set_cell_data_func(cell1, self._data_func, "title")
-        tvcolumn2.set_cell_data_func(cell2, self._data_func, "tasks")
+        tvcolumn2.set_cell_data_func(cell2, self._data_func, "due_date")
 
         # make it searchable
         self.widget.set_search_column(1)
 
     def _on_toggled(self, cell, path, model, column):
         complete = model[path][column]
-        project = model[path][0]
-        if isinstance(project, gtd.Project):
-            project.complete = not project.complete
+        obj = model[path][0]
+        if isinstance(obj, gtd.Task):
+            obj.complete = not obj.complete
 
     def _on_edited(self, cell, path, new_text, model_lambda, column):
-        project = model_lambda()[path][0]
-        if project.title == new_text:
-            return
-        if isinstance(project, NewProject):
+        obj = model_lambda()[path][0]
+        if isinstance(obj, NewTask):
+            if not obj.title == new_text:
+                self.__new_task_handler(new_text)
+        if isinstance(obj, NewProject):
             # FIXME: NewProject can do this itself...
             Project.create(None, new_text)
         else:
-            project.title = new_text
+            obj.title = new_text
 
     def _on_row_inserted(self, model, path, iter):
-        self.widget.set_cursor(path, None, False)
+        if (self.follow_new):
+            self.widget.set_cursor(path, None, True)
 
     def _on_row_deleted(self, model, path):
         if self.widget.get_cursor()[0] is None:
@@ -513,35 +409,41 @@ class ProjectListView(GTDTreeView):
                                         # reason this doesn't happen...
 
     def _data_func(self, column, cell, model, iter, data):
-        project = model[iter][0]
+        obj = model[iter][0]
         if data is "complete":
-            if isinstance(project, gtd.Project):
-                cell.set_property("active", project.complete)
-                cell.set_property("inconsistent", False)
-            else:
+            if isinstance(obj, GTDActionRow):
                 cell.set_property("inconsistent", True)
+            else:
+                cell.set_property("active", obj.complete)
+                cell.set_property("inconsistent", False)
         elif data is "title":
-            title = project.title
-            if isinstance(project, GTDActionRow):
+            title = obj.title
+            if isinstance(obj, GTDActionRow):
                 title = "<i>"+title+"</i>"
             cell.set_property("markup", title)
-        elif data is "tasks":
-            if isinstance(project, gtd.Project):
-                cell.set_property("markup", len(project.tasks))
+        elif data is "due_date":
+            if isinstance(obj, GTDActionRow):
+                due_date = "-"
+            elif obj.due_date:
+                due_date = obj.due_date.strftime("%b %e") # FIXME: use friendly dates (relative to today())
             else:
-                cell.set_property("markup", "")
+                due_date = "-"
+            cell.set_property("markup", due_date)
+
         else:
             # FIXME: throw an exception
             error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
 
     # gtk signal callbacks (defined in and connected via Glade)
-    def on_project_list_button_press(self, widget, event):
-        return GTDTreeView.on_button_press(self, widget, event, 1)
+    # FIXME: can't do this in _init_ since glade is passing in the menu
+    # to  display (widget)
+    def on_gtd_list_button_press(self, widget, event):
+        return GTDTreeViewBase.on_button_press(self, widget, event, 1)
 
 
-class RealmAreaTreeView(GTDTreeView):
+class RealmAreaTreeView(GTDTreeViewBase):
     def __init__(self, name, realm_area_store):
-        GTDTreeView.__init__(self, name)
+        GTDTreeViewBase.__init__(self, name)
         self.widget.set_model(realm_area_store)
 
         tvcolumn = gtk.TreeViewColumn("Title")
@@ -579,7 +481,7 @@ class RealmAreaTreeView(GTDTreeView):
             error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
 
     def on_realms_and_areas_button_press(self, widget, event):
-        return GTDTreeView.on_button_press(self, widget, event, 0)
+        return GTDTreeViewBase.on_button_press(self, widget, event, 0)
 
 
 # Class aggregrating GtkTable to list contexts for tasks
@@ -829,149 +731,6 @@ class RealmAreaDialog(WidgetWrapper):
         if response == gtk.RESPONSE_OK:
             self.widget.hide()
 
-
-# FIXME: too much application knowledge embedded here (GTD signals and other widgets) ?
-class TaskDetailsForm(WidgetWrapper):
-
-    def __init__(self, name, project_store):
-        WidgetWrapper.__init__(self, name)
-        self.__task_notes = GUI().get_widget("task_notes")
-        self.__start = GUI().get_widget("task_start")
-        self.__due = GUI().get_widget("task_due")
-        self.__task_project = GTDCombo("task_project", project_store, ProjectNone())
-        self.__task_contexts = ContextTable("task_contexts_table", self.on_context_toggled)
-        self.__task = None
-
-        self.__task_notes.widget.get_buffer().connect("changed", self.on_task_notes_changed)
-
-    def set_task(self, task):
-        self.__task = task
-        notes = ""
-        start_date = 0 # FIXME: this sets it to today()... we really want blank... (3 others like this)
-        due_date = 0
-        project = None
-        contexts = []
-
-        if isinstance(task, gtd.Task):
-            self.widget.set_sensitive(True)
-            notes = self.__task.notes
-            # FIXME: might be better to wrap the widget so we can simply use datetime objects here
-            if self.__task.start_date:
-                start_date = int(time.mktime(self.__task.start_date.timetuple()))
-            if self.__task.due_date:
-                due_date = int(time.mktime(self.__task.due_date.timetuple()))
-            project = self.__task.project
-            contexts = self.__task.contexts
-        else:
-            self.widget.set_sensitive(False)
-
-        self.__task_notes.widget.get_buffer().set_text(notes)
-        self.__start.widget.set_time(start_date)
-        self.__due.widget.set_time(due_date)
-        self.__task_project.set_active(project)
-        self.__task_contexts.set_active_contexts(contexts)
-
-    def refresh(self):
-        self.set_task(self.__task)
-
-    def get_project(self):
-        return self.__task_project.get_active()
-
-    def on_task_notes_changed(self, buffer):
-        if isinstance(self.__task, gtd.Task):
-            self.__task.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
-
-    def on_task_start_date_changed(self, dateedit):
-        d = datetime.datetime.fromtimestamp(dateedit.get_time())
-        self.__task.start_date = d
-        debug(d)
-
-    def on_task_due_date_changed(self, dateedit):
-        d = datetime.datetime.fromtimestamp(dateedit.get_time())
-        self.__task.due_date = d
-        debug(d)
-
-    def on_task_project_changed(self, project_combo):
-        project = self.get_project()
-        if isinstance(self.__task, gtd.Task) and not self.__task.project == project :
-            self.__task.project.remove_task(self.__task)
-            if isinstance(project, gtd.Project):
-                project.add_task(self.__task)
-            self.__task.project = project
-
-    def on_context_toggled(self, context_checkbox, context):
-        if isinstance(self.__task, gtd.Task):
-            if context_checkbox.get_active():
-                self.__task.add_context(context)
-            else:
-                self.__task.remove_context(context)
-
-
-# FIXME: too much application knowledge embedded here (GTD signals and other widgets) ?
-class ProjectDetailsForm(WidgetWrapper):
-
-    def __init__(self, name, area_store):
-        WidgetWrapper.__init__(self, name)
-        self.__project_notes = GUI().get_widget("project_notes")
-        self.__start = GUI().get_widget("project_start")
-        self.__due = GUI().get_widget("project_due")
-        self.__project_area = GTDCombo("project_area", area_store, AreaNone())
-        self.__project = None
-
-        self.__project_notes.widget.get_buffer().connect("changed", self.on_project_notes_changed)
-
-    def set_project(self, project): # FIXME: consider just using an attribute?
-        self.__project = project
-        notes = ""
-        start_date = 0
-        due_date = 0
-        area = None
-
-        if isinstance(self.__project, gtd.Project):
-            self.widget.set_sensitive(True)
-            notes = self.__project.notes
-            # FIXME: might be better to wrap the widget so we can simply use datetime objects here
-            if self.__project.start_date:
-                start_date = int(time.mktime(self.__project.start_date.timetuple()))
-            if self.__project.due_date:
-                due_date = int(time.mktime(self.__project.due_date.timetuple()))
-            area = self.__project.area
-        else:
-            self.widget.set_sensitive(False)
-
-        self.__project_notes.widget.get_buffer().set_text(notes)
-        self.__start.widget.set_time(start_date)
-        self.__due.widget.set_time(due_date)
-        self.__project_area.set_active(area)
-
-    def refresh(self):
-        self.set_project(self.__project)
-
-    def get_area(self):
-        return self.__project_area.get_active()
-
-    def on_project_notes_changed(self, buffer):
-        if isinstance(self.__project, gtd.Project):
-            self.__project.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
-
-    def on_project_start_date_changed(self, dateedit):
-        d = datetime.datetime.fromtimestamp(dateedit.get_time())
-        self.__project.start_date = d
-        debug(d)
-
-    def on_project_due_date_changed(self, dateedit):
-        d = datetime.datetime.fromtimestamp(dateedit.get_time())
-        self.__project.due_date = d
-        debug(d)
-
-    def on_project_area_changed(self, area_combo):
-        area = self.get_area()
-        debug("%s" % (area.title))
-        if isinstance(self.__project, gtd.Project) and not self.__project.area == area:
-            self.__project.area.remove_project(self.__project)
-            if isinstance(area, gtd.Area):
-                area.add_project(self.__project)
-            self.__project.area = area
 
 class SearchEntry(WidgetWrapper):
 

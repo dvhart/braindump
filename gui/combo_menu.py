@@ -137,7 +137,7 @@ class ComboMenu(gtk.ToggleButton):
     def get_active_item(self):
         """ Return the active item."""
         if self._index >= 0:
-            return self._items[self._index]
+            return self._items[self._index][0]
         return None
 
     def set_active_item(self, item):
