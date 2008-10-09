@@ -28,7 +28,8 @@ o when changing the filtered list of tasks or projects, if the previously
 o add a "[ ] include details" checkbox for the searches
 o Update area_selection model on realm_visible changes
 o norelief combo box: http://code.google.com/p/pychess/source/browse/trunk/lib/pychess/widgets/ToggleComboBox.py?r=978 
-o stacked sidebar
+o delete from filter lists is broken
+o create new tasks/projects results in two new items
 
 Packaging
 o Debian/Ubuntu
@@ -78,14 +79,9 @@ o The Task and Proect Views should always display items from the NonePath, and
   perhaps render them in such as way as to indicate to the user that they need to
   update them.
 
-Signals and Slots
-o right now the scope is at the GTD tree level, rather than at the individual items.
-  There are situations where it might make sense to have the individual widgets listen
-  to the individual tree elements (like the context check boxes listening for a context
-  rename event, while the context_table needs to listen for Added and Removed contexts)
+Signals
 o work to base all gui updates from updates to the data models.  ie. we shouldn't have to 
-  explicitly connect the conext_rename to the context_table.... right?
-o look into gobject signals, we may be able to axe the py-notify dependency
+  explicitly connect the context_rename to the context_table.... right?
 
 GCONF Settings (GNOME dep?)
 o window size and position

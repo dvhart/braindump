@@ -128,7 +128,7 @@ class GTDStore(gobject.GObject):
         return filter
 
     # force all derivative filters to refresh
-    def refilter(self, data):
+    def refilter(self):
         debug("%d filters to refilter in %s" % (len(self.filters), self))
         for f in self.filters:
             f.refilter()
@@ -141,15 +141,16 @@ class GTDStore(gobject.GObject):
             iter = self.model.iter_next(iter)
         return None
 
-    def on_gtd_renamed(self, obj):
+    # FIXME: going to need "changed" for when dates change, etc, we'll need the view updated
+    def on_gtd_renamed(self, tree, obj):
         iter = self.gtd_iter(obj)
         if iter:
             self.model.row_changed(self.model.get_path(iter), iter)
 
-    def on_gtd_added(self, obj):
+    def on_gtd_added(self, tree, obj):
         self.model.append([obj])
 
-    def on_gtd_removed(self, obj):
+    def on_gtd_removed(self, tree, obj):
         iter = self.gtd_iter(obj)
         if iter:
             self.model.remove(iter)
@@ -231,18 +232,18 @@ class RealmAreaStore(gobject.GObject):
 
     # GTD signal handlers
     # FIXME: can we derive from RealmStore and AreaStore
-    def on_realm_renamed(self, realm):
+    def on_realm_renamed(self, tree, realm):
         iter = self.__realm_iter(realm)
         if iter:
             self.model.row_changed(self.model.get_path(iter), iter)
         else:
             error('%s not found in RealmAreaStore' % (area.title))
 
-    def on_realm_added(self, realm):
+    def on_realm_added(self, tree, realm):
         iter = self.model.append(None, [realm])
         self.model.append(iter, [NewArea("Create new area...", realm)])
 
-    def on_realm_removed(self, realm):
+    def on_realm_removed(self, tree, realm):
         # FIXME: what about children (including NewArea) ?
         iter = self.__realm_iter(realm)
         if iter:
@@ -250,18 +251,18 @@ class RealmAreaStore(gobject.GObject):
         else:
             error('%s not found in RealmAreaStore' % (realm.title))
 
-    def on_area_renamed(self, area):
+    def on_area_renamed(self, tree, area):
         iter = self.__area_iter(area)
         if iter:
             self.model.row_changed(self.model.get_path(iter), iter)
         else:
             error('%s not found in RealmAreaStore' % (area.title))
 
-    def on_area_added(self, area):
+    def on_area_added(self, tree, area):
         realm_iter = self.__realm_iter(area.realm)
         self.model.append(realm_iter, [area])
 
-    def on_area_removed(self, area):
+    def on_area_removed(self, tree, area):
         iter = self.__area_iter(area)
         if iter:
             self.model.remove(iter)

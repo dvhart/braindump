@@ -164,9 +164,9 @@ class RealmToggles(WidgetWrapper):
         ti.show_all()
         for r in GTD().realms:
             self.add_realm(r)
-        GTD().sig_realm_added.connect(self.add_realm)
-        GTD().sig_realm_renamed.connect(self.update_realm)
-        GTD().sig_realm_removed.connect(self.remove_realm)
+        GTD().connect("realm_added", self.add_realm)
+        GTD().connect("realm_renamed", self.update_realm)
+        GTD().connect("realm_removed", self.remove_realm)
 
     def _on_toggled(self, widget, realm):
         realm.set_visible(widget.get_active())
@@ -392,7 +392,7 @@ class GTDListView(GTDTreeViewBase):
         if isinstance(obj, NewTask):
             if not obj.title == new_text:
                 self.__new_task_handler(new_text)
-        if isinstance(obj, NewProject):
+        elif isinstance(obj, NewProject):
             # FIXME: NewProject can do this itself...
             Project.create(None, new_text)
         else:
@@ -506,9 +506,9 @@ class ContextTable(WidgetWrapper):
             if not isinstance(c, gtd.ContextNone):
                 self.on_context_added(c)
         # FIXME: decide if this should be connected outside of the widget...
-        GTD().sig_context_added.connect(self.on_context_added)
-        GTD().sig_context_renamed.connect(self.on_context_renamed)
-        GTD().sig_context_removed.connect(self.on_context_removed)
+        GTD().connect("context_added", lambda g,o: self.on_context_added(o))
+        GTD().connect("context_renamed", lambda g,o: self.on_context_renamed(o))
+        GTD().connect("context_removed", lambda g,o: self.on_context_removed(o))
 
     def __rebuild(self, allocation, force=False):
         cols = max(1, min(allocation.width / (self.__max_width+5), len(self.__context_cbs)))

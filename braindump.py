@@ -48,54 +48,54 @@ from xmlstore import *
 
 class GTDSignalTest:
     def __init__(self):
-        GTD().sig_realm_visible_changed.connect(self.on_realm_visible_changed)
-        GTD().sig_realm_renamed.connect(self.on_realm_renamed)
-        GTD().sig_realm_added.connect(self.on_realm_added)
-        GTD().sig_realm_removed.connect(self.on_realm_removed)
-        GTD().sig_area_renamed.connect(self.on_area_renamed)
-        GTD().sig_area_added.connect(self.on_area_added)
-        GTD().sig_area_removed.connect(self.on_area_removed)
-        GTD().sig_project_renamed.connect(self.on_project_renamed)
-        GTD().sig_project_added.connect(self.on_project_added)
-        GTD().sig_project_removed.connect(self.on_project_removed)
-        GTD().sig_task_renamed.connect(self.on_task_renamed)
-        GTD().sig_task_added.connect(self.on_task_added)
-        GTD().sig_task_removed.connect(self.on_task_removed)
-        GTD().sig_context_renamed.connect(self.on_context_renamed)
-        GTD().sig_context_added.connect(self.on_context_added)
-        GTD().sig_context_removed.connect(self.on_context_removed)
+        GTD().connect("realm_visible_changed", self.on_realm_visible_changed)
+        GTD().connect("realm_renamed", self.on_realm_renamed)
+        GTD().connect("realm_added", self.on_realm_added)
+        GTD().connect("realm_removed", self.on_realm_removed)
+        GTD().connect("area_renamed", self.on_area_renamed)
+        GTD().connect("area_added", self.on_area_added)
+        GTD().connect("area_removed", self.on_area_removed)
+        GTD().connect("project_renamed", self.on_project_renamed)
+        GTD().connect("project_added", self.on_project_added)
+        GTD().connect("project_removed", self.on_project_removed)
+        GTD().connect("task_renamed", self.on_task_renamed)
+        GTD().connect("task_added", self.on_task_added)
+        GTD().connect("task_removed", self.on_task_removed)
+        GTD().connect("context_renamed", self.on_context_renamed)
+        GTD().connect("context_added", self.on_context_added)
+        GTD().connect("context_removed", self.on_context_removed)
 
-    def on_realm_visible_changed(self, realm):
+    def on_realm_visible_changed(self, tree, realm):
         debug('on_realm_visible_changed: %s.visible = %s' % (realm.title, realm.visible))
-    def on_realm_renamed(self, realm):
+    def on_realm_renamed(self, tree, realm):
         debug('realm_renamed: %s' % (realm.title))
-    def on_realm_added(self, realm):
+    def on_realm_added(self, tree, realm):
         debug('realm_added: %s' % (realm.title))
-    def on_realm_removed(self, realm):
+    def on_realm_removed(self, tree, realm):
         debug('realm_removed: %s' % (realm.title))
-    def on_area_renamed(self, area):
+    def on_area_renamed(self, tree, area):
         debug('area_renamed: %s' % (area.title))
-    def on_area_added(self, area):
+    def on_area_added(self, tree, area):
         debug('area_added: %s' % (area.title))
-    def on_area_removed(self, area):
+    def on_area_removed(self, tree, area):
         debug('area_removed: %s' % (area.title))
-    def on_project_renamed(self, project):
+    def on_project_renamed(self, tree, project):
         debug('project_renamed: %s' % (project.title))
-    def on_project_added(self, project):
+    def on_project_added(self, tree, project):
         debug('project_added: %s' % (project.title))
-    def on_project_removed(self, project):
+    def on_project_removed(self, tree, project):
         debug('project_removed: %s' % (project.title))
-    def on_task_renamed(self, task):
+    def on_task_renamed(self, tree, task):
         debug('task_renamed: %s' % (task.title))
-    def on_task_added(self, task):
+    def on_task_added(self, tree, task):
         debug('task_added: %s' % (task.title))
-    def on_task_removed(self, task):
+    def on_task_removed(self, tree, task):
         debug('task_removed: %s' % (task.title))
-    def on_context_renamed(self, context):
+    def on_context_renamed(self, tree, context):
         debug('context_renamed: %s' % (context.title))
-    def on_context_added(self, context):
+    def on_context_added(self, tree, context):
         debug('context_added: %s' % (context.title))
-    def on_context_removed(self, context):
+    def on_context_removed(self, tree, context):
         debug('context_removed: %s' % (context.title))
 
 
@@ -160,39 +160,39 @@ class BrainDump(object):
 
 
         ##### Connect GTD Signals #####
-        GTD().sig_realm_renamed.connect(self.realm_store.on_gtd_renamed)
-        GTD().sig_realm_added.connect(self.realm_store.on_gtd_added)
-        GTD().sig_realm_removed.connect(self.realm_store.on_gtd_removed)
+        GTD().connect("realm_renamed", self.realm_store.on_gtd_renamed)
+        GTD().connect("realm_added", self.realm_store.on_gtd_added)
+        GTD().connect("realm_removed", self.realm_store.on_gtd_removed)
 
-        GTD().sig_realm_renamed.connect(self.realm_area_store.on_realm_renamed)
-        GTD().sig_realm_added.connect(self.realm_area_store.on_realm_added)
-        GTD().sig_realm_removed.connect(self.realm_area_store.on_realm_removed)
-        GTD().sig_area_renamed.connect(self.realm_area_store.on_area_renamed)
-        GTD().sig_area_added.connect(self.realm_area_store.on_area_added)
-        GTD().sig_area_removed.connect(self.realm_area_store.on_area_removed)
+        GTD().connect("realm_renamed", self.realm_area_store.on_realm_renamed)
+        GTD().connect("realm_added", self.realm_area_store.on_realm_added)
+        GTD().connect("realm_removed", self.realm_area_store.on_realm_removed)
+        GTD().connect("area_renamed", self.realm_area_store.on_area_renamed)
+        GTD().connect("area_added", self.realm_area_store.on_area_added)
+        GTD().connect("area_removed", self.realm_area_store.on_area_removed)
 
         # Note: the order here is critical, otherwise combo boxes will update
         # to hide objects from hidden realms, inadvertantly changing the gtd
         # object they represent... FIXME: pretty fragile...
-        GTD().sig_realm_visible_changed.connect(self.task_store.refilter)
-        GTD().sig_realm_visible_changed.connect(self.project_store.refilter)
-        GTD().sig_realm_visible_changed.connect(self.area_store.refilter)
+        GTD().connect("realm_visible_changed", lambda g,o: self.task_store.refilter())
+        GTD().connect("realm_visible_changed", lambda g,o: self.project_store.refilter())
+        GTD().connect("realm_visible_changed", lambda g,o: self.area_store.refilter())
 
-        GTD().sig_area_renamed.connect(self.area_store.on_gtd_renamed)
-        GTD().sig_area_added.connect(self.area_store.on_gtd_added)
-        GTD().sig_area_removed.connect(self.area_store.on_gtd_removed)
+        GTD().connect("area_renamed", self.area_store.on_gtd_renamed)
+        GTD().connect("area_added", self.area_store.on_gtd_added)
+        GTD().connect("area_removed", self.area_store.on_gtd_removed)
 
-        GTD().sig_project_renamed.connect(self.project_store.on_gtd_renamed)
-        GTD().sig_project_added.connect(self.project_store.on_gtd_added)
-        GTD().sig_project_removed.connect(self.project_store.on_gtd_removed)
+        GTD().connect("project_renamed", self.project_store.on_gtd_renamed)
+        GTD().connect("project_added", self.project_store.on_gtd_added)
+        GTD().connect("project_removed", self.project_store.on_gtd_removed)
 
-        GTD().sig_task_renamed.connect(self.task_store.on_gtd_renamed)
-        GTD().sig_task_added.connect(self.task_store.on_gtd_added)
-        GTD().sig_task_removed.connect(self.task_store.on_gtd_removed)
+        GTD().connect("task_renamed", self.task_store.on_gtd_renamed)
+        GTD().connect("task_added", self.task_store.on_gtd_added)
+        GTD().connect("task_removed", self.task_store.on_gtd_removed)
 
-        GTD().sig_context_renamed.connect(self.context_store.on_gtd_renamed)
-        GTD().sig_context_added.connect(self.context_store.on_gtd_added)
-        GTD().sig_context_removed.connect(self.context_store.on_gtd_removed)
+        GTD().connect("context_renamed", self.context_store.on_gtd_renamed)
+        GTD().connect("context_added", self.context_store.on_gtd_added)
+        GTD().connect("context_removed", self.context_store.on_gtd_removed)
 
 
         ##### Build the GUI #####
@@ -220,8 +220,9 @@ class BrainDump(object):
             self.project_store_filter_by_realm_no_action,
             self.area_store_filter_by_realm_no_action)
 
-        self.filters_sidebar.connect("changed", self.task_store.refilter)
-        self.filters_sidebar.connect("changed", self.project_store.refilter)
+        # FIXME: this passes a widget to refilter, and not GTD()... which we don't use anyway
+        self.filters_sidebar.connect("changed", lambda w: self.task_store.refilter())
+        self.filters_sidebar.connect("changed", lambda w: self.project_store.refilter())
 
         self.gtd_list = GTDListView("gtd_list", self.task_store_filter, self.on_new_task)
         self.gtd_list.widget.get_selection().connect("changed", self.on_gtd_list_selection_changed)
@@ -356,7 +357,7 @@ class BrainDump(object):
         self.details_form.set_subject(subject)
 
     # Task and project date filter callbacks
-    # FIXME: gotta be a better place for these!
+    # FIXME: gotta be a better place for these (they don't reference self, move them out of this file)
     # FIXME: consider just subclassing them?  Seems silly to subclass for only one instantiation...
     def all_filter_callback(self, obj):
         # FIXME: ewww...
@@ -402,9 +403,6 @@ class BrainDump(object):
         # update the gtd_list model
         model = self.work_with.get_active_item()[1]
         self.gtd_list.widget.set_model(model.model_filter)
-
-        # FIXME: update the rest of the gui to work with tasks or projects...
-        # XXXXXXXXX
 
         # update the menu radio items accordingly
         if index == 0:

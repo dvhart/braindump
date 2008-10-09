@@ -42,25 +42,25 @@ class XMLStore(object):
 
     def connect(self, tree):
         # new signals
-        tree.sig_context_added.connect(self.save_context)
-        tree.sig_task_added.connect(self.save_task)
-        tree.sig_project_added.connect(self.save_project)
-        tree.sig_area_added.connect(self.save_area)
-        tree.sig_realm_added.connect(self.save_realm)
+        tree.connect("context_added", lambda t,o: self.save_context(o))
+        tree.connect("task_added", lambda t,o: self.save_task(o))
+        tree.connect("project_added", lambda t,o: self.save_project(o))
+        tree.connect("area_added", lambda t,o: self.save_area(o))
+        tree.connect("realm_added", lambda t,o: self.save_realm(o))
 
         # modify signals
-        tree.sig_context_modified.connect(self.save_context)
-        tree.sig_task_modified.connect(self.save_task)
-        tree.sig_project_modified.connect(self.save_project)
-        tree.sig_area_modified.connect(self.save_area)
-        tree.sig_realm_modified.connect(self.save_realm)
+        tree.connect("context_modified", lambda t,o: self.save_context(o))
+        tree.connect("task_modified", lambda t,o: self.save_task(o))
+        tree.connect("project_modified", lambda t,o: self.save_project(o))
+        tree.connect("area_modified", lambda t,o: self.save_area(o))
+        tree.connect("realm_modified", lambda t,o: self.save_realm(o))
 
         # remove signals
-        tree.sig_context_removed.connect(self.delete_object)
-        tree.sig_task_removed.connect(self.delete_object)
-        tree.sig_project_removed.connect(self.delete_object)
-        tree.sig_area_removed.connect(self.delete_object)
-        tree.sig_realm_removed.connect(self.delete_object)
+        tree.connect("context_removed", lambda t,o: self.delete_object(o))
+        tree.connect("task_removed", lambda t,o: self.delete_object(o))
+        tree.connect("project_removed", lambda t,o: self.delete_object(o))
+        tree.connect("area_removed", lambda t,o: self.delete_object(o))
+        tree.connect("realm_removed", lambda t,o: self.delete_object(o))
 
     def load(self, path):
         self.__path = path

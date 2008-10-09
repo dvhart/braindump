@@ -20,11 +20,11 @@
 #
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
+from gobject import *
 import datetime
 from uuid import uuid4
 import pickle
 from singleton import *
-from notify.all import *
 from oproperty import *
 from logging import debug, info, warning, error, critical
 
@@ -62,8 +62,8 @@ class Context(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        GTD().sig_context_renamed(self)
-        GTD().sig_context_modified(self)
+        GTD().emit("context_renamed", self)
+        GTD().emit("context_modified", self)
 
 
 class ContextNone(Context, BaseNone):
@@ -90,8 +90,8 @@ class Realm(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        GTD().sig_realm_renamed(self)
-        GTD().sig_realm_modified(self)
+        GTD().emit("realm_renamed", self)
+        GTD().emit("realm_modified", self)
 
     def get_tasks(self):
         tasks = []
@@ -107,7 +107,7 @@ class Realm(Base):
 
     def set_visible(self, visible):
         self.visible = visible
-        GTD().sig_realm_visible_changed(self)
+        GTD().emit("realm_visible_changed", self)
 
 
 class RealmNone(Base, BaseNone):
@@ -132,7 +132,7 @@ class RealmNone(Base, BaseNone):
 class Area(Base):
     def create(id=None, title="", realm=RealmNone()):
         area = Area(id, title, realm)
-        GTD().sig_area_added(area)
+        GTD().emit("area_added", area)
         return area
     create = staticmethod(create)
 
@@ -144,8 +144,8 @@ class Area(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        GTD().sig_area_renamed(self)
-        GTD().sig_area_modified(self)
+        GTD().emit("area_renamed", self)
+        GTD().emit("area_modified", self)
 
     def set_realm(self, realm):
         if not realm:
@@ -153,7 +153,7 @@ class Area(Base):
             self.__realm = RealmNone()
         else:
             self.__realm = realm
-        GTD().sig_area_modified(self)
+        GTD().emit("area_modified", self)
 
     def get_tasks(self):
         tasks = []
@@ -193,7 +193,7 @@ class AreaNone(Base, BaseNone):
 class Project(Base):
     def create(id=None, title="", notes="", area=None, complete=False):
         project = Project(id, title, notes, area, complete)
-        GTD().sig_project_added(project)
+        GTD().emit("project_added", project)
         return project
     create = staticmethod(create)
 
@@ -213,28 +213,28 @@ class Project(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        GTD().sig_project_renamed(self)
-        GTD().sig_project_modified(self)
+        GTD().emit("project_renamed", self)
+        GTD().emit("project_modified", self)
 
     def set_area(self, area):
         self.__area = area
-        GTD().sig_project_modified(self)
+        GTD().emit("project_modified", self)
 
     def set_complete(self, complete):
         self.__complete = complete
-        GTD().sig_project_modified(self)
+        GTD().emit("project_modified", self)
 
     def set_notes(self, notes):
         self.__notes = notes
-        GTD().sig_project_modified(self)
+        GTD().emit("project_modified", self)
 
     def set_start_date(self, start_date):
         self.__start_date = start_date
-        GTD().sig_project_modified(self)
+        GTD().emit("project_modified", self)
 
     def set_due_date(self, due_date):
         self.__due_date = due_date
-        GTD().sig_project_modified(self)
+        GTD().emit("project_modified", self)
 
     def add_task(self, task):
         self.tasks.append(task)
@@ -274,7 +274,7 @@ class ProjectNone(Base, BaseNone):
 class Task(Base):
     def create(id=None, title="", project=None, contexts=None, notes="", waiting=False, complete=False):
         task = Task(id, title, project, contexts, notes, waiting, complete)
-        GTD().sig_task_added(task)
+        GTD().emit("task_added", task)
         return task
     create = staticmethod(create)
 
@@ -303,7 +303,7 @@ class Task(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        GTD().sig_task_renamed(self)
+        GTD().emit("task_renamed", self)
 
     def set_project(self, project):
         # FIXME: I think this is a hack, this should never be None
@@ -312,33 +312,33 @@ class Task(Base):
             self.__project = project
         else:
             self.__project = ProjectNone()
-        GTD().sig_task_modified(self)
+        GTD().emit("task_modified", self)
 
     def set_complete(self, complete):
         self.__complete = complete
-        GTD().sig_task_modified(self)
+        GTD().emit("task_modified", self)
 
     def set_notes(self, notes):
         self.__notes = notes
-        GTD().sig_task_modified(self)
+        GTD().emit("task_modified", self)
 
     def set_start_date(self, start_date):
         self.__start_date = start_date
-        GTD().sig_task_modified(self)
+        GTD().emit("task_modified", self)
 
     def set_due_date(self, due_date):
         self.__due_date = due_date
-        GTD().sig_task_modified(self)
+        GTD().emit("task_modified", self)
 
     def add_context(self, context):
         if self.contexts.count(context) == 0:
             self.contexts.append(context)
-            GTD().sig_task_modified(self)
+            GTD().emit("task_modified", self)
 
     def remove_context(self, context):
         if self.contexts.count(context):
             self.contexts.remove(context)
-            GTD().sig_task_modified(self)
+            GTD().emit("task_modified", self)
 
     project = OProperty(lambda s: s.__project, set_project)
     notes = OProperty(lambda s: s.__notes, set_notes)
@@ -348,45 +348,46 @@ class Task(Base):
 
 
 # The top-level GTD tree
-class GTD(object):
-    __metaclass__ = Singleton
+class GTD(gobject.GObject):
+    __metaclass__ = GSingleton
+
+    __gsignals__ = {'realm_visible_changed' : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'realm_renamed'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'realm_modified'        : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'realm_added'           : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'realm_removed'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'area_renamed'          : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'area_modified'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'area_added'            : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'area_removed'          : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'project_renamed'       : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'project_modified'      : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'project_added'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'project_removed'       : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'task_renamed'          : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'task_modified'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'task_added'            : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'task_removed'          : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'context_renamed'       : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'context_modified'      : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'context_added'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
+                    'context_removed'       : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,))
+                   }
 
     def __init__(self):
+        gobject.GObject.__init__(self)
         self.contexts = [ContextNone()]
         self.realms = [RealmNone()]
         AreaNone()
         ProjectNone()
 
-        # PyNotify Signals
-        self.sig_realm_visible_changed = Signal()
-        self.sig_realm_renamed = Signal()
-        self.sig_realm_modified = Signal()
-        self.sig_realm_added = Signal()
-        self.sig_realm_removed = Signal()
-        self.sig_area_renamed = Signal()
-        self.sig_area_modified = Signal()
-        self.sig_area_added = Signal()
-        self.sig_area_removed = Signal()
-        self.sig_project_renamed = Signal()
-        self.sig_project_modified = Signal()
-        self.sig_project_added = Signal()
-        self.sig_project_removed = Signal()
-        self.sig_task_renamed = Signal()
-        self.sig_task_modified = Signal()
-        self.sig_task_added = Signal()
-        self.sig_task_removed = Signal()
-        self.sig_context_renamed = Signal()
-        self.sig_context_modified = Signal()
-        self.sig_context_added = Signal()
-        self.sig_context_removed = Signal()
-
     def _add_context(self, context):
         self.contexts.append(context)
-        GTD().sig_context_added(context)
+        self.emit("context_added", context)
 
     def _add_realm(self, realm):
         self.realms.append(realm)
-        GTD().sig_realm_added(realm)
+        self.emit("realm_added", realm)
 
     def context_tasks(self, context):
         tasks = []
@@ -403,7 +404,7 @@ class GTD(object):
                 if t.contexts.count(context):
                     t.contexts.remove(context)
         self.contexts.remove(context)
-        self.sig_context_removed(context)
+        self.emit("context_removed", context)
 
     def remove_realm(self, realm, recurse=False):
         # FIXME: throw exception for input errors?
@@ -413,11 +414,11 @@ class GTD(object):
                     self.remove_area(a, recurse)
                 else:
                     a.realm.remove_area(a)
-                    self.sig_area_removed(a)
+                    self.emit("area_removed", a)
                     RealmNone().add_area(a)
-                    self.sig_area_added(a)
+                    self.emit("area_added", a)
             self.realms.remove(realm)
-            self.sig_realm_removed(realm)
+            self.emit("realm_removed", realm)
 
     def remove_area(self, area, recurse=False):
         # FIXME: throw exception for input errors?
@@ -427,11 +428,11 @@ class GTD(object):
                     self.remove_project(p, recurse)
                 else:
                     p.area.remove_project(p)
-                    self.sig_project_removed(p)
+                    self.emit("project_removed", p)
                     AreaNone().add_project(p)
-                    self.sig_project_added(p)
+                    self.emit("project_added", p)
             area.realm.remove_area(area)
-            self.sig_area_removed(area)
+            self.emit("area_removed", area)
 
     def remove_project(self, project, recurse=False):
         # FIXME: throw exception for input errors?
@@ -441,16 +442,17 @@ class GTD(object):
                     self.remove_task(t, recurse)
                 else:
                     t.project.remove_task(t)
-                    self.sig_task_removed(t)
+                    # FIXME: maybe task_changed is adequate here...
+                    self.emit("task_removed", t)
                     ProjectNone().add_task(t)
-                    self.sig_task_added(t)
+                    self.emit("task_added", t)
             project.area.remove_project(project)
-            self.sig_project_removed(project)
+            self.emit("project_removed", project)
 
     def remove_task(self, task):
         if task.project:
             task.project.remove_task(task)
-            self.sig_task_removed(task)
+            self.emit("task_removed", task)
 
     def print_tree(self):
         print "***** THE CURRENT GTD TREE *****"

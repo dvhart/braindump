@@ -3,21 +3,21 @@ expressed an interest in the forming of the project and it's fundamental
 design, rather than strictly in using the end-result.  As such, please keep in
 mind that this project is "not intelligent design" but rather an evolutionary
 code base.  I am using this project to learn best python practices, and as such
-the object hierarchy and other fundamental design elements are likely (read:
+the object hierarchy and other fundamental design elements are likely to (read:
 will) change, probably drastically.  That said, the end goal is to produce a
-top notch python gnome application.  Constructive criticism about any aspect of
+top notch python gtk task manager.  Constructive criticism about any aspect of
 the project is very welcome.
 
 Thanks,
 
-Darren hart <darren@dvhart.com>
+Darren Hart <darren@dvhart.com>
 
 ------------
 
-BrainDump is a Context based Todo and Note taking application, based largely on
-the productivity tips outlined in the book "Getting Things Done" by David
-Allen.  Tasks are tagged with the context in which you plan to accomplish them
-(Phone Calls, Evening, Online, Weekends, etc.).
+BrainDump is a context based task manager, based largely on the productivity
+tips outlined in the book "Getting Things Done" by David Allen.  Tasks are
+tagged with the context in which you plan to accomplish them (Calls, Evening,
+Online, Weekend, etc.).
 
 Tasks are the leaf node of a tree like hierarchy:
 
@@ -26,27 +26,32 @@ Realm (Personal, Profesional, etc.)
        |-Project
            |-Task
 
-Realms allow you to filter your view of todo items and notes so that you can
-work with a related subset at a time.  The Area and Project levels are used
-during the Weekly Review process to ensure you are making progress on each of
-your responsibilities.
+Realms allow you to filter your view of task so that you can work with a
+related subset at a time.  The area and project levels are used during the
+weekly review process to ensure you are making progress on each of your
+responsibilities.
 
 The user interface is designed to optimize the common cases, which I believe to
 be viewing and checking off tasks, and populating new projects and tasks during
 weekly reviews.  As such, those tasks can be accomplished without the use of
-dialog boxes, excessive mouse clicks, etc.  I intend to make the app save state
-automatically - so there will be no "Save" or "Save As" symmantics, just an
-"Open" to work with a different data file.
+dialog boxes, excessive mouse clicks, etc.  BrainDump saves your data
+automatically - so there will be no "Save" or "Save As" symmantics.
+
+One of the key strengths of BrainDump over other task management tools is a
+multidimensional view of your tasks.  Many tools offer contexts, but I haven't
+found many that allos you to filter tasks by both context and project.
+BrainDump provides advanced filtering which allows you to filter your data by
+context, project, area, and realm, as well as textual search and date based
+filters.  Future versions may included saved searches should the demand arise.
 
 
 The GTD Workflow
 ----------------
 o Use Areas to create the Someday/Maybe Lists
-o Waiting/Delegated? (context, separate flag?,
-o Next Action (vs. a known task you can't quite do yet)
+o Waiting/Delegated? (context, separate flag?)
 
 Dependencies
 ------------
 python      2.5.1       I developed on 2.5.1, not sure what is actually required
-py-notify   0.1.14      http://home.gna.org/py-notify/
+pygtk
 python-sexy 0.1.9       I developed with 0.1.9, not sure what is actually required
