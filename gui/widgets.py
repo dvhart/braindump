@@ -23,6 +23,7 @@
 import time
 import datetime
 import re
+from gobject import *
 import gtk, gtk.glade
 import gnome, gnome.ui
 import sexy
@@ -81,13 +82,14 @@ class GUI(gtk.glade.XML):
         return widget
 
 
-class _WidgetWrapperBase(object):
+class _WidgetWrapperBase(gobject.GObject):
     """Base class for wrapped gtk widgets
 
     This is only used by the GUI class to return unregistered gtk widgets.
     """
 
     def __init__(self, name):
+        gobject.GObject.__init__(self)
         self.widget = GUI()._get_gtk_widget(name)
 
 
@@ -279,34 +281,32 @@ class FilterListView(GTDTreeViewBase):
         selection = self.widget.get_selection()
         selmodel, paths = selection.get_selected_rows()
 
+        # Don't filter if nothing is selected or if the "Create new context..." item is selected
         if len(paths) == 0:
             return True
-
-        # FIXME: is this still relevant
-        if obj is None:
-            debug('FIXME: why are we comparing a none task?')
-            return False
+        elif len(paths) == 1:
+            if isinstance(selmodel[paths[0]][0], GTDActionRow):
+                return True
 
         if isinstance(obj, gtd.Task):
-            if obj.project.area.realm.visible:
-                for path in paths:
-                    comp = selmodel[path][0] # either a project or a context
-                    if isinstance(comp, gtd.Context):
-                        if obj.contexts.count(comp):
-                            return True
-                        if len(obj.contexts) is 0 and isinstance(comp, gtd.ContextNone):
-                            return True
-                    elif isinstance(comp, gtd.Project):
-                        if obj.project is comp:
-                            return True
-                    elif isinstance(comp, gtd.Area):
-                        if obj.project.area is selmodel[path][0]:
-                            return True
-                    elif isinstance(comp, GTDActionRow):
-                        continue
-                    else:
-                        info('cannot filter Task on %s' % (comp.__class__.__name__))
+            for path in paths:
+                comp = selmodel[path][0] # project, context, or area
+                if isinstance(comp, gtd.Context):
+                    if obj.contexts.count(comp):
                         return True
+                    if len(obj.contexts) is 0 and isinstance(comp, gtd.ContextNone):
+                        return True
+                elif isinstance(comp, gtd.Project):
+                    if obj.project is comp:
+                        return True
+                elif isinstance(comp, gtd.Area):
+                    if obj.project.area is selmodel[path][0]:
+                        return True
+                elif isinstance(comp, GTDActionRow):
+                    continue
+                else:
+                    info('cannot filter Task on %s' % (comp.__class__.__name__))
+                    return True
         elif isinstance(obj, gtd.Project):
             for path in paths:
                 comp = selmodel[path][0] # either a project or a context

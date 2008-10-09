@@ -36,6 +36,7 @@ import sexy
 import gtd
 from gtd import GTD
 from gui.combo_menu import *
+from gui.stacked_filters import *
 from gui.details import *
 from gui.widgets import *
 from gui_datastores import *
@@ -150,15 +151,6 @@ class BrainDump(object):
         self.context_store_filter_no_action = self.context_store.filter_new()
         self.context_store_filter_no_action.append(self.hide_actions)
 
-        # Task selection filter store
-        self.task_selection_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
-        self.task_selection_filter_store.append([ModelItem("By Context",
-            self.context_store.filter_new())])
-        self.task_selection_filter_store.append([ModelItem("By Project",
-            self.project_store_filter_by_realm_no_action)])
-        self.task_selection_filter_store.append([ModelItem("By Area",
-            self.area_store_filter_by_realm_no_action)])
-
         # Date filter store
         self.date_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
         self.date_filter_store.append([FilterItem("All Items", self.all_filter_callback)])
@@ -224,21 +216,17 @@ class BrainDump(object):
         GUI().get_widget("work_with_placeholder").widget.add(self.work_with)
         self.work_with.show_all()
 
-        # Task Tab
-        self.filter_list = FilterListView("filter_list")
+        self.filters_sidebar = StackedFilters("filters", self.context_store.filter_new(),
+            self.project_store_filter_by_realm_no_action,
+            self.area_store_filter_by_realm_no_action)
 
-        # Clear the filter
-        self.filters_clear = GUI().get_widget("filters_clear")
-        self.filters_clear.widget.connect("clicked", lambda w: self.filter_list.widget.get_selection().unselect_all())
+        self.filters_sidebar.connect("changed", self.task_store.refilter)
+        self.filters_sidebar.connect("changed", self.project_store.refilter)
 
-        self.task_filter_by = ModelCombo("task_filter_by", self.task_selection_filter_store)
-        self.task_filter_by.widget.connect("changed", lambda w: self.filter_list.widget.set_model(self.task_filter_by.get_active().model.model_filter))
-
-        # FIXME: rename, no longer task specific...
         self.gtd_list = GTDListView("gtd_list", self.task_store_filter, self.on_new_task)
         self.gtd_list.widget.get_selection().connect("changed", self.on_gtd_list_selection_changed)
-        self.filter_list.widget.get_selection().connect("changed", self.task_store.refilter)
-        self.filter_list.widget.get_selection().connect("changed", self.project_store.refilter)
+
+        # FIXME: we need to get gobject signals working
 
         self.details_form = Details("details_form",
                                     self.project_store_filter_by_realm_no_action,
@@ -260,20 +248,19 @@ class BrainDump(object):
         # FIXME: store this in gconf?
         self.work_with.set_active(0)
         self.filter_by_date.widget.set_active(0)
-        self.task_filter_by.widget.set_active(0)
         self.default_project.set_active(-1)
         self.default_context.set_active(-1)
 
         # Build the filters and refilter them
         self.task_store_filter.append(self.task_by_realm)
-        self.task_store_filter.append(Filter(self.filter_list.selection_match))
+        self.task_store_filter.append(self.filters_sidebar.filter)
         self.task_store_filter.append(Filter(self.search.search))
         self.task_store_filter.append(Filter(self.filter_by_date.filter))
         self.task_store_filter.refilter()
 
         self.project_store_filter_by_area.append(self.project_by_realm)
         self.project_store_filter_by_area.append(Filter(lambda p: not isinstance(p, gtd.BaseNone)))
-        self.project_store_filter_by_area.append(Filter(self.filter_list.selection_match))
+        self.project_store_filter_by_area.append(self.filters_sidebar.filter)
         self.project_store_filter_by_area.append(Filter(self.search.search))
         self.project_store_filter_by_area.append(Filter(self.filter_by_date.filter))
         self.project_store_filter_by_area.refilter()
