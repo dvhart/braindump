@@ -345,8 +345,8 @@ class GTDListView(GTDTreeViewBase):
 
         self.__new_task_handler = new_task_handler
         self.widget.set_model(task_store.model_filter)
-        task_store.model_filter.connect("row_inserted", self._on_row_inserted)
-        task_store.model_filter.connect("row_deleted", self._on_row_deleted)
+        task_store.model_filter.connect("row_inserted", lambda m,p,i: self._on_row_inserted(p, i))
+        task_store.model_filter.connect("row_deleted", lambda m,p: self._on_row_deleted(p))
 
         # create the TreeViewColumns to display the data
         tvcolumn0 = gtk.TreeViewColumn("Done")
@@ -360,10 +360,10 @@ class GTDListView(GTDTreeViewBase):
 
         # create the CellRenderers
         cell0 = gtk.CellRendererToggle()
-        cell0.connect('toggled', self._on_toggled, self.widget.get_model(), 0)
+        cell0.connect('toggled', self._on_toggled)
         cell1 = gtk.CellRendererText()
         cell1.set_property('editable', True)
-        cell1.connect('edited', self._on_edited, lambda: self.widget.get_model(), 1)
+        cell1.connect('edited', self._on_edited)
         cell2 = gtk.CellRendererText()
 
         # attach the CellRenderers to each column
@@ -379,14 +379,13 @@ class GTDListView(GTDTreeViewBase):
         # make it searchable
         self.widget.set_search_column(1)
 
-    def _on_toggled(self, cell, path, model, column):
-        complete = model[path][column]
-        obj = model[path][0]
-        if isinstance(obj, gtd.Task):
+    def _on_toggled(self, cell, path):
+        obj = self.widget.get_model()[path][0]
+        if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             obj.complete = not obj.complete
 
-    def _on_edited(self, cell, path, new_text, model_lambda, column):
-        obj = model_lambda()[path][0]
+    def _on_edited(self, cell, path, new_text):
+        obj = self.widget.get_model()[path][0]
         if isinstance(obj, NewTask):
             if not obj.title == new_text:
                 self.__new_task_handler(new_text)
@@ -396,11 +395,11 @@ class GTDListView(GTDTreeViewBase):
         else:
             obj.title = new_text
 
-    def _on_row_inserted(self, model, path, iter):
+    def _on_row_inserted(self, path, iter):
         if (self.follow_new):
             self.widget.set_cursor(path, None, True)
 
-    def _on_row_deleted(self, model, path):
+    def _on_row_deleted(self, path):
         if self.widget.get_cursor()[0] is None:
             self.widget.set_cursor((0)) # FIXME: ideally we would just emit the cursor-changed
                                         # signal when the current row was deleted... but for some
@@ -418,12 +417,16 @@ class GTDListView(GTDTreeViewBase):
             title = obj.title
             if isinstance(obj, GTDActionRow):
                 title = "<i>"+title+"</i>"
+            elif obj.complete:
+                title = "<s>"+title+"</s>"
             cell.set_property("markup", title)
         elif data is "due_date":
             if isinstance(obj, GTDActionRow):
                 due_date = "-"
             elif obj.due_date:
                 due_date = obj.due_date.strftime("%b %e") # FIXME: use friendly dates (relative to today())
+                if obj.complete:
+                    due_date = "<s>"+due_date+"</s>"
             else:
                 due_date = "-"
             cell.set_property("markup", due_date)
