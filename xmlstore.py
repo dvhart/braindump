@@ -10,7 +10,6 @@ from logging import debug, info, warning, error, critical
 
 # FIXME: should we make the dates TZ aware ?
 # http://docs.python.org/lib/datetime-datetime.html
-#_DATE_FORMAT = "%F %T"
 _DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # FIXME: I think in the end, we should eliminate the singleton GTD()
@@ -99,10 +98,13 @@ class XMLStore(object):
 
         start_date_str = ""
         due_date_str = ""
+        complete_str = ""
         if task.start_date:
             start_date_str = task.start_date.strftime(_DATE_FORMAT)
         if task.due_date:
             due_date_str = task.due_date.strftime(_DATE_FORMAT)
+        if task.complete:
+            complete_str = task.complete.strftime(_DATE_FORMAT)
 
         fd = open("xml/" + id_str + ".xml", "w")
         x = saxutils.XMLGenerator(fd)
@@ -121,7 +123,7 @@ class XMLStore(object):
             if not isinstance(c, gtd.ContextNone):
                 debug("referencing context: %s" % (c.title))
                 self._simple_element(x, "context_ref", {"id":str(c.id)})
-        self._simple_element(x, "complete", {}, str(task.complete))
+        self._simple_element(x, "complete", {}, complete_str)
         x.endElement("task")
         x.endDocument()
 
@@ -133,10 +135,13 @@ class XMLStore(object):
 
         start_date_str = ""
         due_date_str = ""
+        complete_str = ""
         if project.start_date:
             start_date_str = project.start_date.strftime(_DATE_FORMAT)
         if project.due_date:
             due_date_str = project.due_date.strftime(_DATE_FORMAT)
+        if project.complete:
+            complete_str = project.complete.strftime(_DATE_FORMAT)
 
         fd = open("xml/" + id_str + ".xml", "w")
         x = saxutils.XMLGenerator(fd)
@@ -149,7 +154,7 @@ class XMLStore(object):
         self._simple_element(x, "due_date", {}, due_date_str)
         if not isinstance(project.area, gtd.AreaNone):
             self._simple_element(x, "area_ref", {"id":str(project.area.id)})
-        self._simple_element(x, "complete", {}, str(project.complete))
+        self._simple_element(x, "complete", {}, complete_str)
         x.endElement("project")
         x.endDocument()
 
@@ -271,9 +276,9 @@ class GTDContentHandler(handler.ContentHandler):
             if chars:
                 self.__subject.due_date = datetime.strptime(chars, _DATE_FORMAT)
         elif name == "complete":
-            complete = False
-            if chars == "True":
-                complete = True
+            complete = None
+            if chars:
+                complete = datetime.strptime(chars, _DATE_FORMAT)
             self.__subject.complete = complete
 
         # Elements we do nothing with on endElement

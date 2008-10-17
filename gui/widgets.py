@@ -411,7 +411,10 @@ class GTDListView(GTDTreeViewBase):
             if isinstance(obj, GTDActionRow):
                 cell.set_property("inconsistent", True)
             else:
-                cell.set_property("active", obj.complete)
+                active = False
+                if obj.complete:
+                    active = True
+                cell.set_property("active", active)
                 cell.set_property("inconsistent", False)
         elif data is "title":
             title = obj.title

@@ -205,13 +205,13 @@ class AreaNone(Base, BaseNone):
 
 
 class Project(Base):
-    def create(id=None, title="", notes="", area=None, complete=False):
-        project = Project(id, title, notes, area, complete)
+    def create(id=None, title="", notes="", area=None):
+        project = Project(id, title, notes, area)
         GTD().emit("project_added", project)
         return project
     create = staticmethod(create)
 
-    def __init__(self, id, title, notes, area, complete):
+    def __init__(self, id, title, notes, area):
         self.tasks = []
         Base.__init__(self, id, title)
         if area:
@@ -223,7 +223,7 @@ class Project(Base):
         self.__notes = notes
         self.__start_date = None
         self.__due_date = None
-        self.__complete = complete
+        self.__complete = None
 
     def set_title(self, title):
         Base.set_title(self, title)
@@ -235,6 +235,12 @@ class Project(Base):
         GTD().emit("project_modified", self)
 
     def set_complete(self, complete):
+        if complete == True:
+            complete = datetime.datetime.now()
+        elif complete == False:
+            complete = None
+        elif complete is not None:
+            assert isinstance(complete, datetime.datetime)
         self.__complete = complete
         GTD().emit("project_modified", self)
 
@@ -286,13 +292,13 @@ class ProjectNone(Base, BaseNone):
 
 
 class Task(Base):
-    def create(id=None, title="", project=None, contexts=None, notes="", waiting=False, complete=False):
-        task = Task(id, title, project, contexts, notes, waiting, complete)
+    def create(id=None, title="", project=None, contexts=None, notes="", waiting=False):
+        task = Task(id, title, project, contexts, notes, waiting)
         GTD().emit("task_added", task)
         return task
     create = staticmethod(create)
 
-    def __init__(self, id, title, project, contexts, notes, waiting, complete):
+    def __init__(self, id, title, project, contexts, notes, waiting):
         Base.__init__(self, id, title)
         if project:
             self.__project = project
@@ -313,7 +319,7 @@ class Task(Base):
         self.__start_date = None # these will be datetime objects
         self.__due_date = None
         self.__waiting = waiting
-        self.__complete = complete
+        self.__complete = None
 
     def set_title(self, title):
         Base.set_title(self, title)
@@ -329,6 +335,12 @@ class Task(Base):
         GTD().emit("task_modified", self)
 
     def set_complete(self, complete):
+        if complete == True:
+            complete = datetime.datetime.now()
+        elif complete == False:
+            complete = None
+        elif complete is not None:
+            assert isinstance(complete, datetime.datetime)
         self.__complete = complete
         GTD().emit("task_modified", self)
 
