@@ -93,6 +93,16 @@ class ActionRowFilter(Filter):
             return self._show_actions
         return True
 
+class CompletedFilter(Filter):
+    def __init__(self):
+        Filter.__init__(self, self.filter_completed)
+
+    def filter_completed(self, obj):
+        if isinstance(obj, GTDActionRow):
+            return True
+        elif obj.complete:
+            return False
+        return True
 
 # Datastores (GTD model constructors basically)
 class GTDStore(gobject.GObject):

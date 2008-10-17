@@ -121,10 +121,12 @@ class BrainDump(object):
         # Instantiate the various GUI datastores and filters from the GTD() singleton tree
         # FIXME: filter name is overloaded, clarify model, store, and filter.
         #        keep all filter_new calls here in initialization (not below in model assignments...)
+        # FIXME: better names for the filters
         self.hide_actions = ActionRowFilter(False)
         self.task_by_realm = TaskByRealmFilter()
         self.project_by_realm = ProjectByRealmFilter()
         self.area_by_realm = AreaByRealmFilter()
+        self.completed_filter = CompletedFilter()
 
         self.realm_store = RealmStore()
         self.realm_store_action = self.realm_store.filter_new()
@@ -258,17 +260,24 @@ class BrainDump(object):
         self.task_store_filter.append(self.filters_sidebar.filter)
         self.task_store_filter.append(Filter(self.search.search))
         self.task_store_filter.append(Filter(self.filter_by_date.filter))
-        self.task_store_filter.refilter()
 
         self.project_store_filter_by_area.append(self.project_by_realm)
         self.project_store_filter_by_area.append(Filter(lambda p: not isinstance(p, gtd.BaseNone)))
         self.project_store_filter_by_area.append(self.filters_sidebar.filter)
         self.project_store_filter_by_area.append(Filter(self.search.search))
         self.project_store_filter_by_area.append(Filter(self.filter_by_date.filter))
-        self.project_store_filter_by_area.refilter()
 
         self.project_store_filter_by_realm.append(self.project_by_realm)
         self.project_store_filter_by_realm_no_action.extend([self.project_by_realm, self.hide_actions])
+
+        # Filter out complete tasks if not explicitly checked
+        print "SHOW_COMPLETED: ", GUI().get_widget("show_completed").widget.get_active()
+        if not GUI().get_widget("show_completed").widget.get_active():
+            self.task_store_filter.append(self.completed_filter)
+            self.project_store_filter_by_area.append(self.completed_filter)
+
+        self.task_store_filter.refilter()
+        self.project_store_filter_by_area.refilter()
         self.project_store_filter_by_realm_no_action.refilter()
 
     # Application logic follows
@@ -287,6 +296,16 @@ class BrainDump(object):
             index = self.work_with.get_active()
             if index == 0:
                 self.work_with.set_active(1)
+
+    def on_show_completed_toggled(self, menuitem):
+        if menuitem.get_active():
+            self.task_store_filter.remove(self.completed_filter)
+            self.project_store_filter_by_area.remove(self.completed_filter)
+        else:
+            self.task_store_filter.append(self.completed_filter)
+            self.project_store_filter_by_area.append(self.completed_filter)
+        self.task_store_filter.refilter()
+        self.project_store_filter_by_area.refilter()
 
     def on_realms_and_areas_activate(self, menuitem):
         self.realm_area_dialog.widget.show()
