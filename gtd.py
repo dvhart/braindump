@@ -39,9 +39,32 @@ class Base(object):
         else:
             self.id = id
         self.__title = title
+        self.__tags = {}
 
     def set_title(self, title):
         self.__title = title
+
+    def tag(self, label, val=None):
+        if not label:
+            error("label is None")
+        elif val is not None:
+            self.__tags[label] = val
+        elif self.__tags.has_key(label):
+            return self.__tags[label]
+        else:
+            debug("label (%s) not in tags" % (label))
+            return None
+
+    def remove_tag(self, label):
+        ret = None
+        if not label:
+            error("label is None")
+        elif self.__tags.has_key(label):
+            ret = self.__tags[label]
+            self.__tags.pop(label)
+        else:
+            debug("label (%s) not in tags" % (label))
+        return ret
 
     title = OProperty(lambda s: s.__title, set_title)
 
