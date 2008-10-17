@@ -20,6 +20,9 @@
 #
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
+import os
+from fnmatch import fnmatch
+from string import *
 import time
 import datetime
 import re
@@ -277,7 +280,6 @@ class FilterListView(GTDTreeViewBase):
         cell.set_property("markup", title)
 
     def selection_match(self, obj):
-        print "selection match: ", obj.title
         if isinstance(obj, GTDActionRow):
             return True
 
@@ -330,6 +332,9 @@ class GTDListView(GTDTreeViewBase):
     follow_new -- whether or not to jump to a newly created gtd object
     """
 
+    # FIXME: we should get this from settings
+    __countdown_timeout = 2
+
     # FIXME: should be ables to remove the store from the constructor
     # as we will use several for this tree throughout the use of the program
     # setup the callbacks from the caller
@@ -342,6 +347,10 @@ class GTDListView(GTDTreeViewBase):
         """
         GTDTreeViewBase.__init__(self, name)
         self.follow_new = True
+        self.show_completed = False
+
+        self.__countdown_pixbufs = {}
+        self._load_countdown_pixbufs()
 
         self.__new_task_handler = new_task_handler
         self.widget.set_model(task_store.model_filter)
@@ -352,11 +361,13 @@ class GTDListView(GTDTreeViewBase):
         tvcolumn0 = gtk.TreeViewColumn("Done")
         tvcolumn1 = gtk.TreeViewColumn("Title")
         tvcolumn2 = gtk.TreeViewColumn("Due")
+        tvcolumn3 = gtk.TreeViewColumn("")
 
         # append the columns to the view
         self.widget.append_column(tvcolumn0)
         self.widget.append_column(tvcolumn1)
         self.widget.append_column(tvcolumn2)
+        self.widget.append_column(tvcolumn3)
 
         # create the CellRenderers
         cell0 = gtk.CellRendererToggle()
@@ -365,24 +376,67 @@ class GTDListView(GTDTreeViewBase):
         cell1.set_property('editable', True)
         cell1.connect('edited', self._on_edited)
         cell2 = gtk.CellRendererText()
+        cell3 = gtk.CellRendererPixbuf()
 
         # attach the CellRenderers to each column
         tvcolumn0.pack_start(cell0) # expand True by default
         tvcolumn1.pack_start(cell1)
         tvcolumn2.pack_start(cell2)
+        tvcolumn3.pack_start(cell3)
 
         # display data directly from the gtd object, rather than setting attributes
         tvcolumn0.set_cell_data_func(cell0, self._data_func, "complete")
         tvcolumn1.set_cell_data_func(cell1, self._data_func, "title")
         tvcolumn2.set_cell_data_func(cell2, self._data_func, "due_date")
+        tvcolumn3.set_cell_data_func(cell3, self._data_func, "countdown")
 
         # make it searchable
         self.widget.set_search_column(1)
 
+    # FIXME: we clearly need to abstract the pixbuf fetching :)
+    def _load_countdown_pixbufs(self):
+        for file in os.listdir("images"):
+            if fnmatch(file, "countdown-*.png"):
+                index = atoi(file.replace("countdown-", "").replace(".png", ""))
+                self.__countdown_pixbufs[index] = gtk.gdk.pixbuf_new_from_file("images/"+file)
+
     def _on_toggled(self, cell, path):
-        obj = self.widget.get_model()[path][0]
+        model = self.widget.get_model()
+        obj = model[path][0]
         if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
-            obj.complete = not obj.complete
+            if obj.complete:
+                obj.complete = None
+            else:
+                # note: we don't track the timeouts, so should we ever need to cancel one
+                #       we'll have add something to that effect
+                if not self.show_completed:
+                    obj.tag("countdown_frame", 0)
+                    model = self.widget.get_model()
+                    store = model.get_model()
+                    store_path = model.convert_path_to_child_path(path)
+                    gobject.timeout_add(self.__countdown_timeout*1000/len(self.__countdown_pixbufs), self._complete_timeout,
+                                        store, store_path, obj)
+                obj.complete = True
+
+    # FIXME: if a row is added or deleted, our path may become invalid
+    # we need to determine this (maybe using TreeModelGeneric models)
+    # and find our path via the obj instead... yuk...
+    def _complete_timeout(self, store, path, obj):
+        if not obj.complete:
+            return False
+
+        frame = obj.tag("countdown_frame")
+        if frame >=0:
+            if frame <= (len(self.__countdown_pixbufs) - 1):
+                obj.tag("countdown_frame", frame+1)
+            else:
+                obj.remove_tag("countdown_frame")
+
+            iter = store.get_iter(path)
+            store.row_changed(path, iter)
+            return True
+
+        return False
 
     def _on_edited(self, cell, path, new_text):
         obj = self.widget.get_model()[path][0]
@@ -433,7 +487,13 @@ class GTDListView(GTDTreeViewBase):
             else:
                 due_date = "-"
             cell.set_property("markup", due_date)
-
+        elif data is "countdown":
+            pixbuf = None
+            if not self.show_completed and not isinstance(obj, GTDActionRow) and obj.complete:
+                frame = obj.tag("countdown_frame")
+                if frame >= 0 and frame < len(self.__countdown_pixbufs):
+                    pixbuf = self.__countdown_pixbufs[frame]
+            cell.set_property("pixbuf", pixbuf)
         else:
             # FIXME: throw an exception
             error('ERROR: didn\'t set %s property for %s' % (data, obj.title))

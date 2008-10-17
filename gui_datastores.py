@@ -100,8 +100,8 @@ class CompletedFilter(Filter):
     def filter_completed(self, obj):
         if isinstance(obj, GTDActionRow):
             return True
-        elif obj.complete:
-            return False
+        elif obj.complete and obj.tag("countdown_frame") is None:
+                return False
         return True
 
 # Datastores (GTD model constructors basically)

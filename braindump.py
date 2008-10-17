@@ -189,7 +189,9 @@ class BrainDump(object):
         GTD().connect("project_added", self.project_store.on_gtd_added)
         GTD().connect("project_removed", self.project_store.on_gtd_removed)
 
+        # FIXME: just delete renamed, and use modified everywhere..
         GTD().connect("task_renamed", self.task_store.on_gtd_renamed)
+        GTD().connect("task_modified", self.task_store.on_gtd_renamed)
         GTD().connect("task_added", self.task_store.on_gtd_added)
         GTD().connect("task_removed", self.task_store.on_gtd_removed)
 
@@ -271,10 +273,12 @@ class BrainDump(object):
         self.project_store_filter_by_realm_no_action.extend([self.project_by_realm, self.hide_actions])
 
         # Filter out complete tasks if not explicitly checked
-        print "SHOW_COMPLETED: ", GUI().get_widget("show_completed").widget.get_active()
         if not GUI().get_widget("show_completed").widget.get_active():
             self.task_store_filter.append(self.completed_filter)
             self.project_store_filter_by_area.append(self.completed_filter)
+            self.gtd_list.show_completed = False
+        else:
+            self.gtd_list.show_completed = True
 
         self.task_store_filter.refilter()
         self.project_store_filter_by_area.refilter()
@@ -301,9 +305,11 @@ class BrainDump(object):
         if menuitem.get_active():
             self.task_store_filter.remove(self.completed_filter)
             self.project_store_filter_by_area.remove(self.completed_filter)
+            self.gtd_list.show_completed = True
         else:
             self.task_store_filter.append(self.completed_filter)
             self.project_store_filter_by_area.append(self.completed_filter)
+            self.gtd_list.show_completed = False
         self.task_store_filter.refilter()
         self.project_store_filter_by_area.refilter()
 
