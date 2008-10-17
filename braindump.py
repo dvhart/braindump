@@ -36,6 +36,7 @@ import sexy
 import gtd
 from gtd import GTD
 from gui.combo_menu import *
+from gui.context_table import *
 from gui.stacked_filters import *
 from gui.details import *
 from gui.widgets import *
@@ -440,13 +441,6 @@ def usage():
     print '                           INFO, ERROR, CRITICAL'
 
 def main():
-    # FIXME: why the try block here? What are the props for?
-    #try:
-    #    props = { gnome.PARAM_APP_DATADIR : '/usr/share'}
-    #    prog = gnome.program_init('braindump', '0.01', properties=props)
-    #except:
-    #    prog = gnome.program_init('braindump', '0.01')
-    #    prog.set_property('app-datadir', '/usr/share')
     logging.basicConfig(level=logging.ERROR,
                         format='%(levelname)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s')
 
@@ -475,7 +469,6 @@ def main():
         else:
             assert False, "unhandled option"
 
-    gnome.init("braindump", "0.01") # simpler alternative to the props/prog bits above
     app = BrainDump()
     gtk.main()
 

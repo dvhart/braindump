@@ -86,10 +86,9 @@
     <property name="border_width">5</property>
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+    <property name="program_name">BrainDump</property>
     <property name="copyright" translatable="yes">Copyright © 2007-2008 Darren Hart</property>
-    <property name="comments" translatable="yes">BrainDump is a task
-management inspired by
-David Allen's GTD model.</property>
+    <property name="comments" translatable="yes">A context based task management system</property>
     <property name="website">http://www.dvhart.com/braindump</property>
     <property name="website_label" translatable="yes">http://www.dvhart.com/braindump</property>
     <property name="authors">Darren Hart &lt;darren@dvhart.com&gt;</property>
@@ -1221,8 +1220,8 @@ Realm</property>
                 </child>
               </widget>
               <packing>
-                <property name="resize">False</property>
-                <property name="shrink">True</property>
+                <property name="resize">True</property>
+                <property name="shrink">False</property>
               </packing>
             </child>
           </widget>

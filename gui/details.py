@@ -24,6 +24,7 @@ import time
 import datetime
 import gtk, gtk.glade
 from widgets import *
+from gui.context_table import *
 import gtd
 from logging import debug, info, warning, error, critical
 
@@ -45,10 +46,11 @@ class Details(WidgetWrapper):
         self.__project = GTDCombo("parent_project", project_store, ProjectNone())
         self.__area_label = GUI().get_widget("parent_area_label")
         self.__area = GTDCombo("parent_area", area_store, AreaNone())
-        self.__contexts = ContextTable("context_table", self._on_context_toggled)
+        self.__contexts = ContextTable("context_table")
         self.__subject = None # the gtd object we're working with
 
         self.__notes.widget.get_buffer().connect("changed", self._on_notes_changed)
+        self.__contexts.connect("changed", lambda w,c,a: self._on_context_toggled(c, a))
 
         # Set our initial size request as if all the widgets were visible
         width, height = self.__details_controls.widget.size_request()
@@ -109,9 +111,9 @@ class Details(WidgetWrapper):
                 area.add_project(self.__subject)
             self.__subject.area = area
 
-    def _on_context_toggled(self, context_checkbox, context):
+    def _on_context_toggled(self, context, active):
         if isinstance(self.__subject, gtd.Task):
-            if context_checkbox.get_active():
+            if active:
                 self.__subject.add_context(context)
             else:
                 self.__subject.remove_context(context)
