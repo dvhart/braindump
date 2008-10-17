@@ -63,7 +63,7 @@ class StackedFilters(WidgetWrapper):
         WidgetWrapper.__init__(self, name)
 
         cfw = GUI().get_widget("context_filter_window").widget
-        self.__context_button = ExpanderButton("context_filter", cfw, False)
+        self.__context_button = ExpanderButton("context_filter", cfw, True)
         self.__context_filter_clear = GUI().get_widget("context_filter_clear")
         self.__context_filter_list = FilterListView("context_filter_list")
         self.__context_filter_list.widget.set_model(context_model.model_filter)

@@ -1,5 +1,7 @@
 #    Filename: combo_menu.py
-# Description: Provide a flat combo box for use in panels and titles
+# Description: Provide a flat combo box for use in panels and titles.  Inspired
+#              in part from http://code.google.com/p/pychess/source/browse/trunk/lib/pychess/widgets/ToggleComboBox.py?r=978 
+#              
 # 2008-Oct-02: Initial version
 
 from gobject import *

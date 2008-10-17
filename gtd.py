@@ -110,6 +110,8 @@ class Realm(Base):
         GTD().emit("realm_visible_changed", self)
 
 
+# FIXME: threse should really derive from Realm (or get rid of them all together and store
+# instances of Realm as self.realm_none in the gtd tree
 class RealmNone(Base, BaseNone):
     __metaclass__ =  Singleton
 
@@ -127,6 +129,12 @@ class RealmNone(Base, BaseNone):
     def remove_area(self, area):
         if area is not AreaNone():
             self.areas.remove(area)
+
+    def get_tasks(self):
+        tasks = []
+        for a in self.areas:
+            tasks.extend(a.get_tasks())
+        return tasks
 
 
 class Area(Base):
@@ -188,6 +196,12 @@ class AreaNone(Base, BaseNone):
     def remove_project(self, project):
         if project is not ProjectNone():
             self.projects.remove(project)
+
+    def get_tasks(self):
+        tasks = []
+        for p in self.projects:
+            tasks.extend(p.tasks)
+        return tasks
 
 
 class Project(Base):

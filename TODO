@@ -1,71 +1,82 @@
-This is HORRIBLY incomplete.  The list is immense as the project isn't
-even completely functional yet.  Right now I just start the app, pick some
-unimplemented bit, and hack away...  I'll update this file to remind me
-of things I can't just as easily do via inline '# FIXME's
-
-Basic Functionality
+Version 1.0 Tasks
+=================
 o Recursive delete option
-  - recurse =false is used by default now and delete is disabled for the
+  - recurse=false is used by default now and delete is disabled for the
     objects with paren't in the None Path
   - need a dialog to confirm recursive delete (may be a new menu item so
     "delete" never needs a dialog)
+o Rethink the NonePath...
 o Determine how to deal with "Waiting" tasks, perhaps a delegated field?
-o fix about dialog name "braindump.py" to "BrainDump", glade shows "BrainDump
-  1.0", not sure what's going on the about dialog's widget->name seems to be
-  "braindump.py" ???
-o recalculate sizing for context table after context renaming
-o decide what to do about left side of the window.  Lining up with the menu
-  indents everything a bit too much
-o consider implementing a date/time widget like (gnome-date-entry sucks goats): 
+o reimplement a date/time widget (gnome-date-entry sucks goats): 
   http://www.mail-archive.com/pygtk@daa.com.au/msg12160.html
-o replace the task filter strings with task filter by store objects, one for
-  contexts and one for projects, each one telling the filter_by_selection box
-  which model to use
 o redesign the broken-ass gtd-popup-menu for right-button-press on all the tree
   views...
 o when changing the filtered list of tasks or projects, if the previously
   selected gtd object is still visible, it should be selected.
 o add a "[ ] include details" checkbox for the searches
-o Update area_selection model on realm_visible changes
-o norelief combo box: http://code.google.com/p/pychess/source/browse/trunk/lib/pychess/widgets/ToggleComboBox.py?r=978 
-o delete from filter lists is broken
-o create new tasks/projects results in two new items
-
-Packaging
-o Debian/Ubuntu
-o RedHat/Suse
-
-Artwork
 o Need a profesisonal icon
+o Debian/Ubuntu packaging
+o RedHat/Suse packaging
+o utilize status bar...
+o option to purge completed items
+o due date selection in gtd list
+o basic markup in details.notes display
+o basic help documentation
+o Code refactoring
+o Code pydoc
+o eliminate all warnings and assertion errors
+o add appropriate log level messages
+o eliminate the gtd renamed signals, use modified (or "changed")
+o use countdown time to slowly remove items that newly become invisible
+  due to changed dates, title, contexts, or other filterable property
+o multiple select (v2?)
+  o popup menu for mark complete, date shifting
+o Display Areas in a realm->area hierarchy in the details area combo box
+o Sorting
+  - realms and areas dialog
+  - content table widget
+o New Task Defaults is visible when projects are selected, need to rework
+  like the Details form to show the appropriate fields based on work with
+  mode
+o consider placing details UNDER the task list instead of off to the side,
+  should be a much more efficient layout.
 
-Improvements
+Save Settings / State (GCONF, GNOME dep?)
+---------------------------
+o window size and position
+o details visibility
+o last file loaded
+o last view state ?
+o visible realms
+o active filters
+
+
+Version 2.0+ Tasks
+==================
 o have the filter row animate (swell, glow, whatever) when something is
   added/removed
-o consider using a treeview for tasks, and break them up into "Today"
-  "Tomorrow"|"This Week" "Later/No Date"
 o task and project resource attachments (with twisty to hide)
 o recurring tasks
 o create plugin mechanism
-o consider making contexts two one or more realms (So when you turn off the
-  work realm, all the work only contexts go away, some contexts will belong to
-  multiple realms)
 o MetaFilters - allow the creation of project and task filters by the user
   using boolean logic: "Calls and Morning", "Evening or Weekend"
 o consider making rename less easy - can be done on accident
 o nag mail for delegated tasks
 o export to html
 o report generation (monthly reports, burn-down, etc.)
-o consider multiple notes per task/project, automatically dated, removed with a single click on an [x]...
+o consider multiple notes per task/project, automatically dated, removed with a
+  single click on an [x]...
 o consider using a dict of fields.  This would make writing plugins easier,
   and the backing stores simpler.
   - could also just use the method described here: 
     http://www.python.org/doc/2.2/ref/attribute-access.html
-o consider storing realm.visible in the backing store to easily open up in the
-  same state...
 o grouped-by (date, project, context, area)
-o merge the notebook tabs into one.
+o click on task to launch common tools (email, sip phone, browser, etc.)
+o multiple select (v2?)
+  o popup menu for mark complete, date shifting
 
 Other
+=====
 o look at adding braindump to http://pypi.python.org/pypi ?? timrc's suggestion
 o decide on consistent coding style
   o widget naming: update, update_btn, etc.
@@ -74,20 +85,6 @@ o gut requirements on GNOME, and try to be a pure gtk app by default
 o tickler integration to calendars plus internal notification
 o resource tab (basically embedding zim-like functionality)
 
-Default Parent GTD Nodes
-o The Task and Proect Views should always display items from the NonePath, and
-  perhaps render them in such as way as to indicate to the user that they need to
-  update them.
-
-Signals
-o work to base all gui updates from updates to the data models.  ie. we shouldn't have to 
-  explicitly connect the context_rename to the context_table.... right?
-
-GCONF Settings (GNOME dep?)
-o window size and position
-o details visibility
-o last file loaded
-o last view state ?
-
 Someday / Maybe
+===============
 o GWT (Java) for offline web app interface (google gears)

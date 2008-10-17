@@ -164,9 +164,9 @@ class RealmToggles(WidgetWrapper):
         ti.show_all()
         for r in GTD().realms:
             self.add_realm(r)
-        GTD().connect("realm_added", self.add_realm)
-        GTD().connect("realm_renamed", self.update_realm)
-        GTD().connect("realm_removed", self.remove_realm)
+        GTD().connect("realm_added", lambda g,o: self.add_realm(o))
+        GTD().connect("realm_renamed", lambda g,o: self.update_realm(o))
+        GTD().connect("realm_removed", lambda g,o: self.remove_realm(o))
 
     def _on_toggled(self, widget, realm):
         realm.set_visible(widget.get_active())
@@ -207,6 +207,9 @@ class GTDTreeViewBase(WidgetWrapper):
     def __init__(self, name):
         WidgetWrapper.__init__(self, name)
 
+        menu = GUI().get_widget("gtd_row_popup")
+        self.widget.connect_object_after("event-after", self._on_button_press, menu, 0)
+
     def get_current(self):
         """Return the current gtd object"""
         path = self.widget.get_cursor()[0]
@@ -216,7 +219,7 @@ class GTDTreeViewBase(WidgetWrapper):
             return None
         return obj
 
-    def on_button_press(self, widget, event, col):
+    def _on_button_press(self, popup, event, col):
         """Display the popup menu when the right mouse button is pressed.
 
         Keyword arguments:
@@ -228,9 +231,9 @@ class GTDTreeViewBase(WidgetWrapper):
            and not isinstance(self.get_current(), GTDActionRow) \
            and not isinstance(self.get_current(), BaseNone):
             # FIXME: this is really not type safe, the widget isn't tested to be a GTDPopupMenu
-            popup = GUI().get_widget(widget.get_name())
+            #popup = GUI().get_widget(widget.get_name())
             popup.set_tree_and_col(self, self.widget.get_column(col))
-            widget.popup(None, None, None, event.button, event.time)
+            popup.widget.popup(None, None, None, event.button, event.time)
             return True
         return False
 
@@ -318,11 +321,6 @@ class FilterListView(GTDTreeViewBase):
                     return True
 
         return False
-
-    # FIXME: we could connect this ourselves in __init__, but we don't have
-    # access to the menu here... glade does this via the xml...... ew.....
-    def on_filter_list_button_press(self, widget, event):
-        return GTDTreeViewBase.on_button_press(self, widget, event, 0)
 
 
 class GTDListView(GTDTreeViewBase):
@@ -434,12 +432,6 @@ class GTDListView(GTDTreeViewBase):
             # FIXME: throw an exception
             error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
 
-    # gtk signal callbacks (defined in and connected via Glade)
-    # FIXME: can't do this in _init_ since glade is passing in the menu
-    # to  display (widget)
-    def on_gtd_list_button_press(self, widget, event):
-        return GTDTreeViewBase.on_button_press(self, widget, event, 1)
-
 
 class RealmAreaTreeView(GTDTreeViewBase):
     def __init__(self, name, realm_area_store):
@@ -479,9 +471,6 @@ class RealmAreaTreeView(GTDTreeViewBase):
         else:
             # FIXME: throw an exception
             error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
-
-    def on_realms_and_areas_button_press(self, widget, event):
-        return GTDTreeViewBase.on_button_press(self, widget, event, 0)
 
 
 # Class aggregrating GtkTable to list contexts for tasks
@@ -668,6 +657,7 @@ class GTDRowPopup(WidgetWrapper):
         WidgetWrapper.__init__(self, name)
         self.__tree_view = None
         self.__edit_col = 0
+        self.__delete = GUI().get_widget("gtd_row_popup_delete").widget
 
     # gtk signal callbacks (defined in and connected via Glade)
     def on_gtd_row_popup_rename(self, widget):
@@ -696,10 +686,10 @@ class GTDRowPopup(WidgetWrapper):
         self.__tree_view = tree_view
         self.__edit_col = column
         obj = self.__tree_view.get_current()
-        show_delete = not ((isinstance(obj, Area) and obj.realm == RealmNone()) or \
-           (isinstance(obj, Project) and obj.area == AreaNone()) or \
-           (isinstance(obj, Task) and obj.project == ProjectNone()))
-        GUI().get_widget("gtd_row_popup_delete").widget.set_sensitive(show_delete)
+        show_delete = not ((isinstance(obj, Realm) and len(obj.areas)) or \
+                           (isinstance(obj, Area) and len(obj.projects)) or \
+                           (isinstance(obj, Project) and len(obj.tasks)))
+        self.__delete.set_sensitive(show_delete)
 
 
 class AboutDialog(WidgetWrapper):
