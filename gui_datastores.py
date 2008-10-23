@@ -105,6 +105,8 @@ class CompletedFilter(Filter):
         return True
 
 # Datastores (GTD model constructors basically)
+# FIXME: consider making a factory, since all the derived objects are nothing
+#        but constructors anyway...
 class GTDStore(gobject.GObject):
     def __init__(self):
         # FIXME: why am I using GObject?  Should I call GObject.__init__(self) here?
@@ -156,6 +158,9 @@ class GTDStore(gobject.GObject):
         iter = self.gtd_iter(obj)
         if iter:
             self.model.row_changed(self.model.get_path(iter), iter)
+            # FIXME: this seems to be the only way to force a resort...
+            #        there has to be a better way...
+            self.model.set_sort_func(1, self.__gtd_sort)
 
     def on_gtd_added(self, tree, obj):
         self.model.append([obj])
@@ -211,6 +216,8 @@ class RealmAreaStore(gobject.GObject):
     def __init__(self):
         gobject.GObject.__init__(self)
         self.model = gtk.TreeStore(gobject.TYPE_PYOBJECT)
+        self.model.set_sort_func(1, self.__gtd_sort)
+        self.model.set_sort_column_id(1, gtk.SORT_ASCENDING)
         self.model.append(None, [NewRealm("Create new realm...")])
         for r in GTD().realms:
             # the None path isn't editable, no point in showing it
@@ -220,6 +227,27 @@ class RealmAreaStore(gobject.GObject):
             self.model.append(iter, [NewArea("Create new area...", r)])
             for a in r.areas:
                 self.model.append(iter, [a])
+
+    # Note: this is an exact copy of the gtd sort function used in GTDTree
+    #       think of a way to reuse this code.  Possibly a module level function?
+    def __gtd_sort(self, model, iter1, iter2, user_data=None):
+        obj1 = self.model[iter1][0]
+        obj2 = self.model[iter2][0]
+        # Display action rows before non ActionRows
+        if isinstance(obj1, GTDActionRow) and not isinstance(obj2, GTDActionRow):
+            return -1
+        if isinstance(obj2, GTDActionRow) and not isinstance(obj1, GTDActionRow):
+            return 1
+        # Display the none path before non other items
+        if isinstance(obj1, gtd.BaseNone) and not isinstance(obj2, gtd.BaseNone):
+            return -1
+        if isinstance(obj2, gtd.BaseNone) and not isinstance(obj1, gtd.BaseNone):
+            return 1
+        if obj1.title.lower() < obj2.title.lower():
+            return -1
+        if obj2.title.lower() < obj1.title.lower():
+            return 1
+        return 0
 
     def __area_iter(self, area):
         realm_iter = self.model.get_iter_first()

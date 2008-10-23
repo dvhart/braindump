@@ -41,6 +41,17 @@ class Base(object):
         self.__title = title
         self.__tags = {}
 
+    def __cmp__(self, obj):
+        if not isinstance(obj, Base):
+            return -1
+        a = self.__title
+        b = obj.title
+        if a < b:
+            return -1
+        elif a == b:
+            return 0
+        return 1
+
     def set_title(self, title):
         self.__title = title
 

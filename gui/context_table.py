@@ -56,6 +56,15 @@ class ContextTable(WidgetWrapper):
         GTD().connect("context_renamed", lambda g,o: self.update_context(o))
         GTD().connect("context_removed", lambda g,o: self.remove_context(o))
 
+    def __sort(self, context_a, context_b):
+        a = context_a.title
+        b = context_b.title
+        if a < b:
+            return -1
+        elif a == b:
+            return 0
+        return 1
+
     def __rebuild(self, allocation, force=False):
         cols = max(1, min(allocation.width / (self.__max_width+5), len(self.__context_cbs)))
         rows = max(1, len(self.__context_cbs)/cols)
@@ -69,7 +78,10 @@ class ContextTable(WidgetWrapper):
                 self.__table.remove(cb)
             self.__table.resize(rows, cols)
             i=0
-            for c, cb in self.__context_cbs.iteritems():
+            keys = self.__context_cbs.keys()
+            keys.sort()
+            for k in keys:
+                cb = self.__context_cbs[k]
                 x = i % cols
                 y = i / cols
                 self.__table.attach(cb, x, x+1, y, y+1)
@@ -95,7 +107,7 @@ class ContextTable(WidgetWrapper):
     def update_context(self, context):
         if self.__context_cbs.has_key(context):
             self.__context_cbs[context].set_label(context.title)
-        self.__rebuild(self.widget.allocation)
+        self.__rebuild(self.widget.allocation, True)
 
     def add_context(self, context):
         cb = gtk.CheckButton(context.title)
