@@ -352,14 +352,8 @@ class BrainDump(object):
     def on_show_details_toggled(self, menuitem):
         if menuitem.active:
             self.details_form.widget.show()
-            # FIXME: how do we know if this will cause the main window to resize?
-            # if it does we should resize on hide, but only then
         else:
-            win = GUI().get_widget("braindump_window").widget
-            wwidth,wheight = win.get_size()
-            dwidth,dheight = self.details_form.widget.size_request()
             self.details_form.widget.hide()
-            win.resize(wwidth-dwidth, wheight)
 
     def on_about_activate(self, menuitem):
         self.about_dialog.widget.show()
