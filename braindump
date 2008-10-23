@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+#    Filename: braindump
+#      Author: Darren Hart <darren@dvhart.com>
+# Description: BrainDump application class and program initialization code
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#
+# Copyright (C) Darren Hart, 2007-2008
+#
+# 2008-Oct-16:  Initial version by Darren Hart <darren@dvhart.com>
+
+import sys
+import getopt
+import logging
+from logging import debug, info, warning, error, critical
+
+from braindump.braindump import *
+
+def usage():
+    basename = currentframe().f_code.co_filename
+    print 'Usage: %s [OPTION]...' % (basename) # FIXME: what is the right way to get the filename...
+                                               # do I really have to use currentframe().f_code.co_filename ??
+    print '  -h, --help               display this help and exit'
+    print '  -l, --loglevel=LEVEL     set the logging level: DEBUG (default), WARNING,'
+    print '                           INFO, ERROR, CRITICAL'
+
+def main():
+    logging.basicConfig(level=logging.ERROR,
+                        format='%(levelname)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s')
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hl:", ["help", "loglevel="])
+    except getopt.GetoptError, err:
+        # print help information and exit:
+        error(str(err))
+        usage()
+        sys.exit(2)
+
+    for o, a in opts:
+        if o in ("-l", "--loglevel"):
+            if a == "DEBUG": logging.getLogger().setLevel(level=logging.DEBUG)
+            elif a == "WARNING": logging.getLogger().setLevel(level=logging.WARNING)
+            elif a == "INFO": logging.getLogger().setLevel(level=logging.INFO)
+            elif a == "ERROR": logging.getLogger().setLevel(level=logging.ERROR)
+            elif a == "CRITICAL": logging.getLogger().setLevel(level=logging.CRITICAL)
+            else:
+                error('unrecognized log level: %s' % (a))
+                usage()
+                sys.exit(2)
+        elif o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        else:
+            assert False, "unhandled option"
+
+    app = BrainDump()
+    gtk.main()
+
+# test to see if we were run directly
+if __name__ == "__main__":
+    main()

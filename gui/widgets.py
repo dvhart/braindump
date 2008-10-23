@@ -30,10 +30,10 @@ from gobject import *
 import gtk, gtk.glade
 import gnome, gnome.ui
 import sexy
-from singleton import *
-import gtd
-from gui_datastores import *
-from gtd_action_rows import *
+from braindump.singleton import *
+import braindump.gtd
+from braindump.gui_datastores import *
+from braindump.gtd_action_rows import *
 from logging import debug, info, warning, error, critical
 
 class GUI(gtk.glade.XML):
@@ -393,12 +393,14 @@ class GTDListView(GTDTreeViewBase):
         # make it searchable
         self.widget.set_search_column(1)
 
-    # FIXME: we clearly need to abstract the pixbuf fetching :)
+    # FIXME: is this the "right way" to specify the installed path?
     def _load_countdown_pixbufs(self):
-        for file in os.listdir("images"):
+        img_path = os.path.join(sys.prefix, "share/braindump/images")
+        for file in os.listdir(img_path):
             if fnmatch(file, "countdown-*.png"):
                 index = atoi(file.replace("countdown-", "").replace(".png", ""))
-                self.__countdown_pixbufs[index] = gtk.gdk.pixbuf_new_from_file("images/"+file)
+                self.__countdown_pixbufs[index] = gtk.gdk.pixbuf_new_from_file(
+                    os.path.join(img_path, file))
 
     def _on_toggled(self, cell, path):
         model = self.widget.get_model()
@@ -414,8 +416,9 @@ class GTDListView(GTDTreeViewBase):
                     model = self.widget.get_model()
                     store = model.get_model()
                     store_path = model.convert_path_to_child_path(path)
-                    gobject.timeout_add(self.__countdown_timeout*1000/len(self.__countdown_pixbufs), self._complete_timeout,
-                                        store, store_path, obj)
+                    gobject.timeout_add(self.__countdown_timeout * 1000 /
+                        len(self.__countdown_pixbufs),
+                        self._complete_timeout, store, store_path, obj)
                 obj.complete = True
 
     # FIXME: if a row is added or deleted, our path may become invalid

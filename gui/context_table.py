@@ -23,7 +23,7 @@
 from gobject import *
 import gtk
 from widgets import *
-import gtd
+import braindump.gtd
 from logging import debug, info, warning, error, critical
 
 # FIXME: find a way to use Shrink=No on the hbox in the hpaned

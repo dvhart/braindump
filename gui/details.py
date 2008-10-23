@@ -24,8 +24,8 @@ import time
 import datetime
 import gtk, gtk.glade
 from widgets import *
-from gui.context_table import *
-import gtd
+from context_table import *
+import braindump.gtd
 from logging import debug, info, warning, error, critical
 
 class Details(WidgetWrapper):

@@ -19,6 +19,17 @@ class XMLStore(object):
     def __init__(self):
         self.__path = None
 
+    def _setup_default_path(self):
+        # Make sure the data directory exists, copy the default data in if it doesn't
+        home_dir = os.environ["HOME"]
+        self.__path = home_dir + "/braindump"
+        if not os.path.exists(self.__path):
+            debug("creating directory: %s" % (self.__path))
+            os.makedirs(self.__path)
+        elif os.path.isfile(self.__path):
+            error("unable to create data directory, file already exists with same name: %s" \
+                  % (braindump_dir))
+
     def _obj_filename(self, obj):
         return os.path.join(self.__path, str(obj.id) + ".xml")
 
@@ -33,7 +44,7 @@ class XMLStore(object):
     # shouldn't in favor of a more consistent xml file format (<title>...) in every object...
     def _save_simple_element(self, name, obj):
         id_str = str(obj.id)
-        fd = open("xml/" + id_str + ".xml", "w")
+        fd = open(self._obj_filename(obj), "w")
         x = saxutils.XMLGenerator(fd)
         x.startDocument()
         self._simple_element(x, name, {"id":id_str}, obj.title)
@@ -61,8 +72,11 @@ class XMLStore(object):
         tree.connect("area_removed", lambda t,o: self.delete_object(o))
         tree.connect("realm_removed", lambda t,o: self.delete_object(o))
 
-    def load(self, path):
+    def load(self, path=None):
         self.__path = path
+
+        if self.__path is None:
+            self._setup_default_path()
 
         ch = GTDContentHandler()
         eh = GTDErrorHandler()
@@ -74,10 +88,10 @@ class XMLStore(object):
         #parser.setEntityResolver(?)
 
         # iterate on every xml file in "path"
-        for file in os.listdir(path):
+        for file in os.listdir(self.__path):
             if fnmatch.fnmatch(file, '*.xml'):
-                debug("Loading GTD object from: %s" % (os.path.join(path, file)))
-                parser.parse(os.path.join(path, file))
+                debug("Loading GTD object from: %s" % (os.path.join(self.__path, file)))
+                parser.parse(os.path.join(self.__path, file))
 
     def save(self, gtd_tree):
         critical("not implemented")
@@ -106,7 +120,7 @@ class XMLStore(object):
         if task.complete:
             complete_str = task.complete.strftime(_DATE_FORMAT)
 
-        fd = open("xml/" + id_str + ".xml", "w")
+        fd = open(self._obj_filename(task), "w")
         x = saxutils.XMLGenerator(fd)
         x.startDocument()
         x.startElement("task", {"id":id_str})
@@ -126,6 +140,7 @@ class XMLStore(object):
         self._simple_element(x, "complete", {}, complete_str)
         x.endElement("task")
         x.endDocument()
+        # FIXME: do we need to close the file here?
 
     def save_project(self, project):
         debug("saving project: %s" % (project.title))
@@ -143,7 +158,7 @@ class XMLStore(object):
         if project.complete:
             complete_str = project.complete.strftime(_DATE_FORMAT)
 
-        fd = open("xml/" + id_str + ".xml", "w")
+        fd = open(self._obj_filename(project), "w")
         x = saxutils.XMLGenerator(fd)
         x.startDocument()
         x.startElement("project", {"id":id_str})
@@ -160,7 +175,7 @@ class XMLStore(object):
 
     def save_area(self, area):
         id_str = str(area.id)
-        fd = open("xml/" + id_str + ".xml", "w")
+        fd = open(self._obj_filename(area), "w")
         x = saxutils.XMLGenerator(fd)
         x.startDocument()
         x.startElement("area", {"id":id_str})

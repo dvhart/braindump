@@ -29,17 +29,23 @@ o add appropriate log level messages
 o eliminate the gtd renamed signals, use modified (or "changed")
 o use countdown time to slowly remove items that newly become invisible
   due to changed dates, title, contexts, or other filterable property
-o multiple select (v2?)
+o multiple select
   o popup menu for mark complete, date shifting
 o Display Areas in a realm->area hierarchy in the details area combo box
-o Sorting
-  - realms and areas dialog
-  - content table widget
 o New Task Defaults is visible when projects are selected, need to rework
   like the Details form to show the appropriate fields based on work with
   mode
-o consider placing details UNDER the task list instead of off to the side,
-  should be a much more efficient layout.
+  - consider use the realms toolbar and filters to set default selections for
+    new items
+o don't use model[iter][0] syntax, seems to lead to segfaults...
+o consider using the the filters to display current task/project details
+  and reduce the details form to just the notes filed...
+o update all headers to match date_select.py
+o add on_key_press handler to date_select.py
+o add monitor edge awareness to date_select.py
+  - see kiwi dateentry.py
+  - /usr/share/python-support/python-kiwi/kiwi/ui/dateentry.py
+o Abide by "show completed" settings in filter lists as well
 
 Save Settings / State (GCONF, GNOME dep?)
 ---------------------------
@@ -74,6 +80,10 @@ o grouped-by (date, project, context, area)
 o click on task to launch common tools (email, sip phone, browser, etc.)
 o multiple select (v2?)
   o popup menu for mark complete, date shifting
+o look at making the gtd objects have a parent which can be anything above them
+  in the hierarchy.  This would allow for setting a task to be in an area or
+  realm, without needing to create a project, which seems to be a very common 
+  use case.
 
 Other
 =====

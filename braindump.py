@@ -21,9 +21,7 @@
 #
 # 2007-Jun-30:  Initial version by Darren Hart <darren@dvhart.com>
 
-import sys
 from inspect import currentframe
-import getopt
 import datetime
 
 import logging
@@ -104,7 +102,7 @@ class GTDSignalTest:
 class BrainDump(object):
     def __init__(self):
         # aggregate widgets, with member callbacks
-        GUI("glade/braindump.glade")
+        GUI(os.path.join(sys.prefix, "share/braindump/glade/braindump.glade"))
 
         self.gst = GTDSignalTest() # DELETEME.... later :)
 
@@ -113,7 +111,7 @@ class BrainDump(object):
         # either stored in gconf or maybe in a "config" module type file...
         GTD(None)
         self.backing_store = XMLStore()
-        self.backing_store.load("xml/")
+        self.backing_store.load()
         self.backing_store.connect(GTD())
         #GTD().print_tree()
 
@@ -455,48 +453,3 @@ class BrainDump(object):
 
     def on_window_destroy(self, widget):
         gtk.main_quit()
-
-
-def usage():
-    basename = currentframe().f_code.co_filename
-    print 'Usage: %s [OPTION]...' % (basename) # FIXME: what is the right way to get the filename...
-                                               # do I really have to use currentframe().f_code.co_filename ??
-    print '  -h, --help               display this help and exit'
-    print '  -l, --loglevel=LEVEL     set the logging level: DEBUG (default), WARNING,'
-    print '                           INFO, ERROR, CRITICAL'
-
-def main():
-    logging.basicConfig(level=logging.ERROR,
-                        format='%(levelname)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s')
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hl:", ["help", "loglevel="])
-    except getopt.GetoptError, err:
-        # print help information and exit:
-        error(str(err))
-        usage()
-        sys.exit(2)
-
-    for o, a in opts:
-        if o in ("-l", "--loglevel"):
-            if a == "DEBUG": logging.getLogger().setLevel(level=logging.DEBUG)
-            elif a == "WARNING": logging.getLogger().setLevel(level=logging.WARNING)
-            elif a == "INFO": logging.getLogger().setLevel(level=logging.INFO)
-            elif a == "ERROR": logging.getLogger().setLevel(level=logging.ERROR)
-            elif a == "CRITICAL": logging.getLogger().setLevel(level=logging.CRITICAL)
-            else:
-                error('unrecognized log level: %s' % (a))
-                usage()
-                sys.exit(2)
-        elif o in ("-h", "--help"):
-            usage()
-            sys.exit()
-        else:
-            assert False, "unhandled option"
-
-    app = BrainDump()
-    gtk.main()
-
-# test to see if we were run directly
-if __name__ == "__main__":
-    main()
