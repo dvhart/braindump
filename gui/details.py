@@ -25,6 +25,7 @@ import datetime
 import gtk, gtk.glade
 from widgets import *
 from context_table import *
+from date_select import *
 import braindump.gtd
 from logging import debug, info, warning, error, critical
 
@@ -39,8 +40,14 @@ class Details(WidgetWrapper):
     def __init__(self, name, project_store, area_store):
         WidgetWrapper.__init__(self, name)
         self.__notes = GUI().get_widget("notes")
-        self.__start = GUI().get_widget("start_date")
-        self.__due = GUI().get_widget("due_date")
+        self.__start = DateSelect()
+        self.__start.connect("changed", self._on_start_date_changed)
+        GUI().get_widget("start_date_placeholder").widget.add(self.__start)
+        self.__start.show()
+        self.__due = DateSelect()
+        self.__due.connect("changed", self._on_due_date_changed)
+        GUI().get_widget("due_date_placeholder").widget.add(self.__due)
+        self.__due.show()
         self.__details_controls = GUI().get_widget("details_controls")
         self.__project_label = GUI().get_widget("parent_project_label")
         self.__project = GTDCombo("parent_project", project_store, ProjectNone())
@@ -83,15 +90,11 @@ class Details(WidgetWrapper):
         if isinstance(self.__subject, gtd.Task) or isinstance(self.__subject, gtd.Project):
             self.__subject.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
 
-    def _on_start_date_changed(self, dateedit):
-        d = datetime.datetime.fromtimestamp(dateedit.get_time())
-        self.__subject.start_date = d
-        debug(d)
+    def _on_start_date_changed(self, dselect):
+        self.__subject.start_date = dselect.get_date()
 
-    def _on_due_date_changed(self, dateedit):
-        d = datetime.datetime.fromtimestamp(dateedit.get_time())
-        self.__subject.due_date = d
-        debug(d)
+    def _on_due_date_changed(self, dselect):
+        self.__subject.due_date = dselect.get_date()
 
     # FIXME, merge these two
     # FIXME, update gtd code so we only have to set the parent here (not remove self from parent)
@@ -121,8 +124,8 @@ class Details(WidgetWrapper):
     def set_subject(self, subject):
         self.__subject = subject
         notes = ""
-        start_date = 0 # FIXME: this sets it to today()... we really want blank... (3 others like this)
-        due_date = 0
+        start_date = None
+        due_date = None
         contexts = [] # only relevant for tasks
 
         # FIXME: mostly redundant for Task and Project...
@@ -134,13 +137,8 @@ class Details(WidgetWrapper):
         else:
             # common fields
             notes = self.__subject.notes
-            # FIXME: might be better to wrap the widget so we can simply use datetime objects here
-            if self.__subject.start_date:
-                # FIXME, this can throw an exception if a bad date was stored, or out of range (1969...)
-                start_date = int(time.mktime(self.__subject.start_date.timetuple()))
-                start_date = 0
-            if self.__subject.due_date:
-                due_date = int(time.mktime(self.__subject.due_date.timetuple()))
+            start_date = self.__subject.start_date
+            due_date = self.__subject.due_date
 
             # task and project specific fields
             if isinstance(subject, gtd.Task):
@@ -156,8 +154,8 @@ class Details(WidgetWrapper):
                 self._show_project_widgets(True)
 
         self.__notes.widget.get_buffer().set_text(notes)
-        self.__start.widget.set_time(start_date)
-        self.__due.widget.set_time(due_date)
+        self.__start.set_date(start_date)
+        self.__due.set_date(due_date)
         self.__contexts.set_active_contexts(contexts)
 
     def get_parent(self):

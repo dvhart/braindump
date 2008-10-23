@@ -34,6 +34,7 @@ from braindump.singleton import *
 import braindump.gtd
 from braindump.gui_datastores import *
 from braindump.gtd_action_rows import *
+from friendly_date import *
 from logging import debug, info, warning, error, critical
 
 class GUI(gtk.glade.XML):
@@ -263,6 +264,18 @@ class GTDTreeViewBase(WidgetWrapper):
             return None
         return obj
 
+    def get_gtd_from_path(self, path):
+        """Return the gtd object at path"""
+        model = self.widget.get_model()
+        obj = model.get_value(model.get_iter(path), 0)
+        return obj
+
+    def get_gtd_from_iter(self, iter):
+        """Return the gtd object at path"""
+        model = self.widget.get_model()
+        obj = model.get_value(iter, 0)
+        return obj
+
 
 # FIXME: consider renaming this to not use "Filter" as this class
 # doesn't do the filtering, it's selection is used for that purpose
@@ -373,7 +386,19 @@ class GTDListView(GTDTreeViewBase):
         # create the CellRenderers
         cell0 = gtk.CellRendererToggle()
         cell0.connect('toggled', self._on_toggled)
-        cell2 = gtk.CellRendererText()
+        cell2 = gtk.CellRendererCombo()
+        cell2.connect("edited", self._on_due_date_edited)
+        date_model = gtk.ListStore(gobject.TYPE_STRING)
+        date_model.append(["None"])
+        date_model.append(["Today"])
+        date_model.append(["Tomorrow"])
+        date_model.append(["This Friday"])
+        date_model.append(["Next Week"])
+        date_model.append(["Other..."])
+        cell2.set_property("model", date_model)
+        cell2.set_property('editable', True)
+        cell2.set_property('has-entry', False)
+        cell2.set_property('text-column', 0)
         cell3 = gtk.CellRendererPixbuf()
 
         # attach the CellRenderers to each column
@@ -388,6 +413,14 @@ class GTDListView(GTDTreeViewBase):
 
         # make it searchable
         self.widget.set_search_column(1)
+
+    def _on_due_date_edited(self, cell, path, friendly_str):
+        if friendly_str == "Other...":
+            print "FIXME: Popup calendar and select date..."
+        else:
+            due_date = friendly_to_datetime(friendly_str)
+            obj = self.get_gtd_from_path(path)
+            obj.due_date = due_date
 
     # FIXME: is this the "right way" to specify the installed path?
     def _load_countdown_pixbufs(self):
