@@ -213,14 +213,25 @@ class GTDTreeViewBase(WidgetWrapper):
         menu = GUI().get_widget("gtd_row_popup")
         self.widget.connect_object_after("event-after", self._on_button_press, menu, 0)
 
-    def get_current(self):
-        """Return the current gtd object"""
-        path = self.widget.get_cursor()[0]
-        if path:
-            obj = self.widget.get_model()[path][0]
-        else:
-            return None
-        return obj
+        # setup the title column and cell renderer
+        title_col = gtk.TreeViewColumn()
+        title_cell = gtk.CellRendererText()
+        title_cell.set_property('editable', True)
+        # FIXME: consdider passing None as model, we don't need to pass it to ourselves...
+        title_cell.connect('edited', self._on_title_edited)
+        title_col.pack_start(title_cell, False)
+        title_col.set_cell_data_func(title_cell, self._data_func, "title")
+        self.widget.append_column(title_col)
+
+    def _data_func(self, column, cell, model, iter, data):
+        if data == "title":
+            obj = model.get_value(iter, 0)
+            title = obj.title
+            if isinstance(obj, GTDActionRow) or isinstance(obj, gtd.BaseNone):
+                title = "<i>"+title+"</i>"
+            cell.set_property("markup", title)
+            return True
+        return False
 
     def _on_button_press(self, popup, event, col):
         """Display the popup menu when the right mouse button is pressed.
@@ -240,6 +251,18 @@ class GTDTreeViewBase(WidgetWrapper):
             return True
         return False
 
+    def _on_title_edited(self, cell, path, new_text):
+        self.widget.get_model()[path][0].title = new_text
+
+    def get_current(self):
+        """Return the current gtd object"""
+        path = self.widget.get_cursor()[0]
+        if path:
+            obj = self.widget.get_model()[path][0]
+        else:
+            return None
+        return obj
+
 
 # FIXME: consider renaming this to not use "Filter" as this class
 # doesn't do the filtering, it's selection is used for that purpose
@@ -255,29 +278,9 @@ class FilterListView(GTDTreeViewBase):
         """
         GTDTreeViewBase.__init__(self, name)
 
-        # setup the column and cell renderer
-        tvcolumn0 = gtk.TreeViewColumn()
-        cell0 = gtk.CellRendererText()
-        cell0.set_property('editable', True)
-        # FIXME: consdider passing None as model, we don't need to pass it to ourselves...
-        cell0.connect('edited', self._on_edited, lambda: self.widget.get_model(), 0)
-        tvcolumn0.pack_start(cell0, False)
-        tvcolumn0.set_cell_data_func(cell0, self._data_func)
-        self.widget.append_column(tvcolumn0)
-
         # setup selection modes and callback
         self.widget.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         self.widget.set_rubber_banding(True)
-
-    def _on_edited(self, cell, path, new_text, model_lambda, column):
-        model_lambda()[path][column].title = new_text
-
-    def _data_func(self, column, cell, model, iter):
-        obj = model[iter][0]
-        title = obj.title
-        if isinstance(obj, GTDActionRow) or isinstance(obj, gtd.BaseNone):
-            title = "<i>"+title+"</i>"
-        cell.set_property("markup", title)
 
     def selection_match(self, obj):
         if isinstance(obj, GTDActionRow):
@@ -359,34 +362,27 @@ class GTDListView(GTDTreeViewBase):
 
         # create the TreeViewColumns to display the data
         tvcolumn0 = gtk.TreeViewColumn("Done")
-        tvcolumn1 = gtk.TreeViewColumn("Title")
         tvcolumn2 = gtk.TreeViewColumn("Due")
         tvcolumn3 = gtk.TreeViewColumn("")
 
         # append the columns to the view
-        self.widget.append_column(tvcolumn0)
-        self.widget.append_column(tvcolumn1)
+        self.widget.insert_column(tvcolumn0, 0)
         self.widget.append_column(tvcolumn2)
         self.widget.append_column(tvcolumn3)
 
         # create the CellRenderers
         cell0 = gtk.CellRendererToggle()
         cell0.connect('toggled', self._on_toggled)
-        cell1 = gtk.CellRendererText()
-        cell1.set_property('editable', True)
-        cell1.connect('edited', self._on_edited)
         cell2 = gtk.CellRendererText()
         cell3 = gtk.CellRendererPixbuf()
 
         # attach the CellRenderers to each column
-        tvcolumn0.pack_start(cell0) # expand True by default
-        tvcolumn1.pack_start(cell1)
+        tvcolumn0.pack_start(cell0)
         tvcolumn2.pack_start(cell2)
         tvcolumn3.pack_start(cell3)
 
         # display data directly from the gtd object, rather than setting attributes
         tvcolumn0.set_cell_data_func(cell0, self._data_func, "complete")
-        tvcolumn1.set_cell_data_func(cell1, self._data_func, "title")
         tvcolumn2.set_cell_data_func(cell2, self._data_func, "due_date")
         tvcolumn3.set_cell_data_func(cell3, self._data_func, "countdown")
 
@@ -441,7 +437,8 @@ class GTDListView(GTDTreeViewBase):
 
         return False
 
-    def _on_edited(self, cell, path, new_text):
+    # override tree_view_base
+    def _on_title_edited(self, cell, path, new_text):
         obj = self.widget.get_model()[path][0]
         if isinstance(obj, NewTask):
             if not obj.title == new_text:
@@ -463,7 +460,7 @@ class GTDListView(GTDTreeViewBase):
                                         # reason this doesn't happen...
 
     def _data_func(self, column, cell, model, iter, data):
-        obj = model[iter][0]
+        obj = model.get_value(iter, 0)
         if data is "complete":
             if isinstance(obj, GTDActionRow):
                 cell.set_property("inconsistent", True)
@@ -500,6 +497,8 @@ class GTDListView(GTDTreeViewBase):
         else:
             # FIXME: throw an exception
             error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
+            return False
+        return True
 
 
 class RealmAreaTreeView(GTDTreeViewBase):
@@ -507,21 +506,8 @@ class RealmAreaTreeView(GTDTreeViewBase):
         GTDTreeViewBase.__init__(self, name)
         self.widget.set_model(realm_area_store)
 
-        tvcolumn = gtk.TreeViewColumn("Title")
-        cell = gtk.CellRendererText()
-        cell.set_property('editable', True)
-        cell.connect('edited', self._on_edited, lambda: self.widget.get_model(), 1)
-        tvcolumn.pack_start(cell)
-        tvcolumn.set_cell_data_func(cell, self._data_func, "title")
-        self.widget.append_column(tvcolumn)
-
         self.widget.expand_all()
         self.widget.get_model().connect('row_inserted', self._on_row_inserted)
-
-    def _on_edited(self, cell, path, new_text, model_lambda, column):
-        obj = model_lambda()[path][0]
-        if obj:
-            obj.title = new_text
 
     def _on_row_inserted(self, model, path, iter):
         # We have to wait for a child to be added, otherwise there
@@ -529,17 +515,6 @@ class RealmAreaTreeView(GTDTreeViewBase):
         # of the Area (or the CreateArea) under the new Realm
         if (len(path) >= 2):
             ret = self.widget.expand_to_path(path)
-
-    def _data_func(self, column, cell, model, iter, data):
-        obj = model[iter][0]
-        if data is "title":
-            title = obj.title
-            if isinstance(obj, GTDActionRow) or isinstance(obj, gtd.BaseNone):
-                title = "<i>"+title+"</i>"
-            cell.set_property("markup", title)
-        else:
-            # FIXME: throw an exception
-            error('ERROR: didn\'t set %s property for %s' % (data, obj.title))
 
 
 class ModelCombo(WidgetWrapper):
