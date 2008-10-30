@@ -354,7 +354,7 @@ class GTDListView(GTDTreeViewBase):
     # FIXME: should be ables to remove the store from the constructor
     # as we will use several for this tree throughout the use of the program
     # setup the callbacks from the caller
-    def __init__(self, name, task_store, new_task_handler):
+    def __init__(self, name, task_store, new_task_handler, new_project_handler):
         """Construct a treeview for tasks and projects.
 
         Keyword arguments:
@@ -369,6 +369,7 @@ class GTDListView(GTDTreeViewBase):
         self._load_countdown_pixbufs()
 
         self.__new_task_handler = new_task_handler
+        self.__new_project_handler = new_project_handler
         self.widget.set_model(task_store.model_filter)
         task_store.model_filter.connect("row_inserted", lambda m,p,i: self._on_row_inserted(p, i))
         task_store.model_filter.connect("row_deleted", lambda m,p: self._on_row_deleted(p))
@@ -477,8 +478,8 @@ class GTDListView(GTDTreeViewBase):
             if not obj.title == new_text:
                 self.__new_task_handler(new_text)
         elif isinstance(obj, NewProject):
-            # FIXME: NewProject can do this itself...
-            Project.create(None, new_text)
+            if not obj.title == new_text:
+                self.__new_project_handler(new_text)
         else:
             obj.title = new_text
 

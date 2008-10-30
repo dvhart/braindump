@@ -236,7 +236,8 @@ class BrainDump(object):
         self.filters_sidebar.connect("changed", lambda w: self.task_store.refilter())
         self.filters_sidebar.connect("changed", lambda w: self.project_store_date.refilter())
 
-        self.gtd_list = GTDListView("gtd_list", self.task_store_filter, self.on_new_task)
+        self.gtd_list = GTDListView("gtd_list", self.task_store_filter, self.on_new_task,
+                                    self.on_new_project)
         self.gtd_list.widget.get_selection().connect("changed", self.on_gtd_list_selection_changed)
 
         # FIXME: we need to get gobject signals working
@@ -372,7 +373,13 @@ class BrainDump(object):
         '''Create a new task from the new task defaults, initiated from the gtd_list.'''
         project = self.default_project.get_active()
         context = self.default_context.get_active()
-        gtd.Task.create(None, title, project, [context])
+        task = gtd.Task.create(None, title, project, [context])
+        task.start_date = datetime.now()
+
+    def on_new_project(self, title):
+        '''Create a new project, initiated from the gtd_list.'''
+        project = gtd.Project.create(None, title)
+        project.start_date = datetime.now()
 
     def on_gtd_list_selection_changed(self, selection):
         iter = selection.get_selected()[1]
