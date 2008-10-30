@@ -91,10 +91,12 @@ class Details(WidgetWrapper):
             self.__subject.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
 
     def _on_start_date_changed(self, dselect):
-        self.__subject.start_date = dselect.get_date()
+        if self.__subject:
+            self.__subject.start_date = dselect.get_date()
 
     def _on_due_date_changed(self, dselect):
-        self.__subject.due_date = dselect.get_date()
+        if self.__subject:
+            self.__subject.due_date = dselect.get_date()
 
     # FIXME, merge these two
     # FIXME, update gtd code so we only have to set the parent here (not remove self from parent)
