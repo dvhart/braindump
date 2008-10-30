@@ -1,0 +1,13 @@
+BrainDump 0.3
+=============
+o fix details resize behavior
+  o don't expand details on window resize
+  o only expand notes widget on vpanel adjust
+
+BrainDump 0.2.1
+===============
+o install fixes to install images
+
+BrainDump 0.2
+=============
+o initial RFC release, limited distribution

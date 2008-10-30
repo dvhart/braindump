@@ -1085,9 +1085,6 @@ Realm</property>
                               </widget>
                             </child>
                           </widget>
-                          <packing>
-                            <property name="expand">False</property>
-                          </packing>
                         </child>
                         <child>
                           <widget class="GtkTable" id="table2">
@@ -1219,13 +1216,12 @@ Realm</property>
                         </child>
                       </widget>
                       <packing>
-                        <property name="expand">False</property>
                         <property name="position">1</property>
                       </packing>
                     </child>
                   </widget>
                   <packing>
-                    <property name="resize">True</property>
+                    <property name="resize">False</property>
                     <property name="shrink">False</property>
                   </packing>
                 </child>
@@ -1247,93 +1243,6 @@ Realm</property>
           <packing>
             <property name="expand">False</property>
             <property name="fill">False</property>
-            <property name="position">5</property>
-          </packing>
-        </child>
-      </widget>
-    </child>
-  </widget>
-  <widget class="GtkWindow" id="date_select_popup (NOT USED)">
-    <property name="type">GTK_WINDOW_POPUP</property>
-    <property name="title" translatable="yes">Select Date</property>
-    <property name="resizable">False</property>
-    <property name="modal">True</property>
-    <child>
-      <widget class="GtkVBox" id="vbox1">
-        <property name="visible">True</property>
-        <child>
-          <widget class="GtkCalendar" id="date_calendar">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="year">2008</property>
-            <property name="month">9</property>
-            <property name="day">20</property>
-            <property name="show_details">False</property>
-            <signal name="day_selected" handler="on_date_calendar_day_selected"/>
-          </widget>
-        </child>
-        <child>
-          <widget class="GtkButton" id="date_none">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
-            <property name="label" translatable="yes">None</property>
-            <property name="response_id">0</property>
-            <signal name="clicked" handler="on_date_none_clicked"/>
-          </widget>
-          <packing>
-            <property name="position">1</property>
-          </packing>
-        </child>
-        <child>
-          <widget class="GtkButton" id="date_today">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
-            <property name="label" translatable="yes">Today</property>
-            <property name="response_id">0</property>
-            <signal name="clicked" handler="on_date_today_clicked"/>
-          </widget>
-          <packing>
-            <property name="position">2</property>
-          </packing>
-        </child>
-        <child>
-          <widget class="GtkButton" id="date_tomorrow">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
-            <property name="label" translatable="yes">Tomorrow</property>
-            <property name="response_id">0</property>
-            <signal name="clicked" handler="on_date_tomorrow_clicked"/>
-          </widget>
-          <packing>
-            <property name="position">3</property>
-          </packing>
-        </child>
-        <child>
-          <widget class="GtkButton" id="date_this_friday">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
-            <property name="label" translatable="yes">This Friday</property>
-            <property name="response_id">0</property>
-            <signal name="clicked" handler="on_date_this_friday_clicked"/>
-          </widget>
-          <packing>
-            <property name="position">4</property>
-          </packing>
-        </child>
-        <child>
-          <widget class="GtkButton" id="date_next_week">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">True</property>
-            <property name="label" translatable="yes">Next Week</property>
-            <property name="response_id">0</property>
-            <signal name="clicked" handler="on_date_next_week_clicked"/>
-          </widget>
-          <packing>
             <property name="position">5</property>
           </packing>
         </child>

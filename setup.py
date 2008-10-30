@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='braindump',
-      version='0.2',
+      version='0.2.1',
       description='Context Based Task Manager',
       author='Darren Hart',
       author_email='darren@dvhart.com',
