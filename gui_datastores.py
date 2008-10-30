@@ -114,8 +114,9 @@ class GTDStore(gobject.GObject):
         self.filters = []
         self.model.set_sort_func(1, self.__gtd_sort)
         self.model.set_sort_column_id(1, gtk.SORT_ASCENDING)
+        self._by_due_date = False
 
-    def __gtd_sort(self, model, iter1, iter2, user_data=None):
+    def __gtd_sort(self, model, iter1, iter2):
         obj1 = self.model[iter1][0]
         obj2 = self.model[iter2][0]
         # Display action rows before non ActionRows
@@ -128,11 +129,31 @@ class GTDStore(gobject.GObject):
             return -1
         if isinstance(obj2, gtd.BaseNone) and not isinstance(obj1, gtd.BaseNone):
             return 1
+        # FIXME: this is rather hideous
+        #        o consider a gtd.DateBased which always has a due date
+        #        o or perhaps not check at all since by_due_date should only be used
+        #          for projects and tasks anyway (maybe add assertions that the field exists)
+        if self._by_due_date and ((isinstance(obj1, gtd.Task) and isinstance(obj2, gtd.Task)) or
+            (isinstance(obj1, gtd.Project) and isinstance(obj2, gtd.Project))):
+            if obj1.due_date and not obj2.due_date:
+                return -1
+            if obj2.due_date and not obj1.due_date:
+                return 1
+            if obj1.due_date and obj2.due_date:
+                if obj1.due_date < obj2.due_date:
+                    return -1
+                if obj2.due_date < obj1.due_date:
+                    return 1
         if obj1.title.lower() < obj2.title.lower():
             return -1
         if obj2.title.lower() < obj1.title.lower():
             return 1
         return 0
+
+    def sort_by_due_date(self, by_due_date):
+        self._by_due_date = by_due_date
+        # force a resort
+        self.model.set_sort_func(1, self.__gtd_sort)
 
     def filter_new(self):
         filter = GTDStoreFilter(self.model.filter_new())
@@ -154,6 +175,7 @@ class GTDStore(gobject.GObject):
         return None
 
     # FIXME: going to need "changed" for when dates change, etc, we'll need the view updated
+    # FIXME: this is getting called whenever the cursor changes...
     def on_gtd_renamed(self, tree, obj):
         iter = self.gtd_iter(obj)
         if iter:
@@ -322,6 +344,7 @@ class TaskStore(GTDStore):
     def __init__(self):
         debug("building TaskStore")
         GTDStore.__init__(self)
+        self.sort_by_due_date(True)
         self.model.append([NewTask("Create new task...")])
         for r in GTD().realms:
             debug("from realm: %s (%d areas)" % (r.title, len(r.areas)))

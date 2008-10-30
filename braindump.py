@@ -143,7 +143,10 @@ class BrainDump(object):
         self.project_store = ProjectStore()
         self.project_store_filter_by_realm = self.project_store.filter_new()
         self.project_store_filter_by_realm_no_action = self.project_store.filter_new()
-        self.project_store_filter_by_area = self.project_store.filter_new()
+
+        self.project_store_date = ProjectStore()
+        self.project_store_date.sort_by_due_date(True)
+        self.project_store_filter_by_area = self.project_store_date.filter_new()
 
         self.task_store = TaskStore()
         self.task_store_filter = self.task_store.filter_new()
@@ -175,8 +178,10 @@ class BrainDump(object):
         # Note: the order here is critical, otherwise combo boxes will update
         # to hide objects from hidden realms, inadvertantly changing the gtd
         # object they represent... FIXME: pretty fragile...
+        # FIXME: connect these during data_store construction if possible...
         GTD().connect("realm_visible_changed", lambda g,o: self.task_store.refilter())
         GTD().connect("realm_visible_changed", lambda g,o: self.project_store.refilter())
+        GTD().connect("realm_visible_changed", lambda g,o: self.project_store_date.refilter())
         GTD().connect("realm_visible_changed", lambda g,o: self.area_store.refilter())
 
         GTD().connect("area_renamed", self.area_store.on_gtd_renamed)
@@ -186,6 +191,10 @@ class BrainDump(object):
         GTD().connect("project_renamed", self.project_store.on_gtd_renamed)
         GTD().connect("project_added", self.project_store.on_gtd_added)
         GTD().connect("project_removed", self.project_store.on_gtd_removed)
+
+        GTD().connect("project_renamed", self.project_store_date.on_gtd_renamed)
+        GTD().connect("project_added", self.project_store_date.on_gtd_added)
+        GTD().connect("project_removed", self.project_store_date.on_gtd_removed)
 
         # FIXME: just delete renamed, and use modified everywhere..
         GTD().connect("task_renamed", self.task_store.on_gtd_renamed)
@@ -225,7 +234,7 @@ class BrainDump(object):
 
         # FIXME: this passes a widget to refilter, and not GTD()... which we don't use anyway
         self.filters_sidebar.connect("changed", lambda w: self.task_store.refilter())
-        self.filters_sidebar.connect("changed", lambda w: self.project_store.refilter())
+        self.filters_sidebar.connect("changed", lambda w: self.project_store_date.refilter())
 
         self.gtd_list = GTDListView("gtd_list", self.task_store_filter, self.on_new_task)
         self.gtd_list.widget.get_selection().connect("changed", self.on_gtd_list_selection_changed)
@@ -417,7 +426,6 @@ class BrainDump(object):
         if index != 0 and index != 1:
             error("work_with index out of range")
             index = 0
-        #GUI().get_widget("notebook").widget.set_current_page(index)
         # update the gtd_list model
         model = self.work_with.get_active_item()[1]
         self.gtd_list.widget.set_model(model.model_filter)

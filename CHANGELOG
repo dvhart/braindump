@@ -1,8 +1,9 @@
 BrainDump 0.3
 =============
-o fix details resize behavior
+o fixed details resize behavior
   o don't expand details on window resize
   o only expand notes widget on vpanel adjust
+o sort tasks and projects by due_date in the main gtd list
 
 BrainDump 0.2.1
 ===============

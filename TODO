@@ -7,8 +7,8 @@ o Recursive delete option
     "delete" never needs a dialog)
 o Rethink the NonePath...
 o Determine how to deal with "Waiting" tasks, perhaps a delegated field?
-o reimplement a date/time widget (gnome-date-entry sucks goats): 
-  http://www.mail-archive.com/pygtk@daa.com.au/msg12160.html
+  - add gtd.owners and an owner field to task and project objects
+  - add an owners filter in the stacked filter
 o redesign the broken-ass gtd-popup-menu for right-button-press on all the tree
   views...
 o when changing the filtered list of tasks or projects, if the previously
