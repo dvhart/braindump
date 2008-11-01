@@ -20,7 +20,7 @@
 #
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
-import os
+import os, sys
 from fnmatch import fnmatch
 from string import *
 import time
