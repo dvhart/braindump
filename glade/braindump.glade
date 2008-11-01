@@ -272,28 +272,6 @@
                 <child>
                   <widget class="GtkMenu" id="view1_menu">
                     <child>
-                      <widget class="GtkRadioMenuItem" id="work_with_tasks">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Work with _Tasks</property>
-                        <property name="use_underline">True</property>
-                        <property name="active">True</property>
-                        <property name="draw_as_radio">True</property>
-                        <signal name="toggled" handler="on_work_with_tasks_toggled"/>
-                        <accelerator key="F2" modifiers="" signal="activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkRadioMenuItem" id="work_with_projects">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">Work with _Projects</property>
-                        <property name="use_underline">True</property>
-                        <property name="draw_as_radio">True</property>
-                        <property name="group">work_with_tasks</property>
-                        <signal name="toggled" handler="on_work_with_projects_toggled"/>
-                        <accelerator key="F3" modifiers="" signal="activate"/>
-                      </widget>
-                    </child>
-                    <child>
                       <widget class="GtkCheckMenuItem" id="show_completed">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Completed Items</property>
@@ -392,58 +370,6 @@
           <packing>
             <property name="expand">False</property>
             <property name="position">1</property>
-          </packing>
-        </child>
-        <child>
-          <widget class="GtkHBox" id="hbox5">
-            <property name="visible">True</property>
-            <child>
-              <widget class="GtkLabel" id="label13">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">Show:</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="padding">6</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkComboBox" id="filter_by_date">
-                <property name="visible">True</property>
-                <property name="items" translatable="yes"></property>
-                <signal name="changed" handler="on_filter_by_date_changed"/>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkAlignment" id="search">
-                <property name="visible">True</property>
-                <property name="xalign">1</property>
-                <property name="xscale">0.33000001311302185</property>
-                <child>
-                  <placeholder/>
-                </child>
-              </widget>
-              <packing>
-                <property name="position">2</property>
-              </packing>
-            </child>
-          </widget>
-          <packing>
-            <property name="expand">False</property>
-            <property name="position">2</property>
-          </packing>
-        </child>
-        <child>
-          <widget class="GtkHSeparator" id="hseparator1">
-            <property name="visible">True</property>
-          </widget>
-          <packing>
-            <property name="expand">False</property>
-            <property name="position">3</property>
           </packing>
         </child>
         <child>
@@ -824,30 +750,87 @@
                               <placeholder/>
                             </child>
                           </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                          </packing>
                         </child>
                         <child>
-                          <widget class="GtkLabel" id="label14">
-                            <property name="label" translatable="yes">Group by:</property>
+                          <widget class="GtkRadioButton" id="work_with_tasks">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="label" translatable="yes">Tasks</property>
+                            <property name="relief">GTK_RELIEF_NONE</property>
+                            <property name="focus_on_click">False</property>
+                            <property name="response_id">0</property>
+                            <property name="active">True</property>
+                            <signal name="toggled" handler="on_work_with_tasks_toggled"/>
                           </widget>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="padding">6</property>
                             <property name="position">1</property>
                           </packing>
                         </child>
                         <child>
-                          <widget class="GtkComboBox" id="combobox1">
-                            <property name="active">0</property>
-                            <property name="items" translatable="yes">None
-Due Date
-Context
-Project
-Area
-Realm</property>
+                          <widget class="GtkRadioButton" id="work_with_projects">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="label" translatable="yes">Projects</property>
+                            <property name="relief">GTK_RELIEF_NONE</property>
+                            <property name="focus_on_click">False</property>
+                            <property name="response_id">0</property>
+                            <property name="active">True</property>
+                            <property name="group">work_with_tasks</property>
+                            <signal name="toggled" handler="on_work_with_projects_toggled"/>
                           </widget>
                           <packing>
                             <property name="expand">False</property>
                             <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkVSeparator" id="vseparator1">
+                            <property name="visible">True</property>
+                          </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="padding">6</property>
+                            <property name="position">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkLabel" id="label13">
+                            <property name="visible">True</property>
+                            <property name="xalign">1</property>
+                            <property name="label" translatable="yes">Show:</property>
+                          </widget>
+                          <packing>
+                            <property name="padding">3</property>
+                            <property name="position">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkComboBox" id="filter_by_date">
+                            <property name="visible">True</property>
+                            <property name="items" translatable="yes"></property>
+                            <signal name="changed" handler="on_filter_by_date_changed"/>
+                          </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="padding">3</property>
+                            <property name="position">5</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkAlignment" id="search">
+                            <property name="visible">True</property>
+                            <property name="xalign">1</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </widget>
+                          <packing>
+                            <property name="padding">3</property>
+                            <property name="position">6</property>
                           </packing>
                         </child>
                       </widget>
@@ -1227,13 +1210,13 @@ Realm</property>
                 </child>
               </widget>
               <packing>
-                <property name="resize">False</property>
-                <property name="shrink">True</property>
+                <property name="resize">True</property>
+                <property name="shrink">False</property>
               </packing>
             </child>
           </widget>
           <packing>
-            <property name="position">4</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child>
@@ -1243,7 +1226,7 @@ Realm</property>
           <packing>
             <property name="expand">False</property>
             <property name="fill">False</property>
-            <property name="position">5</property>
+            <property name="position">3</property>
           </packing>
         </child>
       </widget>

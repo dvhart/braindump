@@ -218,16 +218,11 @@ class BrainDump(object):
         self.search = SearchEntry("search")
         self.search.connect("changed", self.on_search_changed)
 
-        # The working mode, currently tasks and projects
-        # FIXME: come up with a better naming scheme
-        self.work_with = ComboMenu()
-        self.work_with.set_markup("<b>", "</b>")
-        self.work_with.set_data_func(lambda i: i[0])
-        self.work_with.add_item(("Tasks", self.task_store_filter))
-        self.work_with.add_item(("Projects", self.project_store_filter_by_area))
-        self.work_with.connect("changed", self.on_work_with_changed)
-        GUI().get_widget("work_with_placeholder").widget.add(self.work_with)
-        self.work_with.show_all()
+        # Fixup the work_with* radio buttons as the glade directives aren't taking aeffect
+        self.work_with_tasks = GUI().get_widget("work_with_tasks")
+        self.work_with_tasks.widget.set_property("draw-indicator", False)
+        self.work_with_projects = GUI().get_widget("work_with_projects")
+        self.work_with_projects.widget.set_property("draw-indicator", False)
 
         self.filters_sidebar = StackedFilters("filters", self.context_store.filter_new(),
             self.project_store_filter_by_realm_no_action,
@@ -261,7 +256,7 @@ class BrainDump(object):
 
         # Setup initial state
         # FIXME: store this in gconf?
-        self.work_with.set_active(0)
+        self.work_with_tasks.widget.set_active(0)
         self.filter_by_date.widget.set_active(0)
         self.default_project.set_active(-1)
         self.default_context.set_active(-1)
@@ -297,18 +292,6 @@ class BrainDump(object):
     # Menu-item callbacks
     def on_quit_activate(self, menuitem):
         gtk.main_quit()
-
-    def on_work_with_tasks_toggled(self, menuitem):
-        if menuitem.get_active():
-            index = self.work_with.get_active()
-            if index == 1:
-                self.work_with.set_active(0)
-
-    def on_work_with_projects_toggled(self, menuitem):
-        if menuitem.get_active():
-            index = self.work_with.get_active()
-            if index == 0:
-                self.work_with.set_active(1)
 
     def on_show_completed_toggled(self, menuitem):
         if menuitem.get_active():
@@ -370,6 +353,14 @@ class BrainDump(object):
         self.about_dialog.widget.show()
 
     # Widget callbacks
+    def on_work_with_tasks_toggled(self, widget):
+        if widget.get_active():
+            self.gtd_list.widget.set_model(self.task_store_filter.model_filter)
+
+    def on_work_with_projects_toggled(self, widget):
+        if widget.get_active():
+            self.gtd_list.widget.set_model(self.project_store_filter_by_area.model_filter)
+
     def on_new_task(self, title):
         '''Create a new task from the new task defaults, initiated from the gtd_list.'''
         project = self.default_project.get_active()
@@ -429,20 +420,6 @@ class BrainDump(object):
             if obj.start_date or obj.due_date:
                 return False
         return True
-
-    def on_work_with_changed(self, widget, index):
-        if index != 0 and index != 1:
-            error("work_with index out of range")
-            index = 0
-        # update the gtd_list model
-        model = self.work_with.get_active_item()[1]
-        self.gtd_list.widget.set_model(model.model_filter)
-
-        # update the menu radio items accordingly
-        if index == 0:
-            GUI().get_widget("work_with_tasks").widget.set_active(True)
-        elif index == 1:
-            GUI().get_widget("work_with_projects").widget.set_active(True)
 
     def on_filter_by_date_changed(self, widget):
         self.task_store_filter.refilter()
