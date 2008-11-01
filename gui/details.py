@@ -91,12 +91,24 @@ class Details(WidgetWrapper):
             self.__subject.notes = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter())
 
     def _on_start_date_changed(self, dselect):
-        if self.__subject:
+        if isinstance(self.__subject, gtd.Task) or isinstance(self.__subject, gtd.Project):
             self.__subject.start_date = dselect.get_date()
+            # FIXME: do we want to do the data validation here?  maybe we should do this in gtd?
+            if self.__subject.due_date:
+                if self.__subject.start_date is None:
+                    self.__subject.due_date = None
+                if self.__subject.due_date < self.__subject.start_date:
+                    self.__subject.due_date = self.__subject.start_date
 
     def _on_due_date_changed(self, dselect):
-        if self.__subject:
+        if isinstance(self.__subject, gtd.Task) or isinstance(self.__subject, gtd.Project):
             self.__subject.due_date = dselect.get_date()
+            # FIXME: do we want to do the data validation here?  maybe we should do this in gtd?
+            if self.__subject.due_date:
+                if self.__subject.start_date is None:
+                    self.__subject.start_date = datetime.today()
+                if self.__subject.due_date < self.__subject.start_date:
+                    self.__subject.start_date = self.__subject.due_date
 
     # FIXME, merge these two
     # FIXME, update gtd code so we only have to set the parent here (not remove self from parent)

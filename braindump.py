@@ -396,29 +396,32 @@ class BrainDump(object):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             today = datetime.today()
-            # FIXME: ewwwwww
-            if not (obj.start_date is None and obj.due_date) and not (obj.start_date and obj.start_date <= today):
-                return False
+            if obj.start_date and obj.start_date <= today:
+                return True
+            return False
         return True
 
+    # There is one invalid state when start_date is future and due_date has past
     def future_filter_callback(self, obj):
         if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             today = datetime.today()
-            if obj.start_date and obj.start_date <= today:
-                return False
-            if not obj.start_date and not obj.due_date:
-                return False
+            if obj.start_date and obj.start_date > today:
+                return True
+            return False
         return True
 
+    # There are 2 invalid states with start_date = None and due_date is future or passed.  If the due_date is
+    # set, we expect start_date to also be set.
     def someday_filter_callback(self, obj):
         if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             today = datetime.today()
-            if obj.start_date or obj.due_date:
-                return False
+            if obj.start_date is None:
+                return True
+            return False
         return True
 
     def on_filter_by_date_changed(self, widget):
