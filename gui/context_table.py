@@ -53,7 +53,7 @@ class ContextTable(WidgetWrapper):
                 self.add_context(c)
         # FIXME: decide if this should be connected outside of the widget...
         GTD().connect("context_added", lambda g,o: self.add_context(o))
-        GTD().connect("context_renamed", lambda g,o: self.update_context(o))
+        GTD().connect("context_modified", lambda g,o: self.update_context(o))
         GTD().connect("context_removed", lambda g,o: self.remove_context(o))
 
     def __sort(self, context_a, context_b):

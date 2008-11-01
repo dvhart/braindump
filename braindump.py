@@ -49,50 +49,50 @@ from xmlstore import *
 class GTDSignalTest:
     def __init__(self):
         GTD().connect("realm_visible_changed", self.on_realm_visible_changed)
-        GTD().connect("realm_renamed", self.on_realm_renamed)
+        GTD().connect("realm_modified", self.on_realm_modified)
         GTD().connect("realm_added", self.on_realm_added)
         GTD().connect("realm_removed", self.on_realm_removed)
-        GTD().connect("area_renamed", self.on_area_renamed)
+        GTD().connect("area_modified", self.on_area_modified)
         GTD().connect("area_added", self.on_area_added)
         GTD().connect("area_removed", self.on_area_removed)
-        GTD().connect("project_renamed", self.on_project_renamed)
+        GTD().connect("project_modified", self.on_project_modified)
         GTD().connect("project_added", self.on_project_added)
         GTD().connect("project_removed", self.on_project_removed)
-        GTD().connect("task_renamed", self.on_task_renamed)
+        GTD().connect("task_modified", self.on_task_modified)
         GTD().connect("task_added", self.on_task_added)
         GTD().connect("task_removed", self.on_task_removed)
-        GTD().connect("context_renamed", self.on_context_renamed)
+        GTD().connect("context_modified", self.on_context_modified)
         GTD().connect("context_added", self.on_context_added)
         GTD().connect("context_removed", self.on_context_removed)
 
     def on_realm_visible_changed(self, tree, realm):
         debug('on_realm_visible_changed: %s.visible = %s' % (realm.title, realm.visible))
-    def on_realm_renamed(self, tree, realm):
-        debug('realm_renamed: %s' % (realm.title))
+    def on_realm_modified(self, tree, realm):
+        debug('realm_modified: %s' % (realm.title))
     def on_realm_added(self, tree, realm):
         debug('realm_added: %s' % (realm.title))
     def on_realm_removed(self, tree, realm):
         debug('realm_removed: %s' % (realm.title))
-    def on_area_renamed(self, tree, area):
-        debug('area_renamed: %s' % (area.title))
+    def on_area_modified(self, tree, area):
+        debug('area_modified: %s' % (area.title))
     def on_area_added(self, tree, area):
         debug('area_added: %s' % (area.title))
     def on_area_removed(self, tree, area):
         debug('area_removed: %s' % (area.title))
-    def on_project_renamed(self, tree, project):
-        debug('project_renamed: %s' % (project.title))
+    def on_project_modified(self, tree, project):
+        debug('project_modified: %s' % (project.title))
     def on_project_added(self, tree, project):
         debug('project_added: %s' % (project.title))
     def on_project_removed(self, tree, project):
         debug('project_removed: %s' % (project.title))
-    def on_task_renamed(self, tree, task):
-        debug('task_renamed: %s' % (task.title))
+    def on_task_modified(self, tree, task):
+        debug('task_modified: %s' % (task.title))
     def on_task_added(self, tree, task):
         debug('task_added: %s' % (task.title))
     def on_task_removed(self, tree, task):
         debug('task_removed: %s' % (task.title))
-    def on_context_renamed(self, tree, context):
-        debug('context_renamed: %s' % (context.title))
+    def on_context_modified(self, tree, context):
+        debug('context_modified: %s' % (context.title))
     def on_context_added(self, tree, context):
         debug('context_added: %s' % (context.title))
     def on_context_removed(self, tree, context):
@@ -165,14 +165,14 @@ class BrainDump(object):
 
 
         ##### Connect GTD Signals #####
-        GTD().connect("realm_renamed", self.realm_store.on_gtd_renamed)
+        GTD().connect("realm_modified", self.realm_store.on_gtd_modified)
         GTD().connect("realm_added", self.realm_store.on_gtd_added)
         GTD().connect("realm_removed", self.realm_store.on_gtd_removed)
 
-        GTD().connect("realm_renamed", self.realm_area_store.on_realm_renamed)
+        GTD().connect("realm_modified", self.realm_area_store.on_realm_modified)
         GTD().connect("realm_added", self.realm_area_store.on_realm_added)
         GTD().connect("realm_removed", self.realm_area_store.on_realm_removed)
-        GTD().connect("area_renamed", self.realm_area_store.on_area_renamed)
+        GTD().connect("area_modified", self.realm_area_store.on_area_modified)
         GTD().connect("area_added", self.realm_area_store.on_area_added)
         GTD().connect("area_removed", self.realm_area_store.on_area_removed)
 
@@ -185,25 +185,23 @@ class BrainDump(object):
         GTD().connect("realm_visible_changed", lambda g,o: self.project_store_date.refilter())
         GTD().connect("realm_visible_changed", lambda g,o: self.area_store.refilter())
 
-        GTD().connect("area_renamed", self.area_store.on_gtd_renamed)
+        GTD().connect("area_modified", self.area_store.on_gtd_modified)
         GTD().connect("area_added", self.area_store.on_gtd_added)
         GTD().connect("area_removed", self.area_store.on_gtd_removed)
 
-        GTD().connect("project_renamed", self.project_store.on_gtd_renamed)
+        GTD().connect("project_modified", self.project_store.on_gtd_modified)
         GTD().connect("project_added", self.project_store.on_gtd_added)
         GTD().connect("project_removed", self.project_store.on_gtd_removed)
 
-        GTD().connect("project_renamed", self.project_store_date.on_gtd_renamed)
+        GTD().connect("project_modified", self.project_store_date.on_gtd_modified)
         GTD().connect("project_added", self.project_store_date.on_gtd_added)
         GTD().connect("project_removed", self.project_store_date.on_gtd_removed)
 
-        # FIXME: just delete renamed, and use modified everywhere..
-        GTD().connect("task_renamed", self.task_store.on_gtd_renamed)
-        GTD().connect("task_modified", self.task_store.on_gtd_renamed)
+        GTD().connect("task_modified", self.task_store.on_gtd_modified)
         GTD().connect("task_added", self.task_store.on_gtd_added)
         GTD().connect("task_removed", self.task_store.on_gtd_removed)
 
-        GTD().connect("context_renamed", self.context_store.on_gtd_renamed)
+        GTD().connect("context_modified", self.context_store.on_gtd_modified)
         GTD().connect("context_added", self.context_store.on_gtd_added)
         GTD().connect("context_removed", self.context_store.on_gtd_removed)
 

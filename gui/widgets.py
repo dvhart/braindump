@@ -169,7 +169,7 @@ class RealmToggles(WidgetWrapper):
         for r in GTD().realms:
             self.add_realm(r)
         GTD().connect("realm_added", lambda g,o: self.add_realm(o))
-        GTD().connect("realm_renamed", lambda g,o: self.update_realm(o))
+        GTD().connect("realm_modified", lambda g,o: self.update_realm(o))
         GTD().connect("realm_removed", lambda g,o: self.remove_realm(o))
 
     def _on_toggled(self, widget, realm):

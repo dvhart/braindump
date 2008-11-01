@@ -174,9 +174,8 @@ class GTDStore(gobject.GObject):
             iter = self.model.iter_next(iter)
         return None
 
-    # FIXME: going to need "changed" for when dates change, etc, we'll need the view updated
     # FIXME: this is getting called whenever the cursor changes...
-    def on_gtd_renamed(self, tree, obj):
+    def on_gtd_modified(self, tree, obj):
         iter = self.gtd_iter(obj)
         if iter:
             self.model.row_changed(self.model.get_path(iter), iter)
@@ -292,7 +291,7 @@ class RealmAreaStore(gobject.GObject):
 
     # GTD signal handlers
     # FIXME: can we derive from RealmStore and AreaStore
-    def on_realm_renamed(self, tree, realm):
+    def on_realm_modified(self, tree, realm):
         iter = self.__realm_iter(realm)
         if iter:
             self.model.row_changed(self.model.get_path(iter), iter)
@@ -311,7 +310,7 @@ class RealmAreaStore(gobject.GObject):
         else:
             error('%s not found in RealmAreaStore' % (realm.title))
 
-    def on_area_renamed(self, tree, area):
+    def on_area_modified(self, tree, area):
         iter = self.__area_iter(area)
         if iter:
             self.model.row_changed(self.model.get_path(iter), iter)

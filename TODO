@@ -26,7 +26,6 @@ o Code refactoring
 o Code pydoc
 o eliminate all warnings and assertion errors
 o add appropriate log level messages
-o eliminate the gtd renamed signals, use modified (or "changed")
 o use countdown time to slowly remove items that newly become invisible
   due to changed dates, title, contexts, or other filterable property
 o multiple select

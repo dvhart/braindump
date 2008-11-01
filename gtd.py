@@ -96,7 +96,6 @@ class Context(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        GTD().emit("context_renamed", self)
         GTD().emit("context_modified", self)
 
 
@@ -124,7 +123,6 @@ class Realm(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        GTD().emit("realm_renamed", self)
         GTD().emit("realm_modified", self)
 
     def get_tasks(self):
@@ -186,7 +184,6 @@ class Area(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        GTD().emit("area_renamed", self)
         GTD().emit("area_modified", self)
 
     def set_realm(self, realm):
@@ -261,7 +258,6 @@ class Project(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        GTD().emit("project_renamed", self)
         GTD().emit("project_modified", self)
 
     def set_area(self, area):
@@ -357,7 +353,7 @@ class Task(Base):
 
     def set_title(self, title):
         Base.set_title(self, title)
-        GTD().emit("task_renamed", self)
+        GTD().emit("task_modified", self)
 
     def set_project(self, project):
         # FIXME: I think this is a hack, this should never be None
@@ -412,23 +408,18 @@ class GTD(gobject.GObject):
     __metaclass__ = GSingleton
 
     __gsignals__ = {'realm_visible_changed' : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
-                    'realm_renamed'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'realm_modified'        : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'realm_added'           : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'realm_removed'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
-                    'area_renamed'          : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'area_modified'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'area_added'            : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'area_removed'          : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
-                    'project_renamed'       : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'project_modified'      : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'project_added'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'project_removed'       : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
-                    'task_renamed'          : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'task_modified'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'task_added'            : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'task_removed'          : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
-                    'context_renamed'       : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'context_modified'      : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'context_added'         : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,)),
                     'context_removed'       : (SIGNAL_RUN_FIRST, TYPE_NONE, (TYPE_PYOBJECT,))
