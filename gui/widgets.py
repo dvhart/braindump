@@ -228,7 +228,10 @@ class GTDTreeViewBase(WidgetWrapper):
         if data == "title":
             obj = model.get_value(iter, 0)
             title = obj.title
-            if isinstance(obj, GTDActionRow) or isinstance(obj, gtd.BaseNone):
+            # FIXME: I think it's time for some subclassing here...
+            if (isinstance(obj, gtd.Project) or isinstance(obj, gtd.Task)) and obj.complete:
+                title = "<s>"+title+"</s>"
+            elif isinstance(obj, GTDActionRow) or isinstance(obj, gtd.BaseNone):
                 title = "<i>"+title+"</i>"
             cell.set_property("markup", title)
             return True
@@ -281,7 +284,7 @@ class GTDTreeViewBase(WidgetWrapper):
 # doesn't do the filtering, it's selection is used for that purpose
 # by the application.
 class FilterListView(GTDTreeViewBase):
-    """A treeview to display contexts or projects."""
+    """A treeview to display contexts, projects, or areas."""
 
     def __init__(self, name):
         """Construct a treeview for contexts and projects.
@@ -585,7 +588,7 @@ class GTDFilterCombo(WidgetWrapper):
 
     def _data_func(self, column, cell, model, iter):
         filter_item = model[iter][0]
-        cell.set_property("text", filter_item.name)
+        cell.set_property("markup", filter_item.name)
 
     def get_active(self):
         iter = self.widget.get_active_iter()
@@ -614,8 +617,10 @@ class GTDCombo(WidgetWrapper):
 
     def _data_func(self, column, cell, model, iter):
         obj = model[iter][0]
-        if isinstance(obj, gtd.Base) or isinstance(obj, GTDActionRow):
-            cell.set_property("text", obj.title)
+        if (isinstance(obj, gtd.Project) or isinstance(obj, gtd.Task)) and obj.complete:
+            cell.set_property("markup", "<s>"+obj.title+"</s>")
+        elif isinstance(obj, gtd.Base) or isinstance(obj, GTDActionRow):
+            cell.set_property("markup", obj.title)
         else:
             # FIXME: throw an exception
             error('obj is not a gtd.Base: %s' % (obj.__class__.__name__))

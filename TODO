@@ -44,7 +44,6 @@ o add on_key_press handler to date_select.py
 o add monitor edge awareness to date_select.py
   - see kiwi dateentry.py
   - /usr/share/python-support/python-kiwi/kiwi/ui/dateentry.py
-o Abide by "show completed" settings in filter lists as well
 
 Save Settings / State (GCONF, GNOME dep?)
 ---------------------------

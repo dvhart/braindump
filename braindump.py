@@ -274,17 +274,9 @@ class BrainDump(object):
         self.project_store_filter_by_realm.append(self.project_by_realm)
         self.project_store_filter_by_realm_no_action.extend([self.project_by_realm, self.hide_actions])
 
-        # Filter out complete tasks if not explicitly checked
-        if not GUI().get_widget("show_completed").widget.get_active():
-            self.task_store_filter.append(self.completed_filter)
-            self.project_store_filter_by_area.append(self.completed_filter)
-            self.gtd_list.show_completed = False
-        else:
-            self.gtd_list.show_completed = True
+        # Filter out complete tasks and projects if not explicitly checked
+        self.on_show_completed_toggled(GUI().get_widget("show_completed").widget)
 
-        self.task_store_filter.refilter()
-        self.project_store_filter_by_area.refilter()
-        self.project_store_filter_by_realm_no_action.refilter()
 
     # Application logic follows
     # Menu-item callbacks
@@ -295,13 +287,16 @@ class BrainDump(object):
         if menuitem.get_active():
             self.task_store_filter.remove(self.completed_filter)
             self.project_store_filter_by_area.remove(self.completed_filter)
+            self.project_store_filter_by_realm_no_action.remove(self.completed_filter)
             self.gtd_list.show_completed = True
         else:
             self.task_store_filter.append(self.completed_filter)
             self.project_store_filter_by_area.append(self.completed_filter)
+            self.project_store_filter_by_realm_no_action.append(self.completed_filter)
             self.gtd_list.show_completed = False
         self.task_store_filter.refilter()
         self.project_store_filter_by_area.refilter()
+        self.project_store_filter_by_realm_no_action.refilter()
 
     def on_realms_and_areas_activate(self, menuitem):
         self.realm_area_dialog.widget.show()
