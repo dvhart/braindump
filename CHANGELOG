@@ -1,5 +1,11 @@
-BrainDump 0.3
-=============
+BrainDump 0.2.3 (current tree)
+===============
+o Icon and menu item installation
+o install.sh script
+o Show/Hide completed tasks in combos and filters according to View menu setting
+
+BrainDump 0.2.2
+===============
 o fixed details resize behavior
   o don't expand details on window resize
   o only expand notes widget on vpanel adjust

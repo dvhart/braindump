@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Task Manager
+Name[en_CA]=Task Manager
+Name[en_GB]=Task Manager
+Comment=Manage tasks
+Comment[en_CA]=Manage tasks
+Comment[en_GB]=Manage tasks
+Categories=GTK;Utility;
+Exec=braindump
+Icon=braindump
+StartupNotify=true
+Terminal=false
+Type=Application
