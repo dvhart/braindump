@@ -1,0 +1,8 @@
+include *.py
+recursive-include gui/*.py
+recursive-include test/*.py
+include glade/braindump.glade
+include images/*.png
+include data/braindump.desktop
+include data/icons/*.png
+include data/icons/*.svg

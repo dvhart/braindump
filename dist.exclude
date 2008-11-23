@@ -1,0 +1,7 @@
+.svn
+.pc
+patches 
+dist.exclude
+*.bak
+*.pyc
+*.pidaproject
