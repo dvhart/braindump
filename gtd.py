@@ -452,8 +452,7 @@ class GTD(gobject.GObject):
     def remove_context(self, context):
         for r in self.realms:
             for t in r.get_tasks():
-                if t.contexts.count(context):
-                    t.contexts.remove(context)
+                t.remove_context(context)
         self.contexts.remove(context)
         self.emit("context_removed", context)
 
