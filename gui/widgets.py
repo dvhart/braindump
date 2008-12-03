@@ -316,7 +316,7 @@ class FilterListView(GTDTreeViewBase):
             for path in paths:
                 comp = selmodel[path][0] # project, context, or area
                 if isinstance(comp, gtd.Context):
-                    if obj.contexts.count(comp):
+                    if comp in obj.contexts:
                         return True
                     if len(obj.contexts) is 0 and isinstance(comp, gtd.ContextNone):
                         return True
