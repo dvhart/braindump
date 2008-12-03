@@ -339,12 +339,7 @@ class Task(Base):
         # called without that parameter... weird...
         if not contexts:
             contexts = []
-        # FIXME: public contexts breaks data hiding, should implement
-        # an iterator (otherwise someone could do
-        #      mytask.contexts.append(mycontext)
-        # and it wouldn't get written back to disk as the _modified signal
-        # won't be emitted.
-        self.contexts = contexts
+        self.__contexts = contexts
         self.__notes = notes
         self.__start_date = None # these will be datetime objects
         self.__due_date = None
@@ -387,15 +382,16 @@ class Task(Base):
         GTD().emit("task_modified", self)
 
     def add_context(self, context):
-        if self.contexts.count(context) == 0:
-            self.contexts.append(context)
+        if self.__contexts.count(context) == 0:
+            self.__contexts.append(context)
             GTD().emit("task_modified", self)
 
     def remove_context(self, context):
-        if self.contexts.count(context):
-            self.contexts.remove(context)
+        if self.__contexts.count(context):
+            self.__contexts.remove(context)
             GTD().emit("task_modified", self)
 
+    contexts = OProperty(lambda s: frozenset(s.__contexts), None)
     project = OProperty(lambda s: s.__project, set_project)
     notes = OProperty(lambda s: s.__notes, set_notes)
     start_date = OProperty(lambda s: s.__start_date, set_start_date)
@@ -445,7 +441,7 @@ class GTD(gobject.GObject):
         for r in self.realms:
             if r.visible:
                 for t in r.get_tasks():
-                    if t.contexts.count(context):
+                    if context in t.contexts:
                         tasks.append(t)
         return tasks
 
