@@ -23,22 +23,21 @@
 
 import sys
 import getopt
+import os.path
 import logging
 from logging import debug, info, warning, error, critical
 
 from braindump.braindump import *
 
 def usage():
-    basename = currentframe().f_code.co_filename
-    print 'Usage: %s [OPTION]...' % (basename) # FIXME: what is the right way to get the filename...
-                                               # do I really have to use currentframe().f_code.co_filename ??
+    print 'Usage: %s [OPTION]...'%os.path.basename(sys.argv[0])
     print '  -h, --help               display this help and exit'
     print '  -l, --loglevel=LEVEL     set the logging level: DEBUG (default), WARNING,'
     print '                           INFO, ERROR, CRITICAL'
 
 def main():
-    logging.basicConfig(level=logging.ERROR,
-                        format='%(levelname)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s')
+    fmt = '%(levelname)s:%(filename)s:%(lineno)d:%(funcName)s:%(message)s'
+    logging.basicConfig(level=logging.ERROR, format=fmt)
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hl:", ["help", "loglevel="])
