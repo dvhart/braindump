@@ -159,6 +159,7 @@ class BrainDump(object):
         # Date filter store
         self.date_filter_store = gtk.ListStore(gobject.TYPE_PYOBJECT)
         self.date_filter_store.append([FilterItem("All Items", self.all_filter_callback)])
+        self.date_filter_store.append([FilterItem("Due Items", self.due_filter_callback)])
         self.date_filter_store.append([FilterItem("Active Items", self.active_filter_callback)])
         self.date_filter_store.append([FilterItem("Future Items", self.future_filter_callback)])
         self.date_filter_store.append([FilterItem("Someday Items", self.someday_filter_callback)])
@@ -382,6 +383,16 @@ class BrainDump(object):
         # FIXME: ewww...
         if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
+        return True
+
+    def due_filter_callback(self, obj):
+        if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
+            debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
+        if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
+            today = datetime_ceiling(datetime.now())
+            if obj.due_date and datetime_ceiling(obj.due_date) <= today:
+                return True
+            return False
         return True
 
     def active_filter_callback(self, obj):
