@@ -213,7 +213,7 @@ class BrainDump(object):
         self.gtd_row_popup = GTDRowPopup("gtd_row_popup")
 
         # Date filter and search bar
-        self.filter_by_date = GTDFilterCombo("filter_by_date", self.date_filter_store)
+        self.filter_by_state = GTDFilterCombo("filter_by_state", self.date_filter_store)
         self.search = SearchEntry("search")
         self.search.connect("changed", self.on_search_changed)
 
@@ -256,7 +256,7 @@ class BrainDump(object):
         # Setup initial state
         # FIXME: store this in gconf?
         self.work_with_tasks.widget.set_active(0)
-        self.filter_by_date.widget.set_active(0)
+        self.filter_by_state.widget.set_active(0)
         self.default_project.set_active(-1)
         self.default_context.set_active(-1)
 
@@ -264,13 +264,13 @@ class BrainDump(object):
         self.task_store_filter.append(self.task_by_realm)
         self.task_store_filter.append(self.filters_sidebar.filter)
         self.task_store_filter.append(Filter(self.search.search))
-        self.task_store_filter.append(Filter(self.filter_by_date.filter))
+        self.task_store_filter.append(Filter(self.filter_by_state.filter))
 
         self.project_store_filter_by_area.append(self.project_by_realm)
         self.project_store_filter_by_area.append(Filter(lambda p: not isinstance(p, gtd.BaseNone)))
         self.project_store_filter_by_area.append(self.filters_sidebar.filter)
         self.project_store_filter_by_area.append(Filter(self.search.search))
-        self.project_store_filter_by_area.append(Filter(self.filter_by_date.filter))
+        self.project_store_filter_by_area.append(Filter(self.filter_by_state.filter))
 
         self.project_store_filter_by_realm.append(self.project_by_realm)
         self.project_store_filter_by_realm_no_action.extend([self.project_by_realm, self.hide_actions])
@@ -388,8 +388,7 @@ class BrainDump(object):
     def due_filter_callback(self, obj):
         if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
-            today = datetime_ceiling(datetime.now())
-            if obj.due_date and datetime_ceiling(obj.due_date) <= today:
+            if obj.state == gtd.Actionable.DUE or obj.state == gtd.Actionable.OVERDUE:
                 return True
             return False
         return True
@@ -397,8 +396,7 @@ class BrainDump(object):
     def active_filter_callback(self, obj):
         if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
-            today = datetime.today()
-            if obj.start_date and obj.start_date <= today:
+            if obj.state <= gtd.Actionable.UPCOMING: # includes OVERDUE, DUE, ACTIVE, and UPCOMING
                 return True
             return False
         return True
@@ -407,8 +405,7 @@ class BrainDump(object):
     def future_filter_callback(self, obj):
         if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
-            today = datetime.today()
-            if obj.start_date and obj.start_date > today:
+            if obj.state == gtd.Actionable.FUTURE:
                 return True
             return False
         return True
@@ -418,13 +415,12 @@ class BrainDump(object):
     def someday_filter_callback(self, obj):
         if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
-            today = datetime.today()
-            if obj.start_date is None:
+            if obj.state == gtd.Actionable.SOMEDAY:
                 return True
             return False
         return True
 
-    def on_filter_by_date_changed(self, widget):
+    def on_filter_by_state_changed(self, widget):
         self.task_store_filter.refilter()
         self.project_store_filter_by_area.refilter()
 

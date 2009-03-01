@@ -21,11 +21,11 @@
 # 2007-Jun-30:	Initial version by Darren Hart <darren@dvhart.com>
 
 from gobject import *
-import datetime
 from uuid import uuid4
 import pickle
 from singleton import *
 from oproperty import *
+from gui.friendly_date import *
 from logging import debug, info, warning, error, critical
 
 # FIXME: consider adding adding function pointers to the GTD() signals, then
@@ -237,35 +237,78 @@ class AreaNone(Base, BaseNone):
 
 class Actionable(Base):
     '''Base Class for Project and Task'''
+
+    # FIXME: consider some kind of an enum or other more structured approach.
+    OVERDUE  = 1 # the due date has passed
+    DUE      = 2 # due today
+    ACTIVE   = 3 # start date has passed, due date is in the future
+    UPCOMING = 4 # ACTIVE and due date is coming up within 7 days - consider making this configurable
+    FUTURE   = 5 # the start date is in the future
+    SOMEDAY  = 6 # no start nor due date
+    COMPLETE = 7 # Actionable.complete is not None - this is redundant...
+    INITIAL  = 8
+
     def __init__(self, id, title, notes):
         Base.__init__(self, id, title)
         self.__notes = notes
         self.__start_date = None
         self.__due_date = None
         self.__complete = None
+        self.__state = Actionable.INITIAL
+
+    def __set_state(self):
+        state = Actionable.INITIAL
+        if self.__complete:
+            state = Actionable.COMPLETE
+        else:
+            today = datetime_ceiling(datetime.now())
+            due_date = None
+            if self.due_date:
+                due_date = datetime_ceiling(self.due_date)
+                if due_date < today:
+                    state = Actionable.OVERDUE
+                elif due_date == today:
+                    state = Actionable.DUE
+            if state == Actionable.INITIAL:
+                if self.start_date:
+                    start_date = datetime_ceiling(self.start_date)
+                    if start_date <= today:
+                        state = Actionable.ACTIVE
+                        # we're ACTIVE, check if also UPCOMING
+                        if due_date and due_date < (today + timedelta(days=7)):
+                            state = Actionable.UPCOMING
+                    elif start_date > today:
+                        state = Actionable.FUTURE
+                else:
+                    state = Actionable.SOMEDAY
+        self.__state = state
 
     def set_complete(self, complete):
         if complete == True:
-            complete = datetime.datetime.now()
+            complete = datetime.now()
         elif complete == False:
             complete = None
         elif complete is not None:
-            assert isinstance(complete, datetime.datetime)
+            assert isinstance(complete, datetime)
         self.__complete = complete
+        self.__set_state()
 
     def set_notes(self, notes):
         self.__notes = notes
 
     def set_start_date(self, start_date):
         self.__start_date = start_date
+        self.__set_state()
 
     def set_due_date(self, due_date):
         self.__due_date = due_date
+        self.__set_state()
 
     notes = OProperty(lambda s: s.__notes, set_notes)
     start_date = OProperty(lambda s: s.__start_date, set_start_date)
     due_date = OProperty(lambda s: s.__due_date, set_due_date)
     complete = OProperty(lambda s: s.__complete, set_complete)
+    state = OProperty(lambda s: s.__state, None)
 
 
 class Project(Actionable):
