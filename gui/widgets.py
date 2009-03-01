@@ -344,7 +344,7 @@ class FilterListView(GTDTreeViewBase):
 
 
 class GTDListView(GTDTreeViewBase):
-    """A treeview to display tasks and pojects.
+    """A treeview to display tasks and projects.
 
     Public members variables:
     follow_new -- whether or not to jump to a newly created gtd object
@@ -366,6 +366,19 @@ class GTDListView(GTDTreeViewBase):
         GTDTreeViewBase.__init__(self, name)
         self.follow_new = True
         self.show_completed = False
+
+        self.colors = {}
+        self.colors[None]                         = "#FFFFFF"
+        self.colors[gtd.Actionable.INITIAL] = "#FFFFFF"
+        self.colors[gtd.Actionable.OVERDUE] = "#E0B6AF"
+        self.colors[gtd.Actionable.DUE]     = "#E0B6AF"
+        self.colors[gtd.Actionable.ACTIVE]  = "#FFFFFF"
+        #self.colors[gtd.Actionable.UPCOMING] = "#EED680"
+        #self.colors[gtd.Actionable.UPCOMING] = "#FFEDAE"
+        self.colors[gtd.Actionable.UPCOMING] = "#FFF3C7"
+        self.colors[gtd.Actionable.FUTURE]   = "#FFFFFF"
+        self.colors[gtd.Actionable.SOMEDAY]  = "#FFFFFF"
+        self.colors[gtd.Actionable.COMPLETE] = "#FFFFFF"
 
         self.__countdown_pixbufs = {}
         self._load_countdown_pixbufs()
@@ -497,6 +510,15 @@ class GTDListView(GTDTreeViewBase):
 
     def _data_func(self, column, cell, model, iter, data):
         obj = model.get_value(iter, 0)
+
+        # common cell formatting
+        if isinstance(obj, GTDActionRow):
+            cell.set_property("cell-background", self.colors[None])
+        else:
+            cell.set_property("cell-background", self.colors[obj.state])
+            # FIXME setup the markup (bold or otherwise here as well)
+
+        # column specific formatting
         if data is "complete":
             if isinstance(obj, GTDActionRow):
                 cell.set_property("inconsistent", True)

@@ -256,6 +256,7 @@ class Actionable(Base):
         self.__complete = None
         self.__state = Actionable.INITIAL
 
+    # FIXME: this needs to be called on all Actionables in the tree everytime the system date changes
     def __set_state(self):
         state = Actionable.INITIAL
         if self.__complete:
