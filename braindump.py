@@ -381,14 +381,13 @@ class BrainDump(object):
     # FIXME: consider just subclassing them?  Seems silly to subclass for only one instantiation...
     def all_filter_callback(self, obj):
         # FIXME: ewww...
-        if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
+        if not isinstance(obj, gtd.BaseNone) and isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         return True
 
     def due_filter_callback(self, obj):
-        if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
+        if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
-        if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             today = datetime_ceiling(datetime.now())
             if obj.due_date and datetime_ceiling(obj.due_date) <= today:
                 return True
@@ -396,9 +395,8 @@ class BrainDump(object):
         return True
 
     def active_filter_callback(self, obj):
-        if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
+        if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
-        if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             today = datetime.today()
             if obj.start_date and obj.start_date <= today:
                 return True
@@ -407,9 +405,8 @@ class BrainDump(object):
 
     # There is one invalid state when start_date is future and due_date has past
     def future_filter_callback(self, obj):
-        if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
+        if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
-        if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             today = datetime.today()
             if obj.start_date and obj.start_date > today:
                 return True
@@ -419,9 +416,8 @@ class BrainDump(object):
     # There are 2 invalid states with start_date = None and due_date is future or passed.  If the due_date is
     # set, we expect start_date to also be set.
     def someday_filter_callback(self, obj):
-        if not isinstance(obj, gtd.BaseNone) and (isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project)):
+        if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
-        if isinstance(obj, gtd.Task) or isinstance(obj, gtd.Project):
             today = datetime.today()
             if obj.start_date is None:
                 return True

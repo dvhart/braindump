@@ -228,8 +228,7 @@ class GTDTreeViewBase(WidgetWrapper):
         if data == "title":
             obj = model.get_value(iter, 0)
             title = obj.title
-            # FIXME: I think it's time for some subclassing here...
-            if (isinstance(obj, gtd.Project) or isinstance(obj, gtd.Task)) and obj.complete:
+            if isinstance(obj, gtd.Actionable) and obj.complete:
                 title = "<s>"+title+"</s>"
             elif isinstance(obj, GTDActionRow) or isinstance(obj, gtd.BaseNone):
                 title = "<i>"+title+"</i>"

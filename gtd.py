@@ -235,34 +235,14 @@ class AreaNone(Base, BaseNone):
         return tasks
 
 
-class Project(Base):
-    def create(id=None, title="", notes="", area=None):
-        project = Project(id, title, notes, area)
-        GTD().emit("project_added", project)
-        return project
-    create = staticmethod(create)
-
-    def __init__(self, id, title, notes, area):
-        self.tasks = []
+class Actionable(Base):
+    '''Base Class for Project and Task'''
+    def __init__(self, id, title, notes):
         Base.__init__(self, id, title)
-        if area:
-            self.__area = area
-        else:
-            self.__area = AreaNone()
-        self.area.add_project(self)
-
         self.__notes = notes
         self.__start_date = None
         self.__due_date = None
         self.__complete = None
-
-    def set_title(self, title):
-        Base.set_title(self, title)
-        GTD().emit("project_modified", self)
-
-    def set_area(self, area):
-        self.__area = area
-        GTD().emit("project_modified", self)
 
     def set_complete(self, complete):
         if complete == True:
@@ -272,18 +252,65 @@ class Project(Base):
         elif complete is not None:
             assert isinstance(complete, datetime.datetime)
         self.__complete = complete
-        GTD().emit("project_modified", self)
 
     def set_notes(self, notes):
         self.__notes = notes
-        GTD().emit("project_modified", self)
 
     def set_start_date(self, start_date):
         self.__start_date = start_date
-        GTD().emit("project_modified", self)
 
     def set_due_date(self, due_date):
         self.__due_date = due_date
+
+    notes = OProperty(lambda s: s.__notes, set_notes)
+    start_date = OProperty(lambda s: s.__start_date, set_start_date)
+    due_date = OProperty(lambda s: s.__due_date, set_due_date)
+    complete = OProperty(lambda s: s.__complete, set_complete)
+
+
+class Project(Actionable):
+    def create(id=None, title="", notes="", area=None):
+        project = Project(id, title, notes, area)
+        GTD().emit("project_added", project)
+        return project
+    create = staticmethod(create)
+
+    def __init__(self, id, title, notes, area):
+        self.tasks = []
+        Actionable.__init__(self, id, title, notes)
+        if area:
+            self.__area = area
+        else:
+            self.__area = AreaNone()
+        self.area.add_project(self)
+    
+    # Base methods
+    # FIXME: find a way to not have to implement these here at all!
+    def set_title(self, title):
+        Base.set_title(self, title)
+        GTD().emit("project_modified", self)
+
+    # Actionable methods
+    # FIXME: find a way to not have to implement these here at all!
+    def set_complete(self, complete):
+        Actionable.set_complete(self, complete)
+        GTD().emit("project_modified", self)
+
+    def set_notes(self, notes):
+        Actionable.set_notes(self, notes)
+        GTD().emit("project_modified", self)
+
+    def set_start_date(self, start_date):
+        Actionable.set_start_date(self, start_date)
+        GTD().emit("project_modified", self)
+
+    def set_due_date(self, due_date):
+        Actionable.set_due_date(self, due_date)
+        GTD().emit("project_modified", self)
+
+    # Project methods
+    def set_area(self, area):
+        self.__area = area
         GTD().emit("project_modified", self)
 
     def add_task(self, task):
@@ -293,10 +320,7 @@ class Project(Base):
         self.tasks.remove(task)
 
     area = OProperty(lambda s: s.__area, set_area)
-    notes = OProperty(lambda s: s.__notes, set_notes)
-    start_date = OProperty(lambda s: s.__start_date, set_start_date)
-    due_date = OProperty(lambda s: s.__due_date, set_due_date)
-    complete = OProperty(lambda s: s.__complete, set_complete)
+
 
 class ProjectNone(Base, BaseNone):
     __metaclass__ = Singleton
@@ -321,7 +345,7 @@ class ProjectNone(Base, BaseNone):
         self.tasks.remove(task)
 
 
-class Task(Base):
+class Task(Actionable):
     def create(id=None, title="", project=None, contexts=None, notes="", waiting=False):
         task = Task(id, title, project, contexts, notes, waiting)
         GTD().emit("task_added", task)
@@ -329,7 +353,7 @@ class Task(Base):
     create = staticmethod(create)
 
     def __init__(self, id, title, project, contexts, notes, waiting):
-        Base.__init__(self, id, title)
+        Actionable.__init__(self, id, title, notes)
         if project:
             self.__project = project
         else:
@@ -340,16 +364,33 @@ class Task(Base):
         if not contexts:
             contexts = []
         self.__contexts = contexts
-        self.__notes = notes
-        self.__start_date = None # these will be datetime objects
-        self.__due_date = None
         self.__waiting = waiting
-        self.__complete = None
 
+    # Base methods
+    # FIXME: find a way to not have to implement these here at all!
     def set_title(self, title):
         Base.set_title(self, title)
         GTD().emit("task_modified", self)
 
+    # Actionable methods
+    # FIXME: find a way to not have to implement these here at all!
+    def set_complete(self, complete):
+        Actionable.set_complete(self, complete)
+        GTD().emit("task_modified", self)
+
+    def set_notes(self, notes):
+        Actionable.set_notes(self, notes)
+        GTD().emit("task_modified", self)
+
+    def set_start_date(self, start_date):
+        Actionable.set_start_date(self, start_date)
+        GTD().emit("task_modified", self)
+
+    def set_due_date(self, due_date):
+        Actionable.set_due_date(self, due_date)
+        GTD().emit("task_modified", self)
+
+    # Task methods
     def set_project(self, project):
         # FIXME: I think this is a hack, this should never be None
         # maybe just throw an exception here ? or an assert?
@@ -357,28 +398,6 @@ class Task(Base):
             self.__project = project
         else:
             self.__project = ProjectNone()
-        GTD().emit("task_modified", self)
-
-    def set_complete(self, complete):
-        if complete == True:
-            complete = datetime.datetime.now()
-        elif complete == False:
-            complete = None
-        elif complete is not None:
-            assert isinstance(complete, datetime.datetime)
-        self.__complete = complete
-        GTD().emit("task_modified", self)
-
-    def set_notes(self, notes):
-        self.__notes = notes
-        GTD().emit("task_modified", self)
-
-    def set_start_date(self, start_date):
-        self.__start_date = start_date
-        GTD().emit("task_modified", self)
-
-    def set_due_date(self, due_date):
-        self.__due_date = due_date
         GTD().emit("task_modified", self)
 
     def add_context(self, context):
@@ -393,10 +412,6 @@ class Task(Base):
 
     contexts = OProperty(lambda s: frozenset(s.__contexts), None)
     project = OProperty(lambda s: s.__project, set_project)
-    notes = OProperty(lambda s: s.__notes, set_notes)
-    start_date = OProperty(lambda s: s.__start_date, set_start_date)
-    due_date = OProperty(lambda s: s.__due_date, set_due_date)
-    complete = OProperty(lambda s: s.__complete, set_complete)
 
 
 # The top-level GTD tree
