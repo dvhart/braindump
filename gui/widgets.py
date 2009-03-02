@@ -536,10 +536,8 @@ class GTDListView(GTDTreeViewBase):
                 title = "<s>"+title+"</s>"
             cell.set_property("markup", title)
         elif data is "due_date":
-            if isinstance(obj, GTDActionRow):
-                due_date = "-"
-            elif obj.due_date:
-                due_date = obj.due_date.strftime("%b %e") # FIXME: use friendly dates (relative to today())
+            if isinstance(obj, gtd.Actionable) and obj.due_date:
+                due_date = datetime_to_friendly(obj.due_date)
                 if obj.complete:
                     due_date = "<s>"+due_date+"</s>"
             else:

@@ -79,9 +79,9 @@ def datetime_to_friendly(datetime_val):
         ret = "This Friday"
     elif delta_days == 7:
         ret = "Next Week"
-    elif delta_days < 364:
+    elif datetime_val.year == today.year:
         ret = datetime_val.strftime("%b %d")
     else:
-        ret = datetime_val.strftime("%b %d %Y")
+        ret = datetime_val.strftime("%b %Y")
 
     return ret
