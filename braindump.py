@@ -32,6 +32,7 @@ import gnome, gnome.ui
 import sexy
 import sys
 
+from config import Config
 import gtd
 from gtd import GTD
 from gui.combo_menu import *
@@ -102,6 +103,8 @@ class GTDSignalTest:
 # GUI Classses and callbacks
 class BrainDump(object):
     def __init__(self):
+        self.config = Config() 
+
         # aggregate widgets, with member callbacks
         GUI(os.path.join(sys.prefix, "share/braindump/glade/braindump.glade"))
 
@@ -275,9 +278,21 @@ class BrainDump(object):
         self.project_store_filter_by_realm.append(self.project_by_realm)
         self.project_store_filter_by_realm_no_action.extend([self.project_by_realm, self.hide_actions])
 
-        # Filter out complete tasks and projects if not explicitly checked
-        self.on_show_completed_toggled(GUI().get_widget("show_completed").widget)
+        # Load the settings
+        self.__apply_config()
 
+    def __apply_config(self):
+        # FIXME: could be more robust
+        debug("Applying settings from %s" % (self.config.filename))
+        for key,val in self.config['view'].iteritems():
+            debug("%s : %s" % (key, val == True))
+            GUI().get_widget(key).widget.set_active(val == "True")
+
+        #if self.config['filters']['filter_by_state']:
+        #    widget = GUI().get_widget("filter_by_state")
+
+        # Ensure the callback is called, regardless of glades initial state
+        self.on_show_completed_toggled(GUI().get_widget("show_completed").widget)
 
     # Application logic follows
     # Menu-item callbacks
@@ -285,6 +300,7 @@ class BrainDump(object):
         gtk.main_quit()
 
     def on_show_completed_toggled(self, menuitem):
+        debug("active: %s" % (menuitem.get_active()))
         if menuitem.get_active():
             self.task_store_filter.remove(self.completed_filter)
             self.project_store_filter_by_area.remove(self.completed_filter)
@@ -298,6 +314,9 @@ class BrainDump(object):
         self.task_store_filter.refilter()
         self.project_store_filter_by_area.refilter()
         self.project_store_filter_by_realm_no_action.refilter()
+        # FIXME: make this save automagically
+        self.config['view']['show_completed'] = menuitem.get_active()
+        self.config.write()
 
     def on_realms_and_areas_activate(self, menuitem):
         self.realm_area_dialog.widget.show()
@@ -314,6 +333,9 @@ class BrainDump(object):
             self.default_project.widget.set_active(-1)
             self.default_context.widget.set_active(-1)
             self.gtd_list.follow_new = True
+        # FIXME: make this save automagically
+        self.config['view']['show_new_task_defaults'] = menuitem.get_active()
+        self.config.write()
 
     def on_show_realms_toggled(self, menuitem):
         # FIXME: consider removing the realm_filter on hide, and putting it back on show
@@ -323,6 +345,9 @@ class BrainDump(object):
         else:
             self.realm_toggles.widget.show_all()
             self.realm_toggles.widget.hide()
+        # FIXME: make this save automagically
+        self.config['view']['show_realms'] = menuitem.get_active()
+        self.config.write()
 
     def on_show_filters_toggled(self, menuitem):
         filters = GUI().get_widget("filters").widget
@@ -336,12 +361,18 @@ class BrainDump(object):
             fwidth,fheight = filters.size_request()
             filters.hide()
             win.resize(wwidth-fwidth, wheight)
+        # FIXME: make this save automagically
+        self.config['view']['show_filters'] = menuitem.get_active()
+        self.config.write()
 
     def on_show_details_toggled(self, menuitem):
         if menuitem.active:
             self.details_form.widget.show()
         else:
             self.details_form.widget.hide()
+        # FIXME: make this save automagically
+        self.config['view']['show_details'] = menuitem.get_active()
+        self.config.write()
 
     def on_about_activate(self, menuitem):
         self.about_dialog.widget.show()
