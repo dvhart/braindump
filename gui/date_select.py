@@ -39,6 +39,8 @@ class _DateSelectPopup(gtk.Window):
     def __init__(self):
         gtk.Window.__init__(self, gtk.WINDOW_POPUP)
 
+        self.__cancel_popdown = False
+
         frame = gtk.Frame()
         frame.set_shadow_type(gtk.SHADOW_ETCHED_IN)
         self.add(frame)
@@ -66,6 +68,10 @@ class _DateSelectPopup(gtk.Window):
         self.connect("button-press-event", self._on_button_press)
         self.connect("key-press-event", self._on_key_press)
         self._calendar.connect("day-selected", self._on_day_selected)
+        self._calendar.connect("next-month", self._cancel_popdown)
+        self._calendar.connect("prev-month", self._cancel_popdown)
+        self._calendar.connect("next-month", self._cancel_popdown)
+        self._calendar.connect("prev-month", self._cancel_popdown)
 
     # private interface
     def _grab_window(self):
@@ -117,12 +123,16 @@ class _DateSelectPopup(gtk.Window):
             return True
 
     def _on_day_selected(self, cal):
-        if self.get_property("visible"):
+        if self.get_property("visible") and not self.__cancel_popdown:
+            self.__cancel_popdown = False
             self.popdown()
         year, month, day = cal.get_date()
         datetime_val = datetime(year, month + 1, day)
         datetime_val = datetime_ceiling(datetime_val)
         self.emit("date-selected", datetime_val)
+
+    def _cancel_popdown(self, cal):
+        self.__cancel_popdown = True
 
     def _on_date_button_clicked(self, btn, friendly_str):
         self.popdown()
