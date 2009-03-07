@@ -180,14 +180,7 @@ class BrainDump(object):
         GTD().connect("area_added", self.realm_area_store.on_area_added)
         GTD().connect("area_removed", self.realm_area_store.on_area_removed)
 
-        # Note: the order here is critical, otherwise combo boxes will update
-        # to hide objects from hidden realms, inadvertantly changing the gtd
-        # object they represent... FIXME: pretty fragile...
-        # FIXME: connect these during data_store construction if possible...
-        GTD().connect("realm_visible_changed", lambda g,o: self.task_store.refilter())
-        GTD().connect("realm_visible_changed", lambda g,o: self.project_store.refilter())
-        GTD().connect("realm_visible_changed", lambda g,o: self.project_store_date.refilter())
-        GTD().connect("realm_visible_changed", lambda g,o: self.area_store.refilter())
+        GTD().connect("realm_visible_changed", self.on_realm_visible_changed)
 
         GTD().connect("area_modified", self.area_store.on_gtd_modified)
         GTD().connect("area_added", self.area_store.on_gtd_added)
@@ -230,9 +223,7 @@ class BrainDump(object):
             self.project_store_filter_by_realm_no_action,
             self.area_store_filter_by_realm_no_action)
 
-        # FIXME: this passes a widget to refilter, and not GTD()... which we don't use anyway
-        self.filters_sidebar.connect("changed", lambda w: self.task_store.refilter())
-        self.filters_sidebar.connect("changed", lambda w: self.project_store_date.refilter())
+        self.filters_sidebar.connect("changed", self.on_filters_sidebar_changed)
 
         self.gtd_list = GTDListView("gtd_list", self.task_store_filter, self.on_new_task,
                                     self.on_new_project)
@@ -311,9 +302,14 @@ class BrainDump(object):
             self.project_store_filter_by_area.append(self.completed_filter)
             self.project_store_filter_by_realm_no_action.append(self.completed_filter)
             self.gtd_list.show_completed = False
+
+        # This takes twice as long to update if the TreeView is visible
+        self.gtd_list.widget.hide()
         self.task_store_filter.refilter()
         self.project_store_filter_by_area.refilter()
         self.project_store_filter_by_realm_no_action.refilter()
+        self.gtd_list.widget.show()
+
         # FIXME: make this save automagically
         self.config['view']['show_completed'] = menuitem.get_active()
         self.config.write()
@@ -451,13 +447,36 @@ class BrainDump(object):
             return False
         return True
 
-    def on_filter_by_state_changed(self, widget):
+    # FIXME: these three functions are identical!
+    def on_filters_sidebar_changed(self, widget):
+        self.gtd_list.widget.hide()
         self.task_store_filter.refilter()
         self.project_store_filter_by_area.refilter()
+        self.gtd_list.widget.show()
+
+    def on_filter_by_state_changed(self, widget):
+        self.gtd_list.widget.hide()
+        self.task_store_filter.refilter()
+        self.project_store_filter_by_area.refilter()
+        self.gtd_list.widget.show()
 
     def on_search_changed(self, widget):
+        self.gtd_list.widget.hide()
         self.task_store_filter.refilter()
         self.project_store_filter_by_area.refilter()
+        self.gtd_list.widget.show()
+
+    def on_realm_visible_changed(self, tree, obj):
+        # Note: the order here is critical, otherwise combo boxes will update
+        # to hide objects from hidden realms, inadvertantly changing the gtd
+        # object they represent... FIXME: pretty fragile...
+        # FIXME: connect these during data_store construction if possible...
+        self.gtd_list.widget.hide()
+        self.task_store.refilter()
+        self.project_store.refilter()
+        self.project_store_date.refilter()
+        self.area_store.refilter()
+        self.gtd_list.widget.show()
 
     def on_filters_close_clicked(self, widget):
         GUI().get_widget("show_filters").widget.set_active(False)
