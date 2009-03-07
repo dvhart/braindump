@@ -150,6 +150,24 @@ class _DateSelectPopup(gtk.Window):
         x, y = widget.window.get_origin()
         x += widget.get_allocation().x
         y += widget.get_allocation().y + widget.get_allocation().height
+        s = self.get_screen()
+        
+        # ensure the full width of the popup is visible
+        if x < 0:
+            x = 0
+        else:
+            w = self.get_allocation().width
+            dx = x + w - s.get_width()
+            if dx > 0:
+                x = x - dx
+
+        # ensure the full height of the popup is visible
+        # y can't be less than 0 in any sane scenario
+        h = self.get_allocation().height
+        dy = y + h - s.get_height()
+        if dy > 0:
+            y = y - dy
+
         self.move(x, y)
         self.show_all()
 
