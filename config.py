@@ -24,15 +24,28 @@
 import os, os.path
 from configobj import ConfigObj
 
+import logging
+from logging import debug, info, warning, error, critical
+
 class Config(ConfigObj):
     def __init__(self):
+        # Ensure the user braindump directory exists
         home_dir = os.environ["HOME"]
-        braindump_dir = home_dir + "/braindump"
-        config_path = braindump_dir + "/config"
-        first_time = not os.path.exists(config_path)
+        self.braindump_dir = home_dir + "/braindump"
+        if not os.path.exists(self.braindump_dir):
+            info("creating directory: %s" % (self.braindump_dir))
+            os.makedirs(self.braindump_dir)
+        elif os.path.isfile(self.braindump_dir):
+            critical("unable to create data directory, file already exists with same name: %s" \
+                     % (self.braindump_dir))
 
+        # Initialize the config object
+        config_path = self.braindump_dir + "/config"
         ConfigObj.__init__(self, config_path)
-        if first_time:
+
+        # Check if the config file exists
+        if not os.path.exists(config_path):
+            info("creating initial config file with default settings: %s" % (config_path))
             self.set_defaults()
 
     def set_defaults(self):

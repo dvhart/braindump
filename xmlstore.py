@@ -19,17 +19,6 @@ class XMLStore(object):
     def __init__(self):
         self.__path = None
 
-    def _setup_default_path(self):
-        # Make sure the data directory exists, copy the default data in if it doesn't
-        home_dir = os.environ["HOME"]
-        self.__path = home_dir + "/braindump"
-        if not os.path.exists(self.__path):
-            debug("creating directory: %s" % (self.__path))
-            os.makedirs(self.__path)
-        elif os.path.isfile(self.__path):
-            error("unable to create data directory, file already exists with same name: %s" \
-                  % (braindump_dir))
-
     def _obj_filename(self, obj):
         return os.path.join(self.__path, str(obj.id) + ".xml")
 
@@ -72,11 +61,12 @@ class XMLStore(object):
         tree.connect("area_removed", lambda t,o: self.delete_object(o))
         tree.connect("realm_removed", lambda t,o: self.delete_object(o))
 
-    def load(self, path=None):
+    def load(self, path):
+        if path is None:
+            critical("no path specified")
+        elif not os.path.exists(path):
+            critical("specified path does not exist: %s" % (path))
         self.__path = path
-
-        if self.__path is None:
-            self._setup_default_path()
 
         ch = GTDContentHandler()
         eh = GTDErrorHandler()

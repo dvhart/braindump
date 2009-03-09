@@ -115,7 +115,7 @@ class BrainDump(object):
         # either stored in gconf or maybe in a "config" module type file...
         GTD(None)
         self.backing_store = XMLStore()
-        self.backing_store.load()
+        self.backing_store.load(self.config.braindump_dir)
         self.backing_store.connect(GTD())
         #GTD().print_tree()
 
