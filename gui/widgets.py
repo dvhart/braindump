@@ -315,10 +315,11 @@ class FilterListView(GTDTreeViewBase):
             for path in paths:
                 comp = selmodel[path][0] # project, context, or area
 
-                if isinstance(comp, gtd.Context):
-                    if comp in obj.contexts:
+                if isinstance(comp, gtd.ContextNone):
+                    if len(obj.contexts) is 0:
                         return True
-                    if len(obj.contexts) is 0 and isinstance(comp, gtd.ContextNone):
+                elif isinstance(comp, gtd.Context):
+                    if comp in obj.contexts:
                         return True
                 elif isinstance(comp, gtd.Project) or isinstance(comp, gtd.ProjectNone):
                     if obj.project is comp:
