@@ -34,10 +34,13 @@ class XMLStore(object):
     def _save_simple_element(self, name, obj):
         id_str = str(obj.id)
         fd = open(self._obj_filename(obj), "w")
-        x = saxutils.XMLGenerator(fd)
-        x.startDocument()
-        self._simple_element(x, name, {"id":id_str}, obj.title)
-        x.endDocument()
+        try:
+            x = saxutils.XMLGenerator(fd)
+            x.startDocument()
+            self._simple_element(x, name, {"id":id_str}, obj.title)
+            x.endDocument()
+        finally:
+            fd.close()
 
     def connect(self, tree):
         # new signals
@@ -98,6 +101,9 @@ class XMLStore(object):
 
     def save_task(self, task):
         global _DATE_FORMAT
+        if not isinstance(task, gtd.Task):
+            critical("task is a %s" % (task.__class__.__name__))
+        debug("saving task: title=%s id=%s" % (task.title, task.id))
         id_str = str(task.id)
 
         start_date_str = ""
@@ -111,26 +117,31 @@ class XMLStore(object):
             complete_str = task.complete.strftime(_DATE_FORMAT)
 
         fd = open(self._obj_filename(task), "w")
-        x = saxutils.XMLGenerator(fd)
-        x.startDocument()
-        x.startElement("task", {"id":id_str})
-        x.characters("\n")
-        self._simple_element(x, "title", {}, task.title)
-        self._simple_element(x, "notes", {}, task.notes)
-        self._simple_element(x, "start_date", {}, start_date_str)
-        self._simple_element(x, "due_date", {}, due_date_str)
-        # FIXME: how do we want to represent project none?  should tasks
-        # be required to have SOME project defined in the backing store?
-        if not isinstance(task.project, gtd.ProjectNone):
-            self._simple_element(x, "project_ref", {"id":str(task.project.id)})
-        for c in task.contexts:
-            if not isinstance(c, gtd.ContextNone):
+        try:
+            x = saxutils.XMLGenerator(fd)
+            x.startDocument()
+            x.startElement("task", {"id":id_str})
+            x.characters("\n")
+            self._simple_element(x, "title", {}, task.title)
+            self._simple_element(x, "notes", {}, task.notes)
+            self._simple_element(x, "start_date", {}, start_date_str)
+            self._simple_element(x, "due_date", {}, due_date_str)
+            debug("saving project")
+            if not isinstance(task.project, gtd.ProjectNone):
+                debug("task project is a %s" % (task.project.__class__.__name__))
+                debug("referencing project: title=%s id=%s" % (task.project.title, task.project.id))
+                if not isinstance(task.project, gtd.Project):
+                    critical("task.project is a %s" % (task.project.__class__.__name__))
+                self._simple_element(x, "project_ref", {"id":str(task.project.id)})
+            debug("saving contexts")
+            for c in task.contexts:
                 debug("referencing context: %s" % (c.title))
                 self._simple_element(x, "context_ref", {"id":str(c.id)})
-        self._simple_element(x, "complete", {}, complete_str)
-        x.endElement("task")
-        x.endDocument()
-        # FIXME: do we need to close the file here?
+            self._simple_element(x, "complete", {}, complete_str)
+            x.endElement("task")
+            x.endDocument()
+        finally:
+            fd.close()
 
     def save_project(self, project):
         debug("saving project: %s" % (project.title))
@@ -149,31 +160,37 @@ class XMLStore(object):
             complete_str = project.complete.strftime(_DATE_FORMAT)
 
         fd = open(self._obj_filename(project), "w")
-        x = saxutils.XMLGenerator(fd)
-        x.startDocument()
-        x.startElement("project", {"id":id_str})
-        x.characters("\n")
-        self._simple_element(x, "title", {}, project.title)
-        self._simple_element(x, "notes", {}, project.notes)
-        self._simple_element(x, "start_date", {}, start_date_str)
-        self._simple_element(x, "due_date", {}, due_date_str)
-        if not isinstance(project.area, gtd.AreaNone):
-            self._simple_element(x, "area_ref", {"id":str(project.area.id)})
-        self._simple_element(x, "complete", {}, complete_str)
-        x.endElement("project")
-        x.endDocument()
+        try:
+            x = saxutils.XMLGenerator(fd)
+            x.startDocument()
+            x.startElement("project", {"id":id_str})
+            x.characters("\n")
+            self._simple_element(x, "title", {}, project.title)
+            self._simple_element(x, "notes", {}, project.notes)
+            self._simple_element(x, "start_date", {}, start_date_str)
+            self._simple_element(x, "due_date", {}, due_date_str)
+            if not isinstance(project.area, gtd.AreaNone):
+                self._simple_element(x, "area_ref", {"id":str(project.area.id)})
+            self._simple_element(x, "complete", {}, complete_str)
+            x.endElement("project")
+            x.endDocument()
+        finally:
+            fd.close()
 
     def save_area(self, area):
         id_str = str(area.id)
         fd = open(self._obj_filename(area), "w")
-        x = saxutils.XMLGenerator(fd)
-        x.startDocument()
-        x.startElement("area", {"id":id_str})
-        x.characters("\n")
-        self._simple_element(x, "title", {}, area.title)
-        self._simple_element(x, "realm_ref", {"id":str(area.realm.id)})
-        x.endElement("area")
-        x.endDocument()
+        try:
+            x = saxutils.XMLGenerator(fd)
+            x.startDocument()
+            x.startElement("area", {"id":id_str})
+            x.characters("\n")
+            self._simple_element(x, "title", {}, area.title)
+            self._simple_element(x, "realm_ref", {"id":str(area.realm.id)})
+            x.endElement("area")
+            x.endDocument()
+        finally:
+            fd.close()
 
     def save_realm(self, realm):
         self._save_simple_element("realm", realm)
