@@ -314,16 +314,17 @@ class FilterListView(GTDTreeViewBase):
         if isinstance(obj, gtd.Task):
             for path in paths:
                 comp = selmodel[path][0] # project, context, or area
+
                 if isinstance(comp, gtd.Context):
                     if comp in obj.contexts:
                         return True
                     if len(obj.contexts) is 0 and isinstance(comp, gtd.ContextNone):
                         return True
-                elif isinstance(comp, gtd.Project):
+                elif isinstance(comp, gtd.Project) or isinstance(comp, gtd.ProjectNone):
                     if obj.project is comp:
                         return True
-                elif isinstance(comp, gtd.Area):
-                    if obj.project.area is selmodel[path][0]:
+                elif isinstance(comp, gtd.Area) or isinstance(comp, gtd.AreaNone):
+                    if obj.project.area is comp:
                         return True
                 elif isinstance(comp, GTDActionRow):
                     continue
@@ -333,7 +334,7 @@ class FilterListView(GTDTreeViewBase):
         elif isinstance(obj, gtd.Project):
             for path in paths:
                 comp = selmodel[path][0] # either a project or a context
-                if isinstance(comp, gtd.Area):
+                if isinstance(comp, gtd.Area) or isinstance(comp, gtd.AreaNone):
                     if obj.area is selmodel[path][0]:
                         return True
                 else:
