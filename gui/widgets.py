@@ -208,11 +208,12 @@ class RealmToggles(WidgetWrapper):
 
 # FIXME: I believe we can eliminate this class eventually...
 class GTDTreeViewBase(WidgetWrapper):
-    def __init__(self, name):
+    def __init__(self, name, title_column=0):
         WidgetWrapper.__init__(self, name)
+        self.__title_column = title_column
 
         menu = GUI().get_widget("gtd_row_popup")
-        self.widget.connect_object_after("event-after", self._on_button_press, menu, 0)
+        self.widget.connect_object_after("event-after", self._on_button_press, menu)
 
         # setup the title column and cell renderer
         title_col = gtk.TreeViewColumn()
@@ -236,20 +237,19 @@ class GTDTreeViewBase(WidgetWrapper):
             return True
         return False
 
-    def _on_button_press(self, popup, event, col):
+    def _on_button_press(self, popup, event):
         """Display the popup menu when the right mouse button is pressed.
 
         Keyword arguments:
         widget -- the gtk.Menu to display
         event  -- the gtk event that caused the signal to be emitted
         """
-
         if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3 \
            and not isinstance(self.get_current(), GTDActionRow) \
            and not isinstance(self.get_current(), BaseNone):
             # FIXME: this is really not type safe, the widget isn't tested to be a GTDPopupMenu
             #popup = GUI().get_widget(widget.get_name())
-            popup.set_tree_and_col(self, self.widget.get_column(col))
+            popup.set_tree_and_col(self, self.widget.get_column(self.__title_column))
             popup.widget.popup(None, None, None, event.button, event.time)
             return True
         return False
@@ -365,7 +365,7 @@ class GTDListView(GTDTreeViewBase):
         widget     -- the gtk.TreeView widget to wrap
         task_store -- the TaskStore for gtd.Tasks
         """
-        GTDTreeViewBase.__init__(self, name)
+        GTDTreeViewBase.__init__(self, name, 1)
         self.follow_new = True
         self.show_completed = False
 
