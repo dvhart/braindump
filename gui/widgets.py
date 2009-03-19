@@ -229,12 +229,12 @@ class GTDTreeViewBase(WidgetWrapper):
     def _data_func(self, column, cell, model, iter, data):
         if data == "title":
             obj = model.get_value(iter, 0)
-            title = obj.title
+            title = quote_markup(obj.title)
             if isinstance(obj, gtd.Actionable) and obj.complete:
                 title = "<s>"+title+"</s>"
             elif isinstance(obj, GTDActionRow) or isinstance(obj, gtd.BaseNone):
                 title = "<i>"+title+"</i>"
-            cell.set_property("markup", quote_markup(title))
+            cell.set_property("markup", title)
             return True
         return False
 
@@ -532,20 +532,20 @@ class GTDListView(GTDTreeViewBase):
                 cell.set_property("active", active)
                 cell.set_property("inconsistent", False)
         elif data is "title":
-            title = obj.title
+            title = quote_markup(obj.title)
             if isinstance(obj, GTDActionRow):
                 title = "<i>"+title+"</i>"
             elif obj.complete:
                 title = "<s>"+title+"</s>"
-            cell.set_property("markup", quote_markup(title))
+            cell.set_property("markup", title)
         elif data is "due_date":
             if isinstance(obj, gtd.Actionable) and obj.due_date:
-                due_date = datetime_to_friendly(obj.due_date)
+                due_date = quote_markup(datetime_to_friendly(obj.due_date))
                 if obj.complete:
                     due_date = "<s>"+due_date+"</s>"
             else:
                 due_date = "-"
-            cell.set_property("markup", quote_markup(due_date))
+            cell.set_property("markup", due_date)
         elif data is "countdown":
             pixbuf = None
             if not self.show_completed and not isinstance(obj, GTDActionRow) and obj.complete:
