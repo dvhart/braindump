@@ -277,7 +277,22 @@ class BrainDump(object):
         debug("Applying settings from %s" % (self.config.filename))
         for key,val in self.config['view'].iteritems():
             debug("%s : %s" % (key, val == True))
-            GUI().get_widget(key).widget.set_active(val == "True")
+            # Handle custom keys (non-widget-names)
+            if key == "layout":
+                if val == "Horizontal":
+                    menuitem = GUI().get_widget("horizontal_layout").widget
+                    menuitem.set_active(True)
+                    self.on_horizontal_layout_toggled(menuitem)
+                elif val == "Vertical":
+                    menuitem = GUI().get_widget("vertical_layout").widget
+                    menuitem.set_active(True)
+                    self.on_vertical_layout_toggled(menuitem)
+
+            # If not a custom key, try the toggle widget names
+            else:
+                widget = GUI().get_widget(key)
+                if (widget):
+                    widget.widget.set_active(val == "True")
 
         #if self.config['filters']['filter_by_state']:
         #    widget = GUI().get_widget("filter_by_state")
@@ -369,6 +384,22 @@ class BrainDump(object):
         # FIXME: make this save automagically
         self.config['view']['show_details'] = menuitem.get_active()
         self.config.write()
+
+    def on_horizontal_layout_toggled(self, menuitem):
+        active = menuitem.get_active()
+        if active:
+            self.details_form.widget.reparent(GUI().get_widget("details_hpanel").widget)
+            # FIXME: make this save automagically
+            self.config['view']['layout'] = "Horizontal"
+            self.config.write()
+
+    def on_vertical_layout_toggled(self, menuitem):
+        active = menuitem.get_active()
+        if active:
+            self.details_form.widget.reparent(GUI().get_widget("details_vpanel").widget)
+            # FIXME: make this save automagically
+            self.config['view']['layout'] = "Vertical"
+            self.config.write()
 
     def on_about_activate(self, menuitem):
         self.about_dialog.widget.show()
