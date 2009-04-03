@@ -55,7 +55,7 @@ class Config(ConfigObj):
             'show_filters':False,
             'show_details':False,
             'show_new_task_defaults':False,
-            'layout':Horizontal
+            'layout':"Horizontal"
         }
         self['view'] = view
 
