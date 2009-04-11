@@ -136,7 +136,7 @@ class XMLStore(object):
             debug("saving contexts")
             for c in task.contexts:
                 debug("referencing context: %s" % (c.title))
-                self._simple_element(x, "context_ref", {"id":str(c.id)})
+                self._simple_element(x, "context_ref", {"id":str(c.id)}, c.title)
             self._simple_element(x, "complete", {}, complete_str)
             x.endElement("task")
             x.endDocument()
