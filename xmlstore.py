@@ -132,7 +132,8 @@ class XMLStore(object):
                 debug("referencing project: title=%s id=%s" % (task.project.title, task.project.id))
                 if not isinstance(task.project, gtd.Project):
                     critical("task.project is a %s" % (task.project.__class__.__name__))
-                self._simple_element(x, "project_ref", {"id":str(task.project.id)})
+                self._simple_element(x, "project_ref", {"id":str(task.project.id)},
+                                     task.project.title)
             debug("saving contexts")
             for c in task.contexts:
                 debug("referencing context: %s" % (c.title))
@@ -170,7 +171,8 @@ class XMLStore(object):
             self._simple_element(x, "start_date", {}, start_date_str)
             self._simple_element(x, "due_date", {}, due_date_str)
             if not isinstance(project.area, gtd.AreaNone):
-                self._simple_element(x, "area_ref", {"id":str(project.area.id)})
+                self._simple_element(x, "area_ref", {"id":str(project.area.id)},
+                                     project.area.title)
             self._simple_element(x, "complete", {}, complete_str)
             x.endElement("project")
             x.endDocument()
@@ -186,7 +188,8 @@ class XMLStore(object):
             x.startElement("area", {"id":id_str})
             x.characters("\n")
             self._simple_element(x, "title", {}, area.title)
-            self._simple_element(x, "realm_ref", {"id":str(area.realm.id)})
+            self._simple_element(x, "realm_ref", {"id":str(area.realm.id)},
+                                 area.realm.title)
             x.endElement("area")
             x.endDocument()
         finally:
