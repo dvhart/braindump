@@ -136,6 +136,9 @@ class XMLStore(object):
                                      task.project.title)
             debug("saving contexts")
             for c in task.contexts:
+                if isinstance(c, gtd.ContextNone):
+                    error("ContextNone should not be stored in the task!")
+                    continue
                 debug("referencing context: %s" % (c.title))
                 self._simple_element(x, "context_ref", {"id":str(c.id)}, c.title)
             self._simple_element(x, "complete", {}, complete_str)

@@ -416,8 +416,11 @@ class BrainDump(object):
     def on_new_task(self, title):
         '''Create a new task from the new task defaults, initiated from the gtd_list.'''
         project = self.default_project.get_active()
-        context = self.default_context.get_active()
-        task = gtd.Task.create(None, title, project, [context])
+        contexts = [self.default_context.get_active()]
+        # Don't store ContextNone in the task (we use an empty array to represent that)
+        if isinstance(contexts[0], gtd.ContextNone):
+            contexts = None
+        task = gtd.Task.create(None, title, project, contexts)
         task.start_date = datetime.now()
 
     def on_new_project(self, title):
