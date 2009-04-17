@@ -31,7 +31,6 @@ import gtk, gtk.glade
 import gnome, gnome.ui
 import sexy
 import sys
-import webbrowser
 
 from config import Config
 import gtd
@@ -105,9 +104,6 @@ class GTDSignalTest:
 class BrainDump(object):
     def __init__(self):
         self.config = Config() 
-
-        # Setup the about url handler before the widgets are created
-        gtk.about_dialog_set_url_hook(lambda dia,url: (webbrowser.open(url)))
 
         # aggregate widgets, with member callbacks
         GUI(os.path.join(sys.prefix, "share/braindump/glade/braindump.glade"))

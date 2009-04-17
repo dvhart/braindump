@@ -30,6 +30,7 @@ from gobject import *
 import gtk, gtk.glade
 import gnome, gnome.ui
 import sexy
+import webbrowser
 from braindump.singleton import *
 import braindump.gtd
 from braindump.gui_datastores import *
@@ -51,6 +52,10 @@ class GUI(gtk.glade.XML):
         widget -- the widget to use for the top of the returned tree (default None)
         """
         self.file = file
+
+        # Setup the about url handler before the widgets are created
+        gtk.about_dialog_set_url_hook(lambda dia,url: (webbrowser.open(url)))
+
         gtk.glade.XML.__init__(self, self.file, widget)
 
     def __get_widget(self, name):
