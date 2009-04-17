@@ -90,9 +90,11 @@
     <property name="copyright" translatable="yes">Copyright © 2007-2009 Darren Hart</property>
     <property name="comments" translatable="yes">A context based task management system</property>
     <property name="website">http://braindump.dvhart.com</property>
+    <property name="website_label" translatable="yes">http://braindump.dvhart.com</property>
     <property name="authors">Darren Hart &lt;darren@dvhart.com&gt;</property>
     <property name="documenters"></property>
     <property name="translator_credits" translatable="yes" comments="TRANSLATORS: Replace this string with your names, one name per line.">translator-credits</property>
+    <property name="artists">Darren Hart &lt;darren@dvhart.com&gt;</property>
     <property name="logo">braindump.png</property>
     <signal name="delete_event" handler="on_about_dialog_delete"/>
     <signal name="response" handler="on_about_dialog_response"/>
