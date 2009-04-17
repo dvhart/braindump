@@ -87,7 +87,7 @@
     <property name="icon_name">braindump</property>
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
     <property name="program_name">BrainDump</property>
-    <property name="copyright" translatable="yes">Copyright © 2007-2008 Darren Hart</property>
+    <property name="copyright" translatable="yes">Copyright © 2007-2009 Darren Hart</property>
     <property name="comments" translatable="yes">A context based task management system</property>
     <property name="website">http://braindump.dvhart.com</property>
     <property name="authors">Darren Hart &lt;darren@dvhart.com&gt;</property>
@@ -130,47 +130,6 @@
                 <child>
                   <widget class="GtkMenu" id="file1_menu">
                     <child>
-                      <widget class="GtkImageMenuItem" id="new1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-new</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_new1_activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkImageMenuItem" id="open1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-open</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_open1_activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkImageMenuItem" id="save1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-save</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_save1_activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkImageMenuItem" id="save_as1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-save-as</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_save_as1_activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkSeparatorMenuItem" id="separator1">
-                        <property name="visible">True</property>
-                      </widget>
-                    </child>
-                    <child>
                       <widget class="GtkImageMenuItem" id="quit">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-quit</property>
@@ -190,70 +149,6 @@
                 <property name="use_underline">True</property>
                 <child>
                   <widget class="GtkMenu" id="edit1_menu">
-                    <child>
-                      <widget class="GtkImageMenuItem" id="cut1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-cut</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_cut1_activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkImageMenuItem" id="copy1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-copy</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_copy1_activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkImageMenuItem" id="paste1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-paste</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_paste1_activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkImageMenuItem" id="clear1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-clear</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_clear1_activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkSeparatorMenuItem" id="separator2">
-                        <property name="visible">True</property>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkImageMenuItem" id="properties1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-properties</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_properties1_activate"/>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkSeparatorMenuItem" id="separator3">
-                        <property name="visible">True</property>
-                      </widget>
-                    </child>
-                    <child>
-                      <widget class="GtkImageMenuItem" id="preferences1">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-preferences</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="activate" handler="on_preferences1_activate"/>
-                      </widget>
-                    </child>
                     <child>
                       <widget class="GtkMenuItem" id="realms_and_areas">
                         <property name="visible">True</property>
@@ -369,22 +264,6 @@
                 <property name="use_underline">True</property>
                 <child>
                   <widget class="GtkMenu" id="help1_menu">
-                    <child>
-                      <widget class="GtkImageMenuItem" id="contents">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">_Contents</property>
-                        <property name="use_underline">True</property>
-                        <signal name="activate" handler="on_contents_activate"/>
-                        <accelerator key="F1" modifiers="" signal="activate"/>
-                        <child internal-child="image">
-                          <widget class="GtkImage" id="menu-item-image2">
-                            <property name="visible">True</property>
-                            <property name="stock">gtk-help</property>
-                            <property name="icon_size">1</property>
-                          </widget>
-                        </child>
-                      </widget>
-                    </child>
                     <child>
                       <widget class="GtkImageMenuItem" id="about">
                         <property name="visible">True</property>
