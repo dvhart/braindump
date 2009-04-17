@@ -35,7 +35,6 @@ import braindump.gtd
 from braindump.gui_datastores import *
 from braindump.gtd_action_rows import *
 from friendly_date import *
-from util import *
 from logging import debug, info, warning, error, critical
 
 class GUI(gtk.glade.XML):
