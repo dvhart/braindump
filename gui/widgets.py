@@ -229,7 +229,7 @@ class GTDTreeViewBase(WidgetWrapper):
     def _data_func(self, column, cell, model, iter, data):
         if data == "title":
             obj = model.get_value(iter, 0)
-            title = quote_markup(obj.title)
+            title = markup_escape_text(obj.title)
             if isinstance(obj, gtd.Actionable) and obj.complete:
                 title = "<s>"+title+"</s>"
             elif isinstance(obj, GTDActionRow) or isinstance(obj, gtd.BaseNone):
@@ -532,7 +532,7 @@ class GTDListView(GTDTreeViewBase):
                 cell.set_property("active", active)
                 cell.set_property("inconsistent", False)
         elif data is "title":
-            title = quote_markup(obj.title)
+            title = markup_escape_text(obj.title)
             if isinstance(obj, GTDActionRow):
                 title = "<i>"+title+"</i>"
             elif obj.complete:
@@ -540,7 +540,7 @@ class GTDListView(GTDTreeViewBase):
             cell.set_property("markup", title)
         elif data is "due_date":
             if isinstance(obj, gtd.Actionable) and obj.due_date:
-                due_date = quote_markup(datetime_to_friendly(obj.due_date))
+                due_date = markup_escape_text(datetime_to_friendly(obj.due_date))
                 if obj.complete:
                     due_date = "<s>"+due_date+"</s>"
             else:
@@ -610,7 +610,7 @@ class GTDFilterCombo(WidgetWrapper):
 
     def _data_func(self, column, cell, model, iter):
         filter_item = model[iter][0]
-        cell.set_property("markup", quote_markup(filter_item.name))
+        cell.set_property("markup", markup_escape_text(filter_item.name))
 
     def get_active(self):
         iter = self.widget.get_active_iter()
@@ -640,9 +640,9 @@ class GTDCombo(WidgetWrapper):
     def _data_func(self, column, cell, model, iter):
         obj = model[iter][0]
         if (isinstance(obj, gtd.Project) or isinstance(obj, gtd.Task)) and obj.complete:
-            cell.set_property("markup", "<s>"+quote_markup(obj.title)+"</s>")
+            cell.set_property("markup", "<s>"+markup_escape_text(obj.title)+"</s>")
         elif isinstance(obj, gtd.Base) or isinstance(obj, GTDActionRow):
-            cell.set_property("markup", quote_markup(obj.title))
+            cell.set_property("markup", markup_escape_text(obj.title))
         else:
             # FIXME: throw an exception
             error('obj is not a gtd.Base: %s' % (obj.__class__.__name__))
