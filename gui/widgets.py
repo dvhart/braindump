@@ -607,6 +607,12 @@ class GTDFilterCombo(WidgetWrapper):
     def __init__(self, name, model):
         WidgetWrapper.__init__(self, name)
         debug('%s model is %s' % (name, model.__class__.__name__))
+
+        # Glade apparently does some setup, and binds attribute text to col 0
+        # this throws gobject errors trying to convert a PyObject to a
+        # chararray.
+        self.widget.clear()
+
         self.widget.set_model(model)
         renderer = gtk.CellRendererText()
         self.widget.pack_start(renderer)
@@ -635,6 +641,12 @@ class GTDCombo(WidgetWrapper):
         WidgetWrapper.__init__(self, name)
         self.__none = none
         debug('%s model is %s' % (name, model.__class__.__name__))
+
+        # Glade apparently does some setup, and binds attribute text to col 0
+        # this throws gobject errors trying to convert a PyObject to a
+        # chararray.
+        self.widget.clear()
+
         self.widget.set_model(model.model_filter)
         model.model_filter.connect("row_changed", lambda m,p,i: self.widget.queue_draw)
         renderer = gtk.CellRendererText()
