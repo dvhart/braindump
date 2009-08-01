@@ -110,14 +110,11 @@ class BrainDump(object):
 
         self.gst = GTDSignalTest() # DELETEME.... later :)
 
-        # FIXME: testing xml backing store, we need a full routine to get
-        # the correct backing store module, the right path to open, etc
-        # either stored in gconf or maybe in a "config" module type file...
+        # Initialize the GTD Tree and load the user data
         GTD(None)
         self.backing_store = XMLStore()
         self.backing_store.load(self.config.braindump_dir)
         self.backing_store.connect(GTD())
-        #GTD().print_tree()
 
         ##### Build Data Stores #####
         # Instantiate the various GUI datastores and filters from the GTD() singleton tree
@@ -213,7 +210,7 @@ class BrainDump(object):
         self.search = SearchEntry("search")
         self.search.connect("changed", self.on_search_changed)
 
-        # Fixup the work_with* radio buttons as the glade directives aren't taking aeffect
+        # Fixup the work_with* radio buttons as the glade directives aren't taking affect
         self.work_with_tasks = GUI().get_widget("work_with_tasks")
         self.work_with_tasks.widget.set_property("draw-indicator", False)
         self.work_with_projects = GUI().get_widget("work_with_projects")
@@ -228,8 +225,6 @@ class BrainDump(object):
         self.gtd_list = GTDListView("gtd_list", self.task_store_filter, self.on_new_task,
                                     self.on_new_project)
         self.gtd_list.widget.get_selection().connect("changed", self.on_gtd_list_selection_changed)
-
-        # FIXME: we need to get gobject signals working
 
         self.details_form = Details("details_form",
                                     self.project_store_filter_by_realm_no_action,
@@ -248,7 +243,7 @@ class BrainDump(object):
         GUI().signal_autoconnect(self)
 
         # Setup initial state
-        # FIXME: store this in gconf?
+        # FIXME: store this in the config
         self.work_with_tasks.widget.set_active(0)
         self.filter_by_state.widget.set_active(0)
         self.default_project.set_active(-1)
@@ -297,10 +292,10 @@ class BrainDump(object):
         #if self.config['filters']['filter_by_state']:
         #    widget = GUI().get_widget("filter_by_state")
 
-        # Ensure the callback is called, regardless of glades initial state
+        # Ensure the callback is called, regardless of glade's initial state
         self.on_show_completed_toggled(GUI().get_widget("show_completed").widget)
 
-    # Application logic follows
+    ##### Application logic follows #####
     # Menu-item callbacks
     def on_quit_activate(self, menuitem):
         gtk.main_quit()
