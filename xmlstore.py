@@ -2,11 +2,13 @@ import os, os.path
 #import stat
 import fnmatch
 from xml.sax import saxutils, make_parser, handler
+from xml.sax._exceptions import *
 import uuid
 from datetime import datetime
 import gtd
 from gtd import GTD
 from logging import debug, info, warning, error, critical
+import sys
 
 # FIXME: should we make the dates TZ aware ?
 # http://docs.python.org/lib/datetime-datetime.html
@@ -84,7 +86,17 @@ class XMLStore(object):
         for file in os.listdir(self.__path):
             if fnmatch.fnmatch(file, '*.xml'):
                 debug("Loading GTD object from: %s" % (os.path.join(self.__path, file)))
-                parser.parse(os.path.join(self.__path, file))
+                try:
+                    parser.parse(os.path.join(self.__path, file))
+                except SAXParseException, e:
+                    error("SAXParseException: %s" % (e))
+                    error("The file was not created (or saved) properly.  The "
+                          "most likely cause is a missing closing element tag, "
+                          "such as </task>.")
+                except:
+                    e = sys.exc_info()[1]
+                    error("Unhandled exception: %s" % (e))
+                
 
     def save(self, gtd_tree):
         critical("not implemented")
@@ -144,6 +156,10 @@ class XMLStore(object):
             self._simple_element(x, "complete", {}, complete_str)
             x.endElement("task")
             x.endDocument()
+        except:
+                    e = sys.exc_info()[1]
+                    error("Unhandled exception: %s while trying to save %s" %
+                          (e, id_str))
         finally:
             fd.close()
 
@@ -212,22 +228,23 @@ class GTDContentHandler(handler.ContentHandler):
         self.__cache = {}     # a dict of objects we have seen referenced in the file and constructed
 
     def startElement(self, name, attrs):
-        print "\nStart element: ", name
+        debug("Start element: %s" % (name))
+
         obj = None
         cached = False
         self.__chars = ""
         id = None
         id_str = attrs.get("id", None)
         if id_str:
-            print "ID_STR: ", id_str
+            debug("ID_STR: %s" % (id_str))
             id = uuid.UUID(id_str)
 
         if id in self.__cache:
-            print "found", id, "in cache"
+            debug("found %s in cache." % (id))
             cached = True
             obj = self.__cache[id]
         elif id: # if it doesn't have an id, it isn't a Primary object
-            print id, "not in cache, generating"
+            debug("%s not in cache, generating." % (id))
             # Primary objects: task, project, area, realm, and context
             # Set the __subject object when first encountered
             if name == "task":
@@ -274,17 +291,17 @@ class GTDContentHandler(handler.ContentHandler):
         # FIXME: yulk! maybe we don't event *_ref, they might be just fine using
         # <context id="sdsadada"/> inside subject elements...
         if not cached and name in ["task", "project", "area", "realm", "context", "project_ref", "area_ref", "realm_ref", "context_ref"]:
-            print "adding %s %s to cache" % (name, id)
+            debug("adding %s %s to cache" % (name, id))
             self.__cache[id] = obj
 
         if name in ["task", "project", "area", "realm", "context"]:
-            print "setting subject to", id
+            debug("setting subject to" % (id))
             self.__subject = obj
 
 
     def endElement(self, name):
         global _DATE_FORMAT
-        print "End element: ", name
+        debug("End element: %s" % (name))
         chars = ' '.join(self.__chars.split())
         self.__chars = ""
 
@@ -321,4 +338,4 @@ class GTDErrorHandler(handler.ErrorHandler):
         pass
 
     def error(self, exception):
-        sys.stderr.write("\%s\n" % (exception))
+        error("\%s\n" % (exception))
