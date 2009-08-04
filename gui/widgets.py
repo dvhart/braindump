@@ -301,7 +301,8 @@ class FilterListView(GTDTreeViewBase):
         self.widget.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         self.widget.set_rubber_banding(True)
 
-    def selection_match(self, obj):
+    def selection_match(self, model, iter):
+        obj = model[iter][0]
         if isinstance(obj, GTDActionRow):
             return True
 
@@ -629,9 +630,9 @@ class GTDFilterCombo(WidgetWrapper):
             return FilterItem("", lambda x: True)
 
     # FIXME: oh come on, isn't there a better name?!?! filter is WAY overloaded!
-    def filter(self, obj):
+    def filter(self, model, iter):
         filter_item = self.get_active()
-        return filter_item.filter(obj)
+        return filter_item.filter(model, iter)
 
 
 class GTDCombo(WidgetWrapper):
@@ -815,7 +816,8 @@ class SearchEntry(WidgetWrapper):
         else:
             self._set_hint()
 
-    def search(self, obj):
+    def search(self, model, iter):
+        obj = model[iter][0]
         if isinstance(obj, GTDActionRow):
             return True
 

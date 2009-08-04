@@ -263,7 +263,8 @@ class BrainDump(object):
         self.task_store_filter.append(Filter(self.filter_by_state.filter))
 
         self.project_store_filter_by_area.append(self.project_by_realm)
-        self.project_store_filter_by_area.append(Filter(lambda p: not isinstance(p, gtd.BaseNone)))
+        self.project_store_filter_by_area.append(Filter(lambda m,i:
+                                                        not isinstance(m[i][0], gtd.BaseNone)))
         self.project_store_filter_by_area.append(self.filters_sidebar.filter)
         self.project_store_filter_by_area.append(Filter(self.search.search))
         self.project_store_filter_by_area.append(Filter(self.filter_by_state.filter))
@@ -442,13 +443,15 @@ class BrainDump(object):
     # Task and project date filter callbacks
     # FIXME: gotta be a better place for these (they don't reference self, move them out of this file)
     # FIXME: consider just subclassing them?  Seems silly to subclass for only one instantiation...
-    def all_filter_callback(self, obj):
+    def all_filter_callback(self, model, iter):
         # FIXME: ewww...
+        obj = model[iter][0]
         if not isinstance(obj, gtd.BaseNone) and isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
         return True
 
-    def due_filter_callback(self, obj):
+    def due_filter_callback(self, model, iter):
+        obj = model[iter][0]
         if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
             if obj.state == gtd.Actionable.DUE or obj.state == gtd.Actionable.OVERDUE:
@@ -456,7 +459,8 @@ class BrainDump(object):
             return False
         return True
 
-    def active_filter_callback(self, obj):
+    def active_filter_callback(self, model, iter):
+        obj = model[iter][0]
         if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
             if obj.state <= gtd.Actionable.UPCOMING: # includes OVERDUE, DUE, ACTIVE, and UPCOMING
@@ -465,7 +469,8 @@ class BrainDump(object):
         return True
 
     # There is one invalid state when start_date is future and due_date has past
-    def future_filter_callback(self, obj):
+    def future_filter_callback(self, model, iter):
+        obj = model[iter][0]
         if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
             if obj.state == gtd.Actionable.FUTURE:
@@ -475,7 +480,8 @@ class BrainDump(object):
 
     # There are 2 invalid states with start_date = None and due_date is future or passed.  If the due_date is
     # set, we expect start_date to also be set.
-    def someday_filter_callback(self, obj):
+    def someday_filter_callback(self, model, iter):
+        obj = model[iter][0]
         if isinstance(obj, gtd.Actionable):
             debug("%s %s %s" % (obj.title, obj.start_date, obj.due_date))
             if obj.state == gtd.Actionable.SOMEDAY:

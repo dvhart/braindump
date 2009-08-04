@@ -38,12 +38,13 @@ class GTDStoreFilter(AndFilter):
         self.model_filter.set_visible_func(self.visible)
 
     def visible(self, model, iter, data=None):
-        debug("VISIBLE test of %s" % (model[iter][0].__class__.__name__))
-        if model[iter][0] is None:
+        obj = model[iter][0]
+        debug("VISIBLE test of %s" % (obj.__class__.__name__))
+        if obj is None:
             error("GTD Object is None")
             return False
-        debug("checking filter for %s" % (model[iter][0].title))
-        ret = self.filter(model[iter][0])
+        debug("checking filter for %s" % (obj.title))
+        ret = self.filter(model, iter)
         debug("returning %s" % (ret))
         return ret
 
@@ -57,7 +58,8 @@ class TaskByRealmFilter(Filter):
     def __init__(self):
         Filter.__init__(self, self.filter_by_realm_visible)
 
-    def filter_by_realm_visible(self, task):
+    def filter_by_realm_visible(self, model, iter):
+        task = model[iter][0]
         if isinstance(task, gtd.Task):
             return task.project.area.realm.visible
         return True
@@ -67,7 +69,8 @@ class ProjectByRealmFilter(Filter):
     def __init__(self):
         Filter.__init__(self, self.filter_by_realm_visible)
 
-    def filter_by_realm_visible(self, project):
+    def filter_by_realm_visible(self, model, iter):
+        project = model[iter][0]
         if isinstance(project, gtd.Project):
             return project.area.realm.visible
         return True
@@ -77,7 +80,8 @@ class AreaByRealmFilter(Filter):
     def __init__(self):
         Filter.__init__(self, self.filter_by_realm_visible)
 
-    def filter_by_realm_visible(self, area):
+    def filter_by_realm_visible(self, model, iter):
+        area = model[iter][0]
         if isinstance(area, gtd.Area):
             return area.realm.visible
         return True
@@ -88,7 +92,8 @@ class ActionRowFilter(Filter):
         Filter.__init__(self, self.filter_by_actions)
         self._show_actions = show_actions
 
-    def filter_by_actions(self, obj):
+    def filter_by_actions(self, model, iter):
+        obj = model[iter][0]
         if isinstance(obj, GTDActionRow):
             return self._show_actions
         return True
@@ -97,7 +102,8 @@ class CompletedFilter(Filter):
     def __init__(self):
         Filter.__init__(self, self.filter_completed)
 
-    def filter_completed(self, obj):
+    def filter_completed(self, model, iter):
+        obj = model[iter][0]
         if isinstance(obj, GTDActionRow):
             return True
         elif obj.complete and obj.tag("countdown_frame") is None:

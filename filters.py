@@ -30,9 +30,9 @@ class Filter(object):
     def __init__(self, callback):
         self.__callback = callback # FIXME: is this valid? or do I need self?
 
-    def filter(self, obj):
+    def filter(self, model, iter):
         debug("__callback: %s" % (self.__callback))
-        return self.__callback(obj)
+        return self.__callback(model, iter)
 
 
 # FIXME: how do we create abstract base classes?
@@ -56,7 +56,7 @@ class AggregateFilter(Filter):
     def clear(self):
         self._filters = []
 
-    def filter(self, obj):
+    def filter(self, model, iter):
         critical("this is an abstract base class")
 
 
@@ -64,12 +64,12 @@ class OrFilter(AggregateFilter):
     def __init__(self):
         AggregateFilter.__init__(self)
 
-    def filter(self, obj):
+    def filter(self, model, iter):
         if len(self._filters) == 0:
             return True
 
         for f in self._filters:
-            if f.filter(obj):
+            if f.filter(model, iter):
                 return True
         return False
 
@@ -78,13 +78,13 @@ class AndFilter(AggregateFilter):
     def __init__(self):
         AggregateFilter.__init__(self)
 
-    def filter(self, obj):
+    def filter(self, model, iter):
         debug("len(filters): %d" % (len(self._filters)))
         if len(self._filters) == 0:
             return True
 
         for f in self._filters:
             debug("%s" % (f))
-            if not f.filter(obj):
+            if not f.filter(model, iter):
                 return False
         return True
