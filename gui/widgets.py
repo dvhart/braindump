@@ -464,10 +464,9 @@ class GTDListView(GTDTreeViewBase):
                 # note: we don't track the timeouts, so should we ever need to cancel one
                 #       we'll have add something to that effect
                 if not self.show_completed:
-                    obj.tag("countdown_frame", 0)
-                    model = self.widget.get_model()
                     store = model.get_model()
                     store_path = model.convert_path_to_child_path(path)
+                    store[store_path][1] = 1
                     gobject.timeout_add(self.__countdown_timeout * 1000 /
                         len(self.__countdown_pixbufs),
                         self._complete_timeout, store, store_path, obj)
@@ -480,13 +479,9 @@ class GTDListView(GTDTreeViewBase):
         if not obj.complete:
             return False
 
-        frame = obj.tag("countdown_frame")
-        if frame >=0:
-            if frame <= (len(self.__countdown_pixbufs) - 1):
-                obj.tag("countdown_frame", frame+1)
-            else:
-                obj.remove_tag("countdown_frame")
-
+        frame = store[path][1]
+        if frame > 0:
+            store[path][1] = (frame + 1) % (len(self.__countdown_pixbufs) + 1)
             iter = store.get_iter(path)
             store.row_changed(path, iter)
             return True
@@ -553,9 +548,9 @@ class GTDListView(GTDTreeViewBase):
         elif data is "countdown":
             pixbuf = None
             if not self.show_completed and not isinstance(obj, GTDActionRow) and obj.complete:
-                frame = obj.tag("countdown_frame")
-                if frame >= 0 and frame < len(self.__countdown_pixbufs):
-                    pixbuf = self.__countdown_pixbufs[frame]
+                frame = model[iter][1]
+                if frame > 0 and frame <= len(self.__countdown_pixbufs):
+                    pixbuf = self.__countdown_pixbufs[frame - 1]
             cell.set_property("pixbuf", pixbuf)
         else:
             # FIXME: throw an exception

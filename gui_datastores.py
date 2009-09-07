@@ -106,7 +106,7 @@ class CompletedFilter(Filter):
         obj = model[iter][0]
         if isinstance(obj, GTDActionRow):
             return True
-        elif obj.complete and obj.tag("countdown_frame") is None:
+        elif obj.complete and model[iter][1] == 0:
                 return False
         return True
 
@@ -115,8 +115,9 @@ class CompletedFilter(Filter):
 #        but constructors anyway...
 class GTDStore(gobject.GObject):
     def __init__(self):
-        # FIXME: why am I using GObject?  Should I call GObject.__init__(self) here?
-        self.model = gtk.ListStore(gobject.TYPE_PYOBJECT)
+        #gobject.Gobject.__init__(self) # is something like this needed?
+        #                          gtd domain object      countdown frame
+        self.model = gtk.ListStore(gobject.TYPE_PYOBJECT, gobject.TYPE_INT)
         self.filters = []
         self.model.set_sort_func(1, self.__gtd_sort)
         self.model.set_sort_column_id(1, gtk.SORT_ASCENDING)
@@ -156,6 +157,11 @@ class GTDStore(gobject.GObject):
             return 1
         return 0
 
+    def add(self, obj):
+        # Abstract the model details and provide a simple interface to add a GTD
+        # object to the store.
+        self.model.append([obj, 0])
+
     def sort_by_due_date(self, by_due_date):
         self._by_due_date = by_due_date
         # force a resort
@@ -190,7 +196,7 @@ class GTDStore(gobject.GObject):
             self.model.set_sort_func(1, self.__gtd_sort)
 
     def on_gtd_added(self, tree, obj):
-        self.model.append([obj])
+        self.add(obj)
 
     def on_gtd_removed(self, tree, obj):
         iter = self.gtd_iter(obj)
@@ -215,27 +221,27 @@ class GTDStoreRealmFilter(GTDStore):
 class RealmStore(GTDStore):
     def __init__(self):
         GTDStore.__init__(self)
-        self.model.append([NewRealm("Create new realm...")])
+        self.add(NewRealm("Create new realm..."))
         for r in GTD().realms:
-            self.model.append([r])
+            self.add(r)
 
 
 class ContextStore(GTDStore):
     def __init__(self):
         GTDStore.__init__(self)
-        self.model.append([NewContext("Create new context...")])
+        self.add(NewContext("Create new context..."))
         for c in GTD().contexts:
-            self.model.append([c])
+            self.add(c)
 
 
 # Area gtd datastore
 class AreaStore(GTDStoreRealmFilter):
     def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
         GTDStoreRealmFilter.__init__(self)
-        self.model.append([NewArea("Create new area...")])
+        self.add(NewArea("Create new area..."))
         for r in GTD().realms:
             for a in r.areas:
-                self.model.append([a])
+                self.add(a)
 
 
 # Realm and Area 2 level datastore
@@ -305,8 +311,8 @@ class RealmAreaStore(gobject.GObject):
             error('%s not found in RealmAreaStore' % (area.title))
 
     def on_realm_added(self, tree, realm):
-        iter = self.model.append(None, [realm])
-        self.model.append(iter, [NewArea("Create new area...", realm)])
+        iter = self.model.append(None, [realm, 0])
+        self.model.append(iter, [NewArea("Create new area...", realm), 0])
 
     def on_realm_removed(self, tree, realm):
         # FIXME: what about children (including NewArea) ?
@@ -325,7 +331,7 @@ class RealmAreaStore(gobject.GObject):
 
     def on_area_added(self, tree, area):
         realm_iter = self.__realm_iter(area.realm)
-        self.model.append(realm_iter, [area])
+        self.model.append(realm_iter, [area, 0])
 
     def on_area_removed(self, tree, area):
         iter = self.__area_iter(area)
@@ -338,11 +344,11 @@ class RealmAreaStore(gobject.GObject):
 class ProjectStore(GTDStoreRealmFilter):
     def __init__(self): # could pass a gtd instance, but it's a singleton, so no need
         GTDStoreRealmFilter.__init__(self)
-        self.model.append([NewProject("Create new project...")])
+        self.add(NewProject("Create new project..."))
         for r in GTD().realms:
             for a in r.areas:
                 for p in a.projects:
-                    self.model.append([p])
+                    self.add(p)
 
 
 class TaskStore(GTDStore):
@@ -350,7 +356,7 @@ class TaskStore(GTDStore):
         debug("building TaskStore")
         GTDStore.__init__(self)
         self.sort_by_due_date(True)
-        self.model.append([NewTask("Create new task...")])
+        self.add(NewTask("Create new task..."))
         for r in GTD().realms:
             debug("from realm: %s (%d areas)" % (r.title, len(r.areas)))
             for a in r.areas:
@@ -361,4 +367,4 @@ class TaskStore(GTDStore):
                         debug("adding task: %s" % (t.title))
                         for c in t.contexts:
                             debug("\t%s" % (c.title))
-                        self.model.append([t])
+                        self.add(t)
