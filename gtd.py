@@ -40,6 +40,7 @@ class Base(object):
             self.id = id
         self.__title = title
         self.__tags = {}
+        self._signal_prefix = self.__class__.__name__.lower() + "_"
 
     def __cmp__(self, obj):
         if not isinstance(obj, Base):
@@ -54,6 +55,7 @@ class Base(object):
 
     def set_title(self, title):
         self.__title = title
+        GTD().emit(self._signal_prefix + "modified", self)
 
     def tag(self, label, val=None):
         if not label:
@@ -94,10 +96,6 @@ class Context(Base):
     def __init__(self, id=None, title=""):
         Base.__init__(self, id, title)
 
-    def set_title(self, title):
-        Base.set_title(self, title)
-        GTD().emit("context_modified", self)
-
 
 class ContextNone(Context, BaseNone):
     __metaclass__ = Singleton
@@ -120,10 +118,6 @@ class Realm(Base):
         self.areas = []
         self.visible = visible
         Base.__init__(self, id, title)
-
-    def set_title(self, title):
-        Base.set_title(self, title)
-        GTD().emit("realm_modified", self)
 
     def get_tasks(self):
         tasks = []
@@ -181,10 +175,6 @@ class Area(Base):
         Base.__init__(self, id, title)
         self.__realm = realm
         self.__realm.add_area(self)
-
-    def set_title(self, title):
-        Base.set_title(self, title)
-        GTD().emit("area_modified", self)
 
     def set_realm(self, realm):
         if not realm:
@@ -293,17 +283,21 @@ class Actionable(Base):
             assert isinstance(complete, datetime)
         self.__complete = complete
         self.__set_state()
+        GTD().emit(self._signal_prefix + "modified", self)
 
     def set_notes(self, notes):
         self.__notes = notes
+        GTD().emit(self._signal_prefix + "modified", self)
 
     def set_start_date(self, start_date):
         self.__start_date = start_date
         self.__set_state()
+        GTD().emit(self._signal_prefix + "modified", self)
 
     def set_due_date(self, due_date):
         self.__due_date = due_date
         self.__set_state()
+        GTD().emit(self._signal_prefix + "modified", self)
 
     notes = OProperty(lambda s: s.__notes, set_notes)
     start_date = OProperty(lambda s: s.__start_date, set_start_date)
@@ -328,31 +322,6 @@ class Project(Actionable):
             self.__area = AreaNone()
         self.area.add_project(self)
     
-    # Base methods
-    # FIXME: find a way to not have to implement these here at all!
-    def set_title(self, title):
-        Base.set_title(self, title)
-        GTD().emit("project_modified", self)
-
-    # Actionable methods
-    # FIXME: find a way to not have to implement these here at all!
-    def set_complete(self, complete):
-        Actionable.set_complete(self, complete)
-        GTD().emit("project_modified", self)
-
-    def set_notes(self, notes):
-        Actionable.set_notes(self, notes)
-        GTD().emit("project_modified", self)
-
-    def set_start_date(self, start_date):
-        Actionable.set_start_date(self, start_date)
-        GTD().emit("project_modified", self)
-
-    def set_due_date(self, due_date):
-        Actionable.set_due_date(self, due_date)
-        GTD().emit("project_modified", self)
-
-    # Project methods
     def set_area(self, area):
         self.__area = area
         GTD().emit("project_modified", self)
@@ -410,31 +379,6 @@ class Task(Actionable):
         self.__contexts = contexts
         self.__waiting = waiting
 
-    # Base methods
-    # FIXME: find a way to not have to implement these here at all!
-    def set_title(self, title):
-        Base.set_title(self, title)
-        GTD().emit("task_modified", self)
-
-    # Actionable methods
-    # FIXME: find a way to not have to implement these here at all!
-    def set_complete(self, complete):
-        Actionable.set_complete(self, complete)
-        GTD().emit("task_modified", self)
-
-    def set_notes(self, notes):
-        Actionable.set_notes(self, notes)
-        GTD().emit("task_modified", self)
-
-    def set_start_date(self, start_date):
-        Actionable.set_start_date(self, start_date)
-        GTD().emit("task_modified", self)
-
-    def set_due_date(self, due_date):
-        Actionable.set_due_date(self, due_date)
-        GTD().emit("task_modified", self)
-
-    # Task methods
     def set_project(self, project):
         # FIXME: I think this is a hack, this should never be None
         # maybe just throw an exception here ? or an assert?
