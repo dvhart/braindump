@@ -45,12 +45,13 @@ class Base(object):
     def __cmp__(self, obj):
         if not isinstance(obj, Base):
             return -1
-        a = self.__title
-        b = obj.title
-        if a < b:
+        if self.__title < obj.title:
             return -1
-        elif a == b:
-            return 0
+        if self.__title == obj.title:
+            if id(self) < id(obj):
+                return -1
+            if id(self) == id(obj):
+                return 0
         return 1
 
     def set_title(self, title):
