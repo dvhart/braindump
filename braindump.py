@@ -31,6 +31,7 @@ import gtk, gtk.glade
 import gnome, gnome.ui
 import sexy
 import sys
+import os
 
 from config import Config
 import gtd
@@ -104,10 +105,16 @@ class GTDSignalTest:
 class BrainDump(object):
     def __init__(self):
         self.config = Config() 
+        if not sys.modules.has_key("braindump"):
+            # FIXME: throw a proper exception
+            print "FATAL ERROR: braindump module not found"
+
+        # Calculate the install prefix for things like glade and images
+        bd_path = sys.modules["braindump"].__path__[0]
+        self.data_dir = bd_path[0:bd_path.find("/lib/python")]
 
         # aggregate widgets, with member callbacks
-        GUI(os.path.join(sys.prefix, "share/braindump/glade/braindump.glade"))
-
+        GUI(os.path.join(self.data_dir, "share/braindump/glade/braindump.glade"))
         self.gst = GTDSignalTest() # DELETEME.... later :)
 
         # Initialize the GTD Tree and load the user data
@@ -223,7 +230,8 @@ class BrainDump(object):
         self.filters_sidebar.connect("changed", self.on_filters_sidebar_changed)
 
         self.gtd_list = GTDListView("gtd_list", self.task_store_filter, self.on_new_task,
-                                    self.on_new_project)
+                                    self.on_new_project,
+                                    os.path.join(self.data_dir, "share/braindump/images"))
         self.gtd_list.widget.get_selection().connect("changed", self.on_gtd_list_selection_changed)
 
         self.details_form = Details("details_form",

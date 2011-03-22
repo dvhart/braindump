@@ -363,7 +363,8 @@ class GTDListView(GTDTreeViewBase):
     # FIXME: should be ables to remove the store from the constructor
     # as we will use several for this tree throughout the use of the program
     # setup the callbacks from the caller
-    def __init__(self, name, task_store, new_task_handler, new_project_handler):
+    def __init__(self, name, task_store, new_task_handler, new_project_handler,
+                 img_path):
         """Construct a treeview for tasks and projects.
 
         Keyword arguments:
@@ -387,6 +388,7 @@ class GTDListView(GTDTreeViewBase):
         self.colors[gtd.Actionable.SOMEDAY]  = "#FFFFFF"
         self.colors[gtd.Actionable.COMPLETE] = "#FFFFFF"
 
+        self.img_path = img_path
         self.__countdown_pixbufs = {}
         self._load_countdown_pixbufs()
 
@@ -445,14 +447,12 @@ class GTDListView(GTDTreeViewBase):
             obj = self.get_gtd_from_path(path)
             obj.due_date = due_date
 
-    # FIXME: is this the "right way" to specify the installed path?
     def _load_countdown_pixbufs(self):
-        img_path = os.path.join(sys.prefix, "share/braindump/images")
-        for file in os.listdir(img_path):
+        for file in os.listdir(self.img_path):
             if fnmatch(file, "countdown-*.png"):
                 index = atoi(file.replace("countdown-", "").replace(".png", ""))
                 self.__countdown_pixbufs[index] = gtk.gdk.pixbuf_new_from_file(
-                    os.path.join(img_path, file))
+                    os.path.join(self.img_path, file))
 
     def _on_toggled(self, cell, path):
         model = self.widget.get_model()
