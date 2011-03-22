@@ -29,7 +29,6 @@ import re
 from gobject import *
 import gtk, gtk.glade
 import gnome, gnome.ui
-import sexy
 import webbrowser
 from braindump.singleton import *
 import braindump.gtd
@@ -769,13 +768,12 @@ class SearchEntry(WidgetWrapper):
     def __init__(self, name):
         WidgetWrapper.__init__(self, name)
         self.__alignment = GUI().get_widget(name)
-        self.__entry = sexy.IconEntry()
+        self.__entry = gtk.Entry()
         self.__active = False # FIXME: we could just have search_string... either a string or none... same detail, more useful...
         self.__focused = False # we should be able to check this right?
         self.__hint = "Search..."
 
-        self.__entry.add_clear_button()
-        self.__entry.connect("icon-released", self.clear)
+        #self.__entry.connect("icon-released", self.clear)
         self.__entry.connect("focus-in-event", self._focus_in)
         self.__entry.connect("focus-out-event", self._focus_out)
         self.__entry.connect("changed", self._changed)

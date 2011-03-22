@@ -29,7 +29,6 @@ from logging import debug, info, warning, error, critical
 
 import gtk, gtk.glade
 import gnome, gnome.ui
-import sexy
 import sys
 import os
 
