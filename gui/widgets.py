@@ -767,35 +767,38 @@ class SearchEntry(WidgetWrapper):
 
     def __init__(self, name):
         WidgetWrapper.__init__(self, name)
-        self.__alignment = GUI().get_widget(name)
-        self.__entry = gtk.Entry()
         self.__active = False # FIXME: we could just have search_string... either a string or none... same detail, more useful...
         self.__focused = False # we should be able to check this right?
         self.__hint = "Search..."
 
-        #self.__entry.connect("icon-released", self.clear)
-        self.__entry.connect("focus-in-event", self._focus_in)
-        self.__entry.connect("focus-out-event", self._focus_out)
-        self.__entry.connect("changed", self._changed)
-        self.__entry.show()
-        self.__alignment.widget.add(self.__entry)
-        self._focus_out(self.__entry, None)
+        #self.set_icon_from_stock(GTK_ENTRY_ICON_SECONDARY, "Clear")
 
-    def _focus_in(self, widget, event):
+        #self.widget.connect("icon-release", self.clear)
+        #self.widget.connect("focus-in-event", self._focus_in)
+        #self.widget.connect("focus-out-event", self._focus_out)
+        #self.widget.connect("changed", self._changed)
+        self.widget.show()
+        self.on_search_focus_out(self.widget, None)
+
+    def _set_hint(self):
+        self.widget.set_text(self.__hint)
+        self.widget.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse("gray"))
+
+    def on_search_focus_in(self, widget, event):
         debug("focused")
         self.__focused = True
         if not self.__active:
-            self.__entry.set_text("")
-            self.__entry.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
+            self.widget.set_text("")
+            self.widget.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse("black"))
 
-    def _focus_out(self, widget, event):
+    def on_search_focus_out(self, widget, event):
         debug("unfocused")
         self.__focused = False
-        if self.__entry.get_text() is "":
-            self.clear(widget)
+        if self.widget.get_text() == "":
+            self._set_hint()
 
-    def _changed(self, widget):
-        search_string = self.__entry.get_text()
+    def on_search_changed(self, widget):
+        search_string = self.widget.get_text()
         debug("changed '%s'" % (search_string))
         if search_string == "" or search_string == self.__hint:
             self.__active = False
@@ -803,13 +806,14 @@ class SearchEntry(WidgetWrapper):
             self.__active = True
 
     def connect(self, signal, handler):
-        self.__entry.connect(signal, handler)
+        self.widget.connect(signal, handler)
 
-    def clear(self, widget, x=1, y=1):
+    def on_search_clear(self, widget, x=1, y=1):
         debug("cleared")
-        if self.__focused is False:
-            self.__entry.set_text(self.__hint)
-            self.__entry.modify_text(gtk.STATE_NORMAL, gtk.gdk.color_parse("gray"))
+        if self.__focused:
+            self.widget.set_text("")
+        else:
+            self._set_hint()
 
     def search(self, obj):
         if isinstance(obj, GTDActionRow):
@@ -819,7 +823,7 @@ class SearchEntry(WidgetWrapper):
             return False
 
         if self.__active:
-            return re.compile(self.__entry.get_text(), re.I).search(obj.title)
+            return re.compile(self.widget.get_text(), re.I).search(obj.title)
 
         return True
 

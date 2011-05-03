@@ -1,17 +1,17 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--*- mode: xml -*-->
+<?xml version="1.0" encoding="UTF-8"?>
 <glade-interface>
+  <!-- interface-requires gtk+ 2.12 -->
+  <!-- interface-naming-policy toplevel-contextual -->
   <widget class="GtkDialog" id="realm_area_dialog">
     <property name="title" translatable="yes">Realms and Areas</property>
     <property name="default_width">300</property>
     <property name="default_height">450</property>
     <property name="destroy_with_parent">True</property>
-    <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
+    <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
     <property name="skip_pager_hint">True</property>
-    <signal name="delete_event" handler="on_realm_area_dialog_delete"/>
     <signal name="response" handler="on_realm_area_dialog_response"/>
+    <signal name="delete_event" handler="on_realm_area_dialog_delete"/>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
@@ -22,9 +22,9 @@
               <widget class="GtkScrolledWindow" id="scrolledwindow34">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                <property name="shadow_type">GTK_SHADOW_IN</property>
+                <property name="hscrollbar_policy">automatic</property>
+                <property name="vscrollbar_policy">automatic</property>
+                <property name="shadow_type">in</property>
                 <child>
                   <widget class="GtkTreeView" id="realm_area_tree">
                     <property name="visible">True</property>
@@ -34,6 +34,9 @@
                   </widget>
                 </child>
               </widget>
+              <packing>
+                <property name="position">0</property>
+              </packing>
             </child>
           </widget>
           <packing>
@@ -43,21 +46,28 @@
         <child internal-child="action_area">
           <widget class="GtkHButtonBox" id="dialog-action_area1">
             <property name="visible">True</property>
-            <property name="layout_style">GTK_BUTTONBOX_END</property>
+            <property name="layout_style">end</property>
             <child>
               <widget class="GtkButton" id="okbutton1">
+                <property name="label">gtk-ok</property>
+                <property name="response_id">-5</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="can_default">True</property>
-                <property name="label">gtk-ok</property>
+                <property name="receives_default">False</property>
                 <property name="use_stock">True</property>
-                <property name="response_id">-5</property>
               </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
             </child>
           </widget>
           <packing>
             <property name="expand">False</property>
-            <property name="pack_type">GTK_PACK_END</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
           </packing>
         </child>
       </widget>
@@ -85,7 +95,7 @@
     <property name="border_width">5</property>
     <property name="destroy_with_parent">True</property>
     <property name="icon_name">braindump</property>
-    <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+    <property name="type_hint">normal</property>
     <property name="program_name">BrainDump</property>
     <property name="copyright" translatable="yes">Copyright © 2007-2009 Darren Hart</property>
     <property name="comments" translatable="yes">A context based task management system</property>
@@ -96,16 +106,16 @@
     <property name="translator_credits" translatable="yes" comments="TRANSLATORS: Replace this string with your names, one name per line.">translator-credits</property>
     <property name="artists">Darren Hart &lt;darren@dvhart.com&gt;</property>
     <property name="logo">braindump.png</property>
-    <signal name="delete_event" handler="on_about_dialog_delete"/>
     <signal name="response" handler="on_about_dialog_response"/>
+    <signal name="delete_event" handler="on_about_dialog_delete"/>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox2">
         <child internal-child="action_area">
-          <widget class="GtkHButtonBox" id="dialog-action_area2">
-          </widget>
+          <widget class="GtkHButtonBox" id="dialog-action_area2"/>
           <packing>
             <property name="expand">False</property>
-            <property name="pack_type">GTK_PACK_END</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
           </packing>
         </child>
       </widget>
@@ -133,8 +143,8 @@
                   <widget class="GtkMenu" id="file1_menu">
                     <child>
                       <widget class="GtkImageMenuItem" id="quit">
+                        <property name="label">gtk-quit</property>
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-quit</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_quit_activate"/>
@@ -197,7 +207,7 @@
                         <property name="label" translatable="yes">_Filters</property>
                         <property name="use_underline">True</property>
                         <signal name="toggled" handler="on_show_filters_toggled"/>
-                        <accelerator key="F7" modifiers="" signal="activate"/>
+                        <accelerator key="F7" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -206,7 +216,7 @@
                         <property name="label" translatable="yes">_Details</property>
                         <property name="use_underline">True</property>
                         <signal name="toggled" handler="on_show_details_toggled"/>
-                        <accelerator key="F9" modifiers="" signal="activate"/>
+                        <accelerator key="F9" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -215,7 +225,7 @@
                         <property name="label" translatable="yes">_New Task Defaults</property>
                         <property name="use_underline">True</property>
                         <signal name="toggled" handler="on_show_new_task_defaults_toggled"/>
-                        <accelerator key="F8" modifiers="" signal="activate"/>
+                        <accelerator key="F8" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -268,8 +278,8 @@
                   <widget class="GtkMenu" id="help1_menu">
                     <child>
                       <widget class="GtkImageMenuItem" id="about">
+                        <property name="label">gtk-about</property>
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-about</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_about_activate"/>
@@ -282,11 +292,11 @@
           </widget>
           <packing>
             <property name="expand">False</property>
+            <property name="position">0</property>
           </packing>
         </child>
         <child>
-          <widget class="GtkToolbar" id="realm_toggles">
-          </widget>
+          <widget class="GtkToolbar" id="realm_toggles"/>
           <packing>
             <property name="expand">False</property>
             <property name="position">1</property>
@@ -316,6 +326,7 @@
                       </widget>
                       <packing>
                         <property name="expand">False</property>
+                        <property name="position">0</property>
                       </packing>
                     </child>
                     <child>
@@ -330,18 +341,15 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_text">Close panel</property>
                             <property name="tooltip" translatable="yes">Close panel</property>
-                            <property name="relief">GTK_RELIEF_NONE</property>
-                            <property name="response_id">0</property>
+                            <property name="relief">none</property>
                             <signal name="clicked" handler="on_filters_close_clicked"/>
                             <child>
                               <widget class="GtkImage" id="image1">
                                 <property name="visible">True</property>
                                 <property name="has_tooltip">True</property>
-                                <property name="tooltip_text">Close panel</property>
                                 <property name="stock">gtk-close</property>
-                                <property name="icon_size">1</property>
+                                <property name="icon-size">1</property>
                               </widget>
                             </child>
                           </widget>
@@ -354,6 +362,7 @@
                   </widget>
                   <packing>
                     <property name="expand">False</property>
+                    <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
@@ -373,18 +382,18 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="relief">GTK_RELIEF_NONE</property>
-                        <property name="response_id">0</property>
+                        <property name="relief">none</property>
                         <child>
                           <widget class="GtkHBox" id="hbox11">
                             <property name="visible">True</property>
                             <child>
                               <widget class="GtkArrow" id="arrow1">
                                 <property name="visible">True</property>
-                                <property name="arrow_type">GTK_ARROW_DOWN</property>
+                                <property name="arrow_type">down</property>
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
+                                <property name="position">0</property>
                               </packing>
                             </child>
                             <child>
@@ -400,6 +409,9 @@
                           </widget>
                         </child>
                       </widget>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
                     </child>
                     <child>
                       <widget class="GtkButton" id="context_filter_clear">
@@ -408,17 +420,14 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="has_tooltip">True</property>
-                        <property name="tooltip_text">Clear filter</property>
                         <property name="tooltip" translatable="yes">Clear filter</property>
-                        <property name="relief">GTK_RELIEF_NONE</property>
-                        <property name="response_id">0</property>
+                        <property name="relief">none</property>
                         <child>
                           <widget class="GtkImage" id="image4">
                             <property name="visible">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_text">Clear filter</property>
                             <property name="stock">gtk-clear</property>
-                            <property name="icon_size">1</property>
+                            <property name="icon-size">1</property>
                           </widget>
                         </child>
                       </widget>
@@ -438,9 +447,9 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="no_show_all">True</property>
-                    <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
-                    <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                    <property name="shadow_type">GTK_SHADOW_IN</property>
+                    <property name="hscrollbar_policy">never</property>
+                    <property name="vscrollbar_policy">automatic</property>
+                    <property name="shadow_type">in</property>
                     <child>
                       <widget class="GtkTreeView" id="context_filter_list">
                         <property name="visible">True</property>
@@ -470,8 +479,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="relief">GTK_RELIEF_NONE</property>
-                        <property name="response_id">0</property>
+                        <property name="relief">none</property>
                         <child>
                           <widget class="GtkHBox" id="hbox14">
                             <property name="visible">True</property>
@@ -481,6 +489,7 @@
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
+                                <property name="position">0</property>
                               </packing>
                             </child>
                             <child>
@@ -496,6 +505,9 @@
                           </widget>
                         </child>
                       </widget>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
                     </child>
                     <child>
                       <widget class="GtkButton" id="project_filter_clear">
@@ -504,18 +516,15 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="has_tooltip">True</property>
-                        <property name="tooltip_text">Clear filter</property>
                         <property name="tooltip" translatable="yes">Clear filter</property>
-                        <property name="relief">GTK_RELIEF_NONE</property>
-                        <property name="response_id">0</property>
+                        <property name="relief">none</property>
                         <child>
                           <widget class="GtkImage" id="image6">
                             <property name="visible">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_text">Clear filter</property>
                             <property name="tooltip" translatable="yes">Clear filter</property>
                             <property name="stock">gtk-clear</property>
-                            <property name="icon_size">1</property>
+                            <property name="icon-size">1</property>
                           </widget>
                         </child>
                       </widget>
@@ -534,9 +543,9 @@
                   <widget class="GtkScrolledWindow" id="project_filter_window">
                     <property name="can_focus">True</property>
                     <property name="no_show_all">True</property>
-                    <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
-                    <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                    <property name="shadow_type">GTK_SHADOW_IN</property>
+                    <property name="hscrollbar_policy">never</property>
+                    <property name="vscrollbar_policy">automatic</property>
+                    <property name="shadow_type">in</property>
                     <child>
                       <widget class="GtkTreeView" id="project_filter_list">
                         <property name="visible">True</property>
@@ -566,8 +575,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="relief">GTK_RELIEF_NONE</property>
-                        <property name="response_id">0</property>
+                        <property name="relief">none</property>
                         <child>
                           <widget class="GtkHBox" id="hbox13">
                             <property name="visible">True</property>
@@ -577,6 +585,7 @@
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
+                                <property name="position">0</property>
                               </packing>
                             </child>
                             <child>
@@ -592,6 +601,9 @@
                           </widget>
                         </child>
                       </widget>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
                     </child>
                     <child>
                       <widget class="GtkButton" id="area_filter_clear">
@@ -600,18 +612,15 @@
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="has_tooltip">True</property>
-                        <property name="tooltip_text">Clear filter</property>
                         <property name="tooltip" translatable="yes">Clear filter</property>
-                        <property name="relief">GTK_RELIEF_NONE</property>
-                        <property name="response_id">0</property>
+                        <property name="relief">none</property>
                         <child>
                           <widget class="GtkImage" id="image7">
                             <property name="visible">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="tooltip_text">Clear filter</property>
                             <property name="tooltip" translatable="yes">Clear filter</property>
                             <property name="stock">gtk-clear</property>
-                            <property name="icon_size">1</property>
+                            <property name="icon-size">1</property>
                           </widget>
                         </child>
                       </widget>
@@ -630,9 +639,9 @@
                   <widget class="GtkScrolledWindow" id="area_filter_window">
                     <property name="can_focus">True</property>
                     <property name="no_show_all">True</property>
-                    <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
-                    <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                    <property name="shadow_type">GTK_SHADOW_IN</property>
+                    <property name="hscrollbar_policy">never</property>
+                    <property name="vscrollbar_policy">automatic</property>
+                    <property name="shadow_type">in</property>
                     <child>
                       <widget class="GtkTreeView" id="area_filter_list">
                         <property name="visible">True</property>
@@ -676,17 +685,19 @@
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
+                                <property name="position">0</property>
                               </packing>
                             </child>
                             <child>
                               <widget class="GtkRadioButton" id="work_with_tasks">
+                                <property name="label" translatable="yes">Tasks</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="label" translatable="yes">Tasks</property>
-                                <property name="relief">GTK_RELIEF_NONE</property>
+                                <property name="receives_default">False</property>
+                                <property name="relief">none</property>
                                 <property name="focus_on_click">False</property>
-                                <property name="response_id">0</property>
                                 <property name="active">True</property>
+                                <property name="draw_indicator">False</property>
                                 <signal name="toggled" handler="on_work_with_tasks_toggled"/>
                               </widget>
                               <packing>
@@ -696,13 +707,14 @@
                             </child>
                             <child>
                               <widget class="GtkRadioButton" id="work_with_projects">
+                                <property name="label" translatable="yes">Projects</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="label" translatable="yes">Projects</property>
-                                <property name="relief">GTK_RELIEF_NONE</property>
+                                <property name="receives_default">False</property>
+                                <property name="relief">none</property>
                                 <property name="focus_on_click">False</property>
-                                <property name="response_id">0</property>
                                 <property name="active">True</property>
+                                <property name="draw_indicator">False</property>
                                 <property name="group">work_with_tasks</property>
                                 <signal name="toggled" handler="on_work_with_projects_toggled"/>
                               </widget>
@@ -745,21 +757,26 @@
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkAlignment" id="search">
+                              <widget class="GtkEntry" id="search">
                                 <property name="visible">True</property>
-                                <property name="xalign">1</property>
-                                <child>
-                                  <placeholder/>
-                                </child>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">●</property>
+                                <property name="secondary_icon_stock">gtk-clear</property>
+                                <property name="secondary_icon_activatable">True</property>
+                                <property name="secondary_icon_sensitive">True</property>
+                                <signal name="changed" handler="on_search_changed"/>
+                                <signal name="icon_release" handler="on_search_clear"/>
+                                <signal name="focus_in_event" handler="on_search_focus_in"/>
+                                <signal name="focus_out_event" handler="on_search_focus_out"/>
                               </widget>
                               <packing>
-                                <property name="padding">3</property>
                                 <property name="position">6</property>
                               </packing>
                             </child>
                           </widget>
                           <packing>
                             <property name="expand">False</property>
+                            <property name="position">0</property>
                           </packing>
                         </child>
                         <child>
@@ -782,6 +799,7 @@
                                   </widget>
                                   <packing>
                                     <property name="expand">False</property>
+                                    <property name="position">0</property>
                                   </packing>
                                 </child>
                                 <child>
@@ -796,18 +814,15 @@
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
                                         <property name="has_tooltip">True</property>
-                                        <property name="tooltip_text">Close panel</property>
                                         <property name="tooltip" translatable="yes">Close panel</property>
-                                        <property name="relief">GTK_RELIEF_NONE</property>
-                                        <property name="response_id">0</property>
+                                        <property name="relief">none</property>
                                         <signal name="clicked" handler="on_task_defaults_close_clicked"/>
                                         <child>
                                           <widget class="GtkImage" id="image3">
                                             <property name="visible">True</property>
                                             <property name="has_tooltip">True</property>
-                                            <property name="tooltip_text">Close panel</property>
                                             <property name="stock">gtk-close</property>
-                                            <property name="icon_size">1</property>
+                                            <property name="icon-size">1</property>
                                           </widget>
                                         </child>
                                       </widget>
@@ -820,6 +835,7 @@
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
+                                <property name="position">0</property>
                               </packing>
                             </child>
                             <child>
@@ -832,7 +848,7 @@
                                     <property name="visible">True</property>
                                     <property name="xalign">0</property>
                                     <property name="label" translatable="yes">Project:</property>
-                                    <property name="justify">GTK_JUSTIFY_RIGHT</property>
+                                    <property name="justify">right</property>
                                   </widget>
                                   <packing>
                                     <property name="x_options">GTK_FILL</property>
@@ -844,7 +860,7 @@
                                     <property name="visible">True</property>
                                     <property name="xalign">0</property>
                                     <property name="label" translatable="yes">Context:</property>
-                                    <property name="justify">GTK_JUSTIFY_RIGHT</property>
+                                    <property name="justify">right</property>
                                   </widget>
                                   <packing>
                                     <property name="top_attach">1</property>
@@ -893,9 +909,9 @@
                           <widget class="GtkScrolledWindow" id="scrolledwindow28">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
-                            <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                            <property name="shadow_type">GTK_SHADOW_IN</property>
+                            <property name="hscrollbar_policy">never</property>
+                            <property name="vscrollbar_policy">automatic</property>
+                            <property name="shadow_type">in</property>
                             <child>
                               <widget class="GtkTreeView" id="gtd_list">
                                 <property name="visible">True</property>
@@ -943,6 +959,7 @@
                           </widget>
                           <packing>
                             <property name="expand">False</property>
+                            <property name="position">0</property>
                           </packing>
                         </child>
                         <child>
@@ -957,18 +974,15 @@
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
                                 <property name="has_tooltip">True</property>
-                                <property name="tooltip_text">Close panel</property>
                                 <property name="tooltip" translatable="yes">Close panel</property>
-                                <property name="relief">GTK_RELIEF_NONE</property>
-                                <property name="response_id">0</property>
+                                <property name="relief">none</property>
                                 <signal name="clicked" handler="on_details_close_clicked"/>
                                 <child>
                                   <widget class="GtkImage" id="image2">
                                     <property name="visible">True</property>
                                     <property name="has_tooltip">True</property>
-                                    <property name="tooltip_text">Close panel</property>
                                     <property name="stock">gtk-close</property>
-                                    <property name="icon_size">1</property>
+                                    <property name="icon-size">1</property>
                                   </widget>
                                 </child>
                               </widget>
@@ -981,6 +995,7 @@
                       </widget>
                       <packing>
                         <property name="expand">False</property>
+                        <property name="position">0</property>
                       </packing>
                     </child>
                     <child>
@@ -990,17 +1005,20 @@
                           <widget class="GtkScrolledWindow" id="scrolledwindow24">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                            <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                            <property name="shadow_type">GTK_SHADOW_IN</property>
+                            <property name="hscrollbar_policy">automatic</property>
+                            <property name="vscrollbar_policy">automatic</property>
+                            <property name="shadow_type">in</property>
                             <child>
                               <widget class="GtkTextView" id="notes">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="wrap_mode">GTK_WRAP_WORD</property>
+                                <property name="wrap_mode">word</property>
                               </widget>
                             </child>
                           </widget>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
                         </child>
                         <child>
                           <widget class="GtkTable" id="table2">
